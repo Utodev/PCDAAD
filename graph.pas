@@ -76,7 +76,7 @@ begin
  begin
   Windows[i].line := 0;
   Windows[i].col := 0;
-  Windows[i].height := NUM_ROWS;
+  Windows[i].height := NUM_LINES;
   Windows[i].width := NUM_COLUMNS;
   Windows[i].operationMode := 0;
  end; 

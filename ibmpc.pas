@@ -1,4 +1,4 @@
-unit pc;
+unit ibmpc;
 (* IBM PC specific functions *)
 
 interface

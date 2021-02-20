@@ -286,7 +286,7 @@ implementation
 
 
 
-uses flags, ddb, objects, pc, graph;
+uses flags, ddb, objects, ibmpc, graph;
 
 
 procedure _AT;
