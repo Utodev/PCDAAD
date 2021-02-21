@@ -1,16 +1,12 @@
+{$I SETTINGS.INC}
 unit graph;
-
-
-
 
 interface
 const NUM_WINDOWS = 8;
 {$ifdef VGA}
-      BIOS_VIDEO_MODE = $13;
       NUM_COLUMNS = 51;
       NUM_LINES=25;
 {$else}
-      BIOS_VIDEO_MODE = $03;
       NUM_COLUMNS = 80;
       NUM_LINES=25;
 {$endif}
@@ -18,54 +14,70 @@ const NUM_WINDOWS = 8;
 type TWindow = record
                 line, col, height, width: Word;
                 operationMode: Byte;
+                currentLine, currentCol : Word;
+                BackupCurrentLine, BackupCurrentCol : Word;
                end; 
 
 VAR INK, PAPER, BORDER: byte;
     Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
-    CurrentLine, CurrentCol : Word;
-    BackupCurrentLine, BackupCurrentCol : Word;
+    
 
 procedure resetWindows;
 procedure startVideoMode;
 procedure terminateVideoMode;
 procedure Printat(line, col : word);
+procedure Tab(col:word);
 procedure SaveAt;
 procedure BackAt;
+procedure WriteText(Str: Pchar);
+procedure CarriageReturn;
 
 implementation
 
+uses strings;
+
 PROCEDURE startVideoMode; Assembler;
 ASM
- MOV AX, BIOS_VIDEO_MODE
+{$ifdef VGA}
+ MOV AX, $13
  INT $10
+{$endif}
 END;
+
 
 PROCEDURE terminateVideoMode; Assembler;
 ASM
+{$ifdef VGA}
  MOV AX, $03
  INT $10
+{$endif}
 END;
 
 procedure Printat(line, col : word);
 begin
- if (line < NUM_LINES) and (col<NUM_COLUMNS) then
+ if (line < Windows[ActiveWindow].height) and (col < Windows[ActiveWindow].width) then
  begin
-    CurrentLine := line;
-    CurrentCol := col;
+    Windows[ActiveWindow].CurrentLine := line;
+    Windows[ActiveWindow].CurrentCol := col;
  end;
+end; 
+
+procedure Tab(col:word);
+begin
+ if (col < Windows[ActiveWindow].width) then Windows[ActiveWindow].CurrentCol := col;
 end; 
 
 procedure SaveAt;
 begin
- BackupCurrentLine := CurrentLine;
- BackupCurrentCol := CurrentCol;
+ Windows[ActiveWindow].BackupCurrentLine := Windows[ActiveWindow].currentLine;
+ Windows[ActiveWindow].BackupCurrentCol := Windows[ActiveWindow].CurrentCol;
 end;
 
 procedure BackAt;
 begin
-  CurrentLine := BackupCurrentLine;
-  CurrentCol := BackupCurrentCol;
+  Windows[ActiveWindow].CurrentLine := Windows[ActiveWindow].BackupCurrentLine;
+  Windows[ActiveWindow].CurrentCol := Windows[ActiveWindow].BackupCurrentCol;
 end;
 
 
@@ -81,5 +93,17 @@ begin
   Windows[i].operationMode := 0;
  end; 
 end;
+
+procedure WriteText(Str: Pchar);
+begin
+ Write(Str);
+end;
+
+procedure CarriageReturn;
+begin
+
+end;
+
+
 
 end.

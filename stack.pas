@@ -1,3 +1,4 @@
+{$I SETTINGS.INC}
 (* Implements the processes call stack*)
 
 unit Stack;
@@ -7,35 +8,60 @@ uses global;
 
 const MAX_PROCESS_STACK = 500;
       
+type TStackElement = record
+                        ProcessPTR, EntryPTR, CondactPTR, DoallPTR, DoallEntryPTR, DoallFlag, DoallLocation : Word;
+                     end;
 
-var ProcessStack : array [0..MAX_PROCESS_STACK-1] of Word;
+var ProcessStack : array [0..MAX_PROCESS_STACK-1] of TStackElement;
     StackPTR : Word;
 
 
-function StackPop: Word;
-procedure StackPusb(ptr: word);
+procedure StackPop;
+procedure StackPush;
 procedure resetStack;
 
 implementation
 
-uses errors;
+uses errors, ddb, graph, flags;
 
-procedure resetStack;
+procedure resetStack;   
 begin
     StackPTR := 0;
 end;    
 
-function StackPop: Word;
+procedure StackPop;
+var StackElement: TStackElement;
 begin
-    if StackPTR = 0 then Error(2, 'Stack pop without push');
-    StackPop := ProcessStack[StackPTR];
+    {if POP and nothing to POP we have come to the end of process 0, just exit}
+    if StackPTR = 0 then begin
+                           terminateVideoMode; 
+                           WriteLn('Goodbye.');
+                           halt(0);
+                          end;
+
+    StackElement := ProcessStack[StackPtr];
+    ProcessPTR := StackElement.ProcessPTR;
+    EntryPTR := StackElement.EntryPTR;
+    CondactPTR := StackElement.CondactPTR;
+    DoallPTR := StackElement.DoallPTR;
+    DoallEntryPTR := StackElement.DoallEntryPTR;
+    DoallLocation := StackElement.DoallLocation;
+    setFlag(FDOALL, StackElement.DoallFlag);
     StackPtr := StackPtr - 1;
 end;
 
-procedure StackPusb(ptr: word);
+procedure StackPush;
+var StackElement: TStackElement;    
 begin
     if (StackPTR = MAX_PROCESS_STACK - 1) then Error(2, 'Stack overflow');
-    ProcessStack[StackPtr] := ptr;
+    StackElement.ProcessPTR := ProcessPTR;
+    StackElement.EntryPTR := EntryPTR;
+    StackElement.CondactPTR := CondactPTR;
+    StackElement.DoallPTR := DoallPTR;
+    StackElement.DoallEntryPTR := DoallEntryPTR;
+    StackElement.DoallFlag := getFlag(FDOALL);
+    StackElement.DoallLocation := DoallLocation;
+    ProcessStack[StackPtr] := StackElement;
     StackPtr := StackPtr + 1;
 end;
 

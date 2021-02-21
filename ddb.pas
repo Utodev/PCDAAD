@@ -1,7 +1,7 @@
+{$I SETTINGS.INC}
 (* Functions to load the DDB file and access data in it*)
 unit ddb;
 
-{$I SETTINGS.INC}
 
 
 interface
@@ -37,6 +37,8 @@ end;
 var DDBHeader : TDDBheader;
     ProcessPTR, EntryPTR, CondactPTR : Word;
     DoallPTR : Word; {0 if DOALL not active, points to condact after DOALL otherwise}
+    DoallEntryPTR : Word;
+    DoallLocation : Word;
 
 function loadDDB(filename: String) : boolean; {Loads a DDB file}
 function getByte(address: Word): byte; {get byte at address from DDB}
@@ -45,6 +47,8 @@ procedure resetProcesses; {restarts pointers to restart game}
 
 
 implementation
+
+uses utils;
 
 var DDBRAM : pointer;
     
@@ -62,22 +66,42 @@ begin
         ddbSize := filesize(ddbFile);
         if (ddbSize<=$FFFF) and (ddbSize > sizeof(TDDBheader)) then
         begin
+            BlockRead(ddbFile, DDBHeader, Sizeof(TDDBHeader));
+            Close(ddbFile);
+            Reset(ddbFile, 1);
             GetMem(DDBRAM, $FFFF);
             FillChar(DDBRAM^, $FFFF, 0);
-            BlockRead(ddbFile, DDBHeader, Sizeof(TDDBHeader));
-            Seek(ddbFile, 0);
             BlockRead(ddbFile, DDBRAM^, ddbSize);
-            Close(ddbFile);
             loadDDB := true;
         end;
     end;
+	Debug('====================================================');
+    Debug('NumObj    :' + inttostr(DDBHeader.NumObj));
+    Debug('numLoc    :' + inttostr(DDBHeader.numLoc));
+    Debug('numMsg    :' + inttostr(DDBHeader.numMsg));
+    Debug('numSys    :' + inttostr(DDBHeader.numSys));
+    Debug('numPro    :' + inttostr(DDBHeader.numPro));
+    Debug('tokensPos  :' + inttohex(DDBHeader.tokenPos));
+    Debug('processPos :' + inttohex(DDBHeader.processPos));
+    Debug('objectPos :' + inttohex(DDBHeader.objectPos));
+    Debug('locationPos :' + inttohex(DDBHeader.locationPos));
+    Debug('messagePos :' + inttohex(DDBHeader.messagePos));
+    Debug('sysmessPos :' + inttohex(DDBHeader.sysmessPos));
+    Debug('connectionPos :' + inttohex(DDBHeader.connectionPos));
+    Debug('vocabularyPos :' + inttohex(DDBHeader.vocabularyPos));
+    Debug('objInitiallyAtPos :' + inttohex(DDBHeader.objInitiallyAtPos));
+    Debug('objNamePos :' + inttohex(DDBHeader.objNamePos));
+    Debug('objWeightContWearPos :' + inttohex(DDBHeader.objWeightContWearPos));
+    Debug('objAttributesPos :' + inttohex(DDBHeader.objAttributesPos));
+    Debug('====================================================');
 end;
 
 procedure resetProcesses;
 begin
     DoallPTR := 0;
+    DoallEntryPTR := 0; {Not really necessery}
     CondactPTR := 0;
-    ProcessPTR :=  getWord(DDBHeader.processPos);
+    ProcessPTR :=  DDBHeader.processPos;
     EntryPTR :=  getWord(ProcessPTR);
 end;    
 
