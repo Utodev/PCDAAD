@@ -12,6 +12,7 @@ const VERSION='1.0';
       END_OF_CONDACTS_MARK = $FF;
       NUM_LOCATIONS = 256;
       MAX_LOCATION = NUM_LOCATIONS -1;
+       
 
 { The following constants are to be used so in case in the future some }
 { system message has to be changed, it's easier to replace everywhere. }

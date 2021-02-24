@@ -212,7 +212,7 @@ const condactTable : TCondactTable = (
 ({$ifdef DEBUG}condactName: 'ISAT   '; {$endif}condactRoutine: _ISAT   ; numParams: 2), {  55 $37}
 ({$ifdef DEBUG}condactName: 'SETCO  '; {$endif}condactRoutine: _SETCO  ; numParams: 1), {  56 $38}
 ({$ifdef DEBUG}condactName: 'SPACE  '; {$endif}condactRoutine: _SPACE  ; numParams: 1), {  57 $39}
-({$ifdef DEBUG}condactName: 'HASAT  '; {$endif}condactRoutine: _HASAT  ; numParams: 0), {  58 $3A}
+({$ifdef DEBUG}condactName: 'HASAT  '; {$endif}condactRoutine: _HASAT  ; numParams: 1), {  58 $3A}
 ({$ifdef DEBUG}condactName: 'HASNAT '; {$endif}condactRoutine: _HASNAT ; numParams: 1), {  59 $3B}
 ({$ifdef DEBUG}condactName: 'LISTOBJ'; {$endif}condactRoutine: _LISTOBJ; numParams: 0), {  60 $3C}
 ({$ifdef DEBUG}condactName: 'EXTERN '; {$endif}condactRoutine: _EXTERN ; numParams: 2), {  61 $3D}
@@ -288,7 +288,7 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, graph, stack, messages, strings, errors, utils;
+uses flags, ddb, objects, ibmpc, graph, stack, messages, strings, errors, utils, parser;
 
 
 procedure _AT;
@@ -412,8 +412,10 @@ end;
 
 procedure _DONE;
 begin
- (* FALTA HACER QUE SALTE AL FINAL DE TABLA *)
  done := true;
+ ConsumeProcess; {Go to last entry}
+ {force failure so we jump to next entry, which happens to be the mark of end of process}
+ condactResult := false; 
 end;
 
 procedure _OK;
@@ -426,7 +428,8 @@ end;
 procedure _ANYKEY;
 begin
  while getKey = 0 do;
- done := true; (* FALTA COMPROBAR SI ANYKEY MARCA DONE *)
+ done := true; 
+ (* FALTA SOPORTE DE TIMEOUT EN ANYKEY *)
 end;
 
 procedure _SAVE;
@@ -460,8 +463,8 @@ end;
 
 procedure _CLS;
 begin
-(* FALTA *)
-done := true;
+ ClearCurrentWindow;
+ done := true;
 end;
 
 procedure _DROPALL;
@@ -493,7 +496,7 @@ end;
 procedure _PAUSE;
 begin
 (* FALTA *)
-done := true; (* FALTA COMPROBAR SI MARCA DONE*)
+done := true; 
 end;
 
 procedure _SYNONYM;
@@ -603,7 +606,7 @@ end;
 
 procedure _NEWLINE;
 begin
-(* FALTA *)
+ CarriageReturn;
  done := true;
 end;
 
@@ -733,8 +736,9 @@ end;
 
 procedure _PARSE;
 begin
-(* FALTA *)
-done := true;
+ parse(parameter1);
+ done := true; (* SALE CON DONE? mas bien al reves, no?*)
+ {(* FALTA DAR SOPORTE A PARSE 1*)}
 end;
 
 procedure _LISTAT;
@@ -747,17 +751,18 @@ procedure _PROCESS;
 begin
     if (Parameter1 >= DDBHeader.numPro) then Error(3, 'Process ' + inttostr(parameter1) + 'does not exist');
     StackPush;
+    Debug('Push ProPtr:' + inttostr(ProcessPtr) + ' EntryPtr:' + inttostr(EntryPtr)+ ' CondactPtr: '+ inttostr(condactPTR));
     DoallPTR := 0;
-    DoallEntryPTR := 0; {Not really necessery}
+    DoallEntryPTR := 0; {Not really necessary}
     CondactPTR := 0;
     ProcessPTR :=  DDBHeader.processPos + 2 * parameter1;
     {As I really want to force a jump to first entry of this new   }
     {process I set the EntryPRT to 2 below the first entry and     }
     {make the condition fail, so actually we wil habe the EntryPTR }
     { increased by 2 on return and jump to entry validation        }
-    EntryPTR :=  getWord(ProcessPTR) - 2;
+    EntryPTR :=  getWord(ProcessPTR) - 4;
     condactResult := false;
-    done := true; (*FALTA ¿Seguro?*)
+    {Done is not set, as it will basically depend on the PROCESS result}
 end;
 
 procedure _SAME;
@@ -863,7 +868,7 @@ end;
 
 procedure _NEWTEXT;
 begin
-    (* FALTA *)
+    newtext;
     done := true;
 end;
 
@@ -966,8 +971,10 @@ end;
 
 procedure _NOTDONE;
 begin
-(* FALTA  LO DE HACER QUE SALTE AL FINAL DE PROCESO*)
-  done := false;
+ done := false;
+ ConsumeProcess; {Go to last entry}
+ {force failure so we jump to next entry, which happens to be the mark of end of process}
+ condactResult := false; 
 end;
 
 procedure _AUTOP;
@@ -994,9 +1001,10 @@ end;
 
 procedure _REDO;
 begin
-  {Point two bytes below first entry because on return the engine will add 2}
-  EntryPTR := getWord(ProcessPTR - 2); 
+  {Point two bytes below first entry because on return the engine will add 4}
+  EntryPTR := getWord(ProcessPTR) - 4; 
   condactResult := false;  {force}
+  (* falta poner el done = true ??*)
 end;
 
 procedure _CENTRE;
@@ -1046,11 +1054,7 @@ procedure _SKIP;
 var OriginalSkip: integer;
 begin
  OriginalSkip := parameter1 - 256; {Bring back the -128 to 127 value}
- {Please notice a SKIP -1 returns to this same entry but, as we are }
- {going to make the entry "fail" as in a failed condition, that -1  }
- {will actually point to the previous entry. That is fixed on return}
- {as when a condact fails, the EntryPTR is increased by 2           }
- EntryPTR := EntryPtr - 2 * OriginalSkip; 
+ EntryPTR := EntryPtr + 4 * OriginalSkip; 
  condactResult := false;
 end;
 
@@ -1059,9 +1063,9 @@ begin
  {Reset the stack and the processes to go back to process 0}
  resetProcesses;
  resetStack;
- {When we force condact to fail, it will inrease EntryPTR by 2 and continue execution}
+ {When we force condact to fail, it will inrease EntryPTR by 4 and continue execution}
  {So we first make EntryPTR point two point below}
- EntryPTR := EntryPTR -2;
+ EntryPTR := getWord(ProcessPtr)  -4;
  condactResult := false;
  end;
 

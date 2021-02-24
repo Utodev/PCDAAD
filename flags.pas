@@ -79,7 +79,6 @@ procedure resetFlags;
 var i : integer;
 begin
     for i := 0 to MAX_FLAGS-1 do setFlag(i, 0);
-
 end;
 
 procedure setFlag(index: word; value: TFlagType);

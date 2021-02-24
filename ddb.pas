@@ -6,9 +6,9 @@ unit ddb;
 
 interface
 
-
-
 uses global;
+
+CONST OFUSCATE_VALUE = $FF;
 
 type TDDBheader = record
 	version: byte;
@@ -44,6 +44,7 @@ function loadDDB(filename: String) : boolean; {Loads a DDB file}
 function getByte(address: Word): byte; {get byte at address from DDB}
 function getWord(address: Word): word; {get word at address from DDB}
 procedure resetProcesses; {restarts pointers to restart game}
+procedure ConsumeProcess; {Goes to last entry of process}
 
 
 implementation
@@ -120,4 +121,11 @@ begin
   getWord := getByte(address) + 256 * getByte(address + 1);
 end;
 
+procedure ConsumeProcess;
+begin
+ while (GetByte(EntryPtr) <> END_OF_PROCESS_MARK) do EntryPtr := EntryPtr + 4;
+ EntryPtr := EntryPtr - 4;
+end;
+
+begin
 end.

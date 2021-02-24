@@ -32,10 +32,16 @@ procedure SaveAt;
 procedure BackAt;
 procedure WriteText(Str: Pchar);
 procedure CarriageReturn;
+procedure ClearCurrentWindow;
 
 implementation
 
 uses strings;
+
+procedure ClearCurrentWindow;
+begin
+ (* FALTA *)
+end;
 
 PROCEDURE startVideoMode; Assembler;
 ASM
@@ -101,7 +107,7 @@ end;
 
 procedure CarriageReturn;
 begin
-
+ (* FALTA *)
 end;
 
 

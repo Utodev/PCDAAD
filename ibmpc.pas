@@ -3,17 +3,19 @@ unit ibmpc;
 
 interface
 
-FUNCTION GetKey:Word; 
+function GetKey:Word; 
 
 implementation
 
-FUNCTION GetKey:Word; Assembler;
+
+
+function GetKey : Word; Assembler;
 (* Returns keyboard code:
 
             if  <256    ->  estandar  ASCII code
                 >=256   -> Extended ASCII code -> Hi(GetKey)= Code
                 =0      -> no key pressed *)
-ASM
+asm
     MOV AH,1
     INT $16
     MOV AX,0
@@ -23,7 +25,7 @@ ASM
     JZ @getKeyEnd
     SUB AH,AH
     @getKeyEnd:
-END;
+end;
 
 
 END.

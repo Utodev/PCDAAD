@@ -10,6 +10,7 @@ const MAX_PROCESS_STACK = 500;
       
 type TStackElement = record
                         ProcessPTR, EntryPTR, CondactPTR, DoallPTR, DoallEntryPTR, DoallFlag, DoallLocation : Word;
+
                      end;
 
 var ProcessStack : array [0..MAX_PROCESS_STACK-1] of TStackElement;
@@ -39,6 +40,7 @@ begin
                            halt(0);
                           end;
 
+    StackPtr := StackPtr - 1;
     StackElement := ProcessStack[StackPtr];
     ProcessPTR := StackElement.ProcessPTR;
     EntryPTR := StackElement.EntryPTR;
@@ -47,13 +49,12 @@ begin
     DoallEntryPTR := StackElement.DoallEntryPTR;
     DoallLocation := StackElement.DoallLocation;
     setFlag(FDOALL, StackElement.DoallFlag);
-    StackPtr := StackPtr - 1;
 end;
 
 procedure StackPush;
 var StackElement: TStackElement;    
 begin
-    if (StackPTR = MAX_PROCESS_STACK - 1) then Error(2, 'Stack overflow');
+    if (StackPTR = MAX_PROCESS_STACK - 1) then Error(2, 'Stack overflow. Too many nested processes');
     StackElement.ProcessPTR := ProcessPTR;
     StackElement.EntryPTR := EntryPTR;
     StackElement.CondactPTR := CondactPTR;

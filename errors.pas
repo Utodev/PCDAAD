@@ -13,7 +13,7 @@ uses graph;
 procedure error(level: word; message: string );
 begin
     terminateVideoMode;
-    Writeln('[Error ' , strpad(inttostr(level), '0', 3) , '] - ' , message,'.');
+    Writeln('Runtime Error: ' , strpad(inttostr(level), '0', 3) , '] - ' , message,'.');
     halt(level);
 end;
 

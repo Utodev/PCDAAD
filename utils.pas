@@ -9,12 +9,33 @@ unit utils;
 
 interface
 
+
 function inttostr(value: longint): string;
 function intToHex(value:Word): String;
 function strpad(str: string; filler: string; minLength:byte):string;
+{Just as freepascal StringReplace, only if will enter and endless lookp if Origin is a substring of Dest}
+function StringReplace(Str:String; Origin, Dest: String): String;
+function StrUpper(Str: String) :String;
 procedure Debug(Str: string);
+procedure Delay(Seconds : Word);
 
 implementation
+
+uses dos, ibmpc;
+
+
+procedure Delay(Seconds : Word);
+var h, m, s, hund : Word;
+    Timestamp1,Timestamp2 : Longint;
+begin
+ GetTime(h,m,s,hund);
+ TimeStamp1 :=h*24*60*100 + m*60*100 + s*100 + hund;
+ repeat 
+  GetTime(h,m,s,hund);
+  TimeStamp2 :=h*24*60*100 + m*60*100 + s*100 + hund;
+  if (GetKey<>0) then break;
+ until  TimeStamp2 - Timestamp1 > Seconds * 100;
+end;
 
 function strpad(str: string; filler: string; minLength:byte):string;
 begin
@@ -47,7 +68,19 @@ begin
      intToHex := tmp;
 end;
 
+function StringReplace(Str:String; Origin, Dest: String): String;
+begin
+    while (Pos(Origin, Str) <> 0) do
+        Str := Copy(Str, 1, Pos(Origin, Str) - 1) + Dest + Copy(Str, Pos(Origin, Str) + length(Origin), 255);
+    StringReplace := Str;
+end;
 
+function StrUpper(Str: String) :String;
+var i : integer;
+begin
+ for i := 1 to Length(Str) do Str[i] := UpCase(Str[i]);
+ StrUpper := Str;
+end;
 
 procedure Debug(Str: String);
 begin
