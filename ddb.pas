@@ -76,6 +76,7 @@ begin
             loadDDB := true;
         end;
     end;
+    (*
 	Debug('====================================================');
     Debug('NumObj    :' + inttostr(DDBHeader.NumObj));
     Debug('numLoc    :' + inttostr(DDBHeader.numLoc));
@@ -95,6 +96,7 @@ begin
     Debug('objWeightContWearPos :' + inttohex(DDBHeader.objWeightContWearPos));
     Debug('objAttributesPos :' + inttohex(DDBHeader.objAttributesPos));
     Debug('====================================================');
+    *)
 end;
 
 procedure resetProcesses;

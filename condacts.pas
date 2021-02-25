@@ -288,7 +288,7 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, graph, stack, messages, strings, errors, utils, parser;
+uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser;
 
 
 procedure _AT;
@@ -751,7 +751,6 @@ procedure _PROCESS;
 begin
     if (Parameter1 >= DDBHeader.numPro) then Error(3, 'Process ' + inttostr(parameter1) + 'does not exist');
     StackPush;
-    Debug('Push ProPtr:' + inttostr(ProcessPtr) + ' EntryPtr:' + inttostr(EntryPtr)+ ' CondactPtr: '+ inttostr(condactPTR));
     DoallPTR := 0;
     DoallEntryPTR := 0; {Not really necessary}
     CondactPTR := 0;

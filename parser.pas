@@ -75,66 +75,6 @@ begin
 end;
 
 
-procedure getPlayerOrders;
-var i : word;
-begin
- Debug('Entering getPlaterOrders function');
- ReadLn(inputBuffer);
- for i:= 0 to ConjunctionsCount - 1 do
-  while (Pos(Conjunctions[i], inputBuffer)>0) do
-    inputBuffer := StringReplace(inputBuffer, Conjunctions[i], '.');
- (* FALTA REEMPLAZAR LAS CONJUNCIONES CON "." *)
-end; 
-
-procedure parse(Option:TFlagType);
-var playerOrder : string;
-	orderWords : array[0..High(Byte)] of TWord;
-	orderWordCount : Byte;
-    i : integer;
-begin
- Debug('Entering parse function');
- if (inputBuffer='') then getPlayerOrders;
- {Extract an order}
- Debug('InputBuffer = ' + inputBuffer);
- playerOrder := '';
- i := 0;
- while (not (inputBuffer[i] in STANDARD_SEPARATORS)) and (i <= Length(inputBuffer)) do
- begin
-  playerOrder := playerOrder + inputBuffer[i];
-  i := i + 1;
- end;
- if (i>=Length(inputBuffer)) then inputBuffer := '' {If finished, we empty the inputBuffer}
-							 else inputBuffer := Copy(inputBuffer, i + 1, 255); {If not , we set it to the remaining after the separator}
-
- 
- orderWordCount := 0;
- {remove double spaces}
- while (Pos('  ', playerOrder)> 0) do playerOrder := StringReplace(playerOrder, '  ', ' ');
-
- {split order into words}
- while playerOrder <> '' do
- begin
-  if (Pos(' ', playerOrder)> 0) then
-  begin
-   orderWords[orderWordCount] := Copy(playerOrder, 1, Pos(' ', playerOrder) - 1);
-   orderWordCount := orderWordCount + 1;
-   playerOrder := Copy(playerOrder, Pos(' ', playerOrder) + 1, 255);
-  end
-  else
-  begin
-   orderWords[orderWordCount] := playerOrder;
-   orderWordCount := orderWordCount + 1;
-   playerOrder := '';
-  end;
- end;
-
- {parse the order}
-
-
- 
-
-
-end;
 
 function FindWord(AWord: TWord; AVocType : TVocType): integer;
 var i, ptr : Word;
@@ -168,6 +108,62 @@ begin
 end; {While}
 
 FindWord := -1;
+end;
+
+
+procedure getPlayerOrders;
+var i : word;
+begin
+ ReadLn(inputBuffer);
+ for i:= 0 to ConjunctionsCount - 1 do
+  while (Pos(Conjunctions[i], inputBuffer)>0) do
+    inputBuffer := StringReplace(inputBuffer, Conjunctions[i], '.');
+end; 
+
+procedure parse(Option:TFlagType);
+var playerOrder : string;
+	orderWords : array[0..High(Byte)] of TWord;
+	orderWordCount : Byte;
+    i : integer;
+begin
+ if (inputBuffer='') then getPlayerOrders;
+ {Extract an order}
+ playerOrder := '';
+ i := 0;
+ while (not (inputBuffer[i] in STANDARD_SEPARATORS)) and (i <= Length(inputBuffer)) do
+ begin
+  playerOrder := playerOrder + inputBuffer[i];
+  i := i + 1;
+ end;
+ if (i>=Length(inputBuffer)) then inputBuffer := '' {If finished, we empty the inputBuffer}
+							 else inputBuffer := Copy(inputBuffer, i + 1, 255); {If not , we set it to the remaining after the separator}
+
+ 
+ orderWordCount := 0;
+ {remove double spaces}
+ while (Pos('  ', playerOrder)> 0) do playerOrder := StringReplace(playerOrder, '  ', ' ');
+
+ {split order into words}
+ while playerOrder <> '' do
+ begin
+  if (Pos(' ', playerOrder)> 0) then
+  begin
+   orderWords[orderWordCount] := Copy(playerOrder, 1, Pos(' ', playerOrder) - 1);
+   orderWordCount := orderWordCount + 1;
+   playerOrder := Copy(playerOrder, Pos(' ', playerOrder) + 1, 255);
+  end
+  else
+  begin
+   orderWords[orderWordCount] := playerOrder;
+   orderWordCount := orderWordCount + 1;
+   playerOrder := '';
+  end;
+ end;
+
+ {parse the order}
+ for i:= 1 to orderWordCount - 1 do WriteLn(orderWords[i]);
+ (* FALTA PARSEAR *)
+ 
 end;
 
 

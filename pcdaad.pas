@@ -1,17 +1,16 @@
 {$I SETTINGS.INC}
 
 (*
-    This interpreter is (C) Uto (Carlos Sanchez) and is distributed under the MIT license.
+    This interpreter is (C) 2021 Uto (Carlos Sanchez) and is distributed under the
+    MIT license.
 
-    The code has been built with Borland Pascal 7.0, although it's likely to work fine 
-    with Turbo Pascal 7.0 and Turbo pascal 6.0
-
+    This code is to be built with Borland Pascal 7.0, although it's likely to work
+    fine with Turbo Pascal 7.0 and maybe with Turbo pascal 6.0
 *)
-
 
 program PCDAAD;
 
-uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser;
+uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, tokens;
 
 var ddbFilename : String;
 
@@ -33,7 +32,6 @@ begin
  {Where a new entry is considered and evaluated}
  RunEntry:
  
- Debug('[RunEntry]  ProcessPtr: ' + intToHex(ProcessPTR) + ' | EntryPtr  : ' + intToHex(EntryPTR));
  
  {Check if current process has finished}
  if getByte(EntryPTR) = END_OF_PROCESS_MARK then 
@@ -49,7 +47,6 @@ begin
     begin
       EntryPTR := DoallEntryPTR;
       CondactPTR :=  DoallPTR;
-      Debug('Doall loop, jumping back with object '+ inttostr(nextDoallObjno));
       SetReferencedObject(nextDoallObjno);
       goto RunCondact;
     end
@@ -57,20 +54,16 @@ begin
     begin
       {If in DOALL but no more objects mark doall inactive and just let }
       {the process continue and finish normally}
-      Debug('Doall loop but no more objects at location ' + inttostr(DoallLocation));
       DoallPTR := 0; 
     end;
   end;
 
   {process finishes normally}
-  Debug('End of Proces found - no more entries');
   StackPop;
-  Debug('Pp ProPtr:' + inttostr(ProcessPtr) + ' EntryPtr:' + inttostr(EntryPtr)+ ' CondactPtr: '+ inttostr(condactPTR));
   condactPTR := condactPTR + 1;
   Goto RunCondact;
  end;
 
- Debug('Validating entry ' + inttostr(getByte(EntryPTR)) + ' ' + inttostr(getByte(EntryPTR+1)));
  
  ValidEntry := ((getByte(EntryPTR) = getFlag(FVERB)) OR (getByte(EntryPTR) = NO_WORD))
                  and ((getByte(EntryPTR+1) = getFlag(FNOUN)) OR (getByte(EntryPTR+1) = NO_WORD));
@@ -78,19 +71,16 @@ begin
 
  if not ValidEntry then
  begin
-  Debug('Entry not valid');
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end; 
 
  RunCondact:
  {First check if no more condacts in the entry, if so, move to next entry}
- Debug('Getting next condact');
  condactResult := true;
  opcode := getByte(CondactPTR);
  if opcode = END_OF_CONDACTS_MARK then
  begin
-  Debug('End of condacts mark found. No more condacts in this entry');
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end; 
@@ -119,10 +109,10 @@ begin
    DebugStr := DebugStr + inttostr(Parameter2);
   end;
  end;
- Debug('>> ' + DebugStr);
-
+ 
  {run condact}
- {$ifdef DEBUG}
+ Debug('>> ' + DebugStr);
+{$ifdef DEBUG}
  Delay(1);
  {$endif}
  condactResult := true;
@@ -130,7 +120,6 @@ begin
  {If condact execution failed, go to next entry}
  if (condactResult = false) then
  begin
-  Debug('Condition failed, jumping to next entry');
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end;
