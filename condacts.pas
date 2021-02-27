@@ -291,26 +291,100 @@ implementation
 uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser;
 
 
+(*****************************************************************************************)
+(**************************************** AUX FUNCTIONS **********************************)
+(*****************************************************************************************)
+
+{SYSMESS is called often from other condact, so to ease calling Sysmess procedure is created}
+procedure Sysmess(sysno: integer);
+var saveParameter : TFlagType;
+begin
+ {preseve so in case it's used after sysmes() call, it is not altered}
+ saveParameter := parameter1; 
+ parameter1 := sysno;
+ _SYSMESS;
+ parameter1 := saveParameter;
+end;
+
+{LISTAT shows no message when no objects found, also the
+following has to be fullfilled according manual: 
+
+    Flag 53 holds object print flags
+    7 - Set if any object printed as part of LISTOBJ or LISTAT
+    6 - Set this to cause continuous object listing. i.e. LET 53 64
+    will make PAW list objects on the same line forming a valid
+    sentence.
+}
+procedure listObjects(locno: TFlagType; isLISTAT: boolean);
+var count, listed : TFlagType;
+    i : integer;
+begin
+ count := getObjectCountAt(locno);
+ listed := 0;
+ 
+ if (count> 0) then
+ begin
+    setFlag(FOBJECT_PRINT_FLAGS, getFlag(FOBJECT_PRINT_FLAGS) OR $80); {Set bit 7}
+    
+    if (not isLISTAT) then 
+    begin
+     Sysmess(SM1); {I can also see:} {Only for LISTOBJ}
+     if ((getFlag(FOBJECT_PRINT_FLAGS) AND 64) = 0) then _NEWLINE;
+    end;
+
+    for  i := 0 to DDBHeader.numObj - 1 do
+    begin
+        if (getObjectLocation(i) = locno) then
+        begin
+            WriteText(getPcharMessage(DDBHeader.objectPos, i));
+            listed := listed + 1;
+            if ((getFlag(FOBJECT_PRINT_FLAGS) AND 64) <> 0) then
+            begin {continuous listing}
+                if (listed = count) then Sysmess(SM48)  {.\n}
+                else if (listed = count - 1) then Sysmess(SM47) {"and"}
+                else Sysmess(SM46); {, }
+            end {continuous listing}
+            else WriteText(#13#10'');
+        end; { if (getObjectLocation(i) = locno)}
+    end  {for}
+ end
+ else
+ begin {if no objects at the location}
+  setFlag(FOBJECT_PRINT_FLAGS, getFlag(FOBJECT_PRINT_FLAGS) AND $7F); {Clear bit 7}
+  if  isLISTAT then Sysmess(SM53); {"Nothing"}
+ end;
+ 
+end;
+
+
+(*****************************************************************************************)
+(****************************************** CONDACTS *************************************)
+(*****************************************************************************************)
+
 procedure _AT;
 begin
     condactResult := getFlag(FPLAYER) = Parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTAT;
 begin
     condactResult := getFlag(FPLAYER) <> Parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ATGT;
 begin
     condactResult := getFlag(FPLAYER) > Parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ATLT;
 begin
     condactResult := getFlag(FPLAYER) < Parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PRESENT;
 var objectLocation : TLocationType;
 begin
@@ -318,6 +392,7 @@ begin
     condactResult := (objectLocation = LOC_CARRIED) or (objectLocation = LOC_WORN) or (objectLocation = getFlag(FPLAYER)) ;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ABSENT;
 var objectLocation : TLocationType;
 begin
@@ -327,89 +402,107 @@ begin
                          and (objectLocation <> getFlag(FPLAYER)) ;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WORN;
 begin
     condactResult := getObjectLocation(parameter1) = LOC_WORN;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTWORN;
 begin
     condactResult := getObjectLocation(parameter1) <> LOC_WORN;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _CARRIED;
 begin
     condactResult := getObjectLocation(parameter1) = LOC_CARRIED;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTCARR;
 begin
     condactResult := getObjectLocation(parameter1) <> LOC_CARRIED;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _CHANCE;
 begin
  if (parameter1 > 100) then condactResult := false
                        else condactResult :=  random(101) <= parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ZERO;
 begin
     condactResult := getFlag(Parameter1) = 0;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTZERO;
 begin
     condactResult := getFlag(Parameter1) <> 0;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _EQ;
 begin
     condactResult := getFlag(Parameter1) = Parameter2;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _GT;
 begin
     condactResult := getFlag(Parameter1) > Parameter2;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _LT;
 begin
     condactResult := getFlag(Parameter1) < Parameter2;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ADJECT1;
 begin
  condactResult := getFlag(FADJECT) = parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ADVERB;
 begin
  condactResult := getFlag(FADVERB) = parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SFX;
 begin
-(* FALTA *)
+(* PENDING *)
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DESC;
 begin
   WriteText(getPcharMessage(DDBHeader.locationPos, parameter1));
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _QUIT;
 begin
 (* FALTA *)
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _END;
 begin
-(* FALTA *)
+ halt(0);
+(* FALTA HACERLO BIEN*)
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DONE;
 begin
  done := true;
@@ -418,47 +511,54 @@ begin
  condactResult := false; 
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _OK;
 begin
- Parameter1 := SYSMESS15; {"OK"}
- _SYSMESS;
+  Sysmess(SM15); {OK}
  _DONE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ANYKEY;
 begin
  while getKey = 0 do;
  done := true; 
- (* FALTA SOPORTE DE TIMEOUT EN ANYKEY *)
+ (* PENDING. SOPORTE DE TIMEOUT EN ANYKEY *)
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SAVE;
 begin
     { Hay que grabar los flags, las localidades de los obejtos, la configuración de
      ventanas (cada una con sus datos, y cual es la activa), y seguramente algunas
      otras variables como la direccion de doall y no sé si algo más. PENSAR. }
-    (* FALTA *)
+    (* PENDING *)
     done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _LOAD;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DPRINT;
 var value: Word;
+    valstr : array[0..2] of char;
 begin
     Value := getFlag(parameter1) + 256 * getFlag(parameter1 + 1);
-    (* FALTA IMPRIMIRLO*)
+    StrPCopy(valstr,inttostr(value));
+    WriteText(valstr);
     done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DISPLAY;
 begin
 (* FALTA *)
-done := true;(* FALTA COMPROBAR SI MARCA DONE *)
+done := true;
 end;
 
 procedure _CLS;
@@ -467,38 +567,174 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DROPALL;
+var nextObject : integer;
+    here : TFlagType;
+    locno : TFlagType;
 begin
-(* FALTA *)
-done := true;
+   here := getFlag(FPLAYER);
+   for locno := LOC_CARRIED to LOC_WORN do
+   begin
+        nextObject := - 1;
+        repeat
+        nextObject := getNextObjectAt(nextObject, locno);
+        if (nextObject<>MAX_OBJECT) then 
+        begin 
+            parameter1 := nextObject;
+            parameter2 := here;
+            _PLACE;
+        end;
+        until nextObject=MAX_OBJECT;
+   end;
+   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _AUTOG;
+var Noun, Adject : TFlagType;
 begin
-(* FALTA *)
+ Noun := getFlag(FNOUN);
+ Adject := getFlag(FADJECT);
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _GET;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _GET;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _GET;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
+ if (Parameter1 <> MAX_OBJECT) then Sysmess(SM26) {There isn't one of those here.}
+                               else Sysmess(SM8); {I can't do that.}
+ _NEWTEXT;
+ _DONE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _AUTOD;
+var Noun, Adject : TFlagType;
 begin
-(* FALTA *)
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
+ Noun := getFlag(FNOUN);
+ Adject := getFlag(FADJECT);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _DROP;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _DROP;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _DROP;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
+ if (Parameter1 <> MAX_OBJECT) then Sysmess(SM28) {I don't have one of those.}
+                               else Sysmess(SM8); {I can't do that.}
+ _NEWTEXT;
+ _DONE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _AUTOW;
+var Noun, Adject : TFlagType;
 begin
-(* FALTA *)
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
+ Noun := getFlag(FNOUN);
+ Adject := getFlag(FADJECT);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _WEAR;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _WEAR;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _WEAR;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
+ if (Parameter1 <> MAX_OBJECT) then Sysmess(SM28) {I don't have one of those.}
+                               else Sysmess(SM8); {I can't do that.}
+ _NEWTEXT;
+ _DONE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _AUTOR;
+var Noun, Adject : TFlagType;
 begin
-(* FALTA *)
-end;
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
+ Noun := getFlag(FNOUN);
+ Adject := getFlag(FADJECT);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _REMOVE;
+  exit;
+ end;
 
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _REMOVE;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _REMOVE;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
+ if (Parameter1 <> MAX_OBJECT) then Sysmess(SM23) {"I'm not wearing one of those.}
+                               else Sysmess(SM8); {I can't do that.}
+ _NEWTEXT;
+ _DONE;
+ end;
+
+(*--------------------------------------------------------------------------------------*)
 procedure _PAUSE;
 begin
-(* FALTA *)
-done := true; 
+ if (parameter1 = 0) then Delay(5.12)
+                     else Delay(parameter1/50);
+ done := true; 
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SYNONYM;
 begin
  if (parameter1<>NO_WORD) then setFlag(FVERB, parameter1);
@@ -506,54 +742,203 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _GOTO;
 begin
  setFlag(FPLAYER, Parameter1);
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _MESSAGE;
 begin
  _MES;
  _NEWLINE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _REMOVE;
+var ObjectLocation : TFlagType;
+    WeightCarried, WeightWorn :  Word;
 begin
-(* FALTA *)
-done := true;
+ ObjectLocation :=getObjectLocation(parameter1);
+ if (ObjectLocation = LOC_CARRIED) or (ObjectLocation=getFlag(FPLAYER)) then 
+ begin
+  Sysmess(SM50); {I'm not wearing the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation <> LOC_WORN) and (ObjectLocation<>getFlag(FPLAYER)) then 
+ begin
+  Sysmess(SM23);  {"I'm not wearing one of those.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (not isObjectWearable(parameter1)) then
+ begin
+  Sysmess(SM41); {I can't remove the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (getFlag(FPLAYER)>= getFlag(FOBJECTS_CONVEYABLE)) then
+ begin
+  Sysmess(SM42); {I can't remove the _. My hands are full.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+ setObjectLocation(parameter1, LOC_CARRIED);
+ setFlag(FCARRIED, getFlag(FCARRIED) + 1);
+ Sysmess(SM38); {I've removed the _.}
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _GET;
+var ObjectLocation : TFlagType;
+    WeightCarried, WeightWorn :  Word;
 begin
-(* FALTA *)
-done := true;
+ ObjectLocation :=getObjectLocation(parameter1);
+ if (ObjectLocation = LOC_WORN) or (ObjectLocation=LOC_CARRIED) then 
+ begin
+  Sysmess(SM25); {I already have the_.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation <> getFlag(FPLAYER)) then 
+ begin
+  Sysmess(SM26); {There isn't one of those here.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ WeightCarried := getObjectFullWeight(LOC_CARRIED);
+ WeightWorn := getObjectFullWeight(LOC_WORN);
+ if (WeightWorn + WeightCarried + getObjectFullWeight(parameter1) > getFlag(FPLAYER_STRENGTH)) then
+ begin
+  Sysmess(SM43); {The _ weighs too much for me.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (getFlag(FCARRIED)>= getFlag(FOBJECTS_CONVEYABLE)) then
+ begin
+  Sysmess(SM27);  {I can't carry any more things.}
+  DoallPTR := 0;
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ setObjectLocation(parameter1, LOC_CARRIED);
+ setFlag(FCARRIED, getFlag(FCARRIED) + 1);
+ Sysmess(SM36); {I now have the _.}
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DROP;
+var ObjectLocation : TFlagType;
 begin
-(* FALTA *)
-done := true;
+ ObjectLocation :=getObjectLocation(parameter1);
+ if (ObjectLocation = LOC_WORN)  then 
+ begin
+  Sysmess(SM24); {I can't. I'm wearing the_.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation = getFlag(FPLAYER))  then 
+ begin
+  Sysmess(SM49); {I don't have the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation<>LOC_CARRIED)  then 
+ begin
+  Sysmess(SM28); {I don't have one of those.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ setObjectLocation(parameter1, getFlag(FPLAYER));
+ setFlag(FCARRIED, getFlag(FCARRIED) - 1);
+ Sysmess(SM39); {I've dropped the _.}
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WEAR;
+var ObjectLocation : TFlagType;
 begin
-(* FALTA *)
-done := true;
+ ObjectLocation :=getObjectLocation(parameter1);
+ if (ObjectLocation = getFlag(FPLAYER))  then 
+ begin
+  Sysmess(SM49); {I don't have the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation = LOC_WORN)  then 
+ begin
+  Sysmess(SM29); {I'm already wearing the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation <> LOC_CARRIED)  then 
+ begin
+  Sysmess(SM28); {I don't have one of those.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (not isObjectWearable(parameter1)) then
+begin
+  Sysmess(SM40); {I can't wear the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ setObjectLocation(parameter1, LOC_WORN);
+ setFlag(FCARRIED, getFlag(FCARRIED) - 1);
+ Sysmess(SM37); {I'm now wearing the _.}
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DESTROY;
 begin
   Parameter2 := LOC_NOT_CREATED;
  _PLACE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _CREATE;
 begin
  Parameter2 := getFlag(FPLAYER);
  _PLACE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SWAP;
 var aux : TLocationType;
 begin
@@ -564,6 +949,7 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PLACE;
 begin
  if (getObjectLocation(parameter1) = LOC_CARRIED) then setFlag(FCARRIED, getFlag(FCARRIED) - 1);
@@ -572,18 +958,21 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SET;
 begin
  setFlag(Parameter1, MAX_FLAG_VALUE);
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _CLEAR;
 begin
  setFlag(Parameter1, 0);
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PLUS;
 begin
  if getFlag(Parameter1) + Parameter2 > MAX_FLAG_VALUE then _SET
@@ -591,6 +980,7 @@ begin
  done := true;                                                      
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _MINUS;
 begin
  if getFlag(Parameter1) - Parameter2 <0  then _CLEAR
@@ -598,51 +988,61 @@ begin
  done := true;                                                        
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _LET;
 begin
  setFlag(Parameter1, parameter2);
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NEWLINE;
 begin
  CarriageReturn;
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PRINT;
 var value : TFlagtype;
+    valstr : array[0..2] of char;
 begin
  value := getFlag(parameter1);
-(* FALTA IMPRIMIR*)
+ StrPCopy(valstr,inttostr(value));
+ WriteText(valstr);
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SYSMESS;
 begin
  WriteText(getPcharMessage(DDBHeader.sysmessPos, parameter1));   
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ISAT;
 begin
     condactResult := getObjectLocation(Parameter1) = parameter2;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SETCO;
 begin
   SetReferencedObject(parameter1);
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SPACE;
 var Str: array[0..1] of char;
 begin
     StrPCopy(Str, ' ');
-    WriteText(@Str);
+    WriteText(Str);
     done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _HASAT;
 var flag : TFlagType;
     bit : Word;
@@ -650,23 +1050,27 @@ begin
     condactResult := getFlagBit(59-parameter1 div 8, parameter1 mod 8);
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _HASNAT;
 begin
     condactResult := not getFlagBit(59 - (parameter1 div 8), parameter1 mod 8);
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _LISTOBJ;
 begin
-(* FALTA *)
-done := true;
+ listObjects(getFlag(FPLAYER), false);
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _EXTERN;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _RAMSAVE;
 begin
  RAMSaveFlags;
@@ -674,6 +1078,7 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _RAMLOAD;
 begin
  RAMLoadFlags(parameter1);
@@ -681,45 +1086,53 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _BEEP;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PAPER;
 begin
  PAPER := parameter1;
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _INK;
 begin
  INK := parameter1;
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _BORDER;
 begin
  BORDER := parameter1;
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PREP;
 begin
  condactResult := getFlag(FPREP) = parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOUN2;
 begin
  condactResult := getFlag(FNOUN2) = parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ADJECT2;
 begin
  condactResult := getFlag(FADJECT2) = parameter1;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ADD;
 begin
  if getFlag(Parameter1) +  getFlag(Parameter2) > MAX_FLAG_VALUE then setFlag(Parameter2, MAX_FLAG_VALUE)
@@ -727,6 +1140,7 @@ begin
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SUB;
 begin
  if getFlag(Parameter2) +  getFlag(Parameter1) <> 0 then setFlag(Parameter2, 0)
@@ -734,19 +1148,24 @@ begin
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PARSE;
+var result : boolean;
 begin
- parse(parameter1);
- done := true; (* SALE CON DONE? mas bien al reves, no?*)
+ result := parse(parameter1);
+ if ((parameter1=0) and (result)) or (parameter1<>0) then condactResult := false;
+ done := false;
  {(* FALTA DAR SOPORTE A PARSE 1*)}
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _LISTAT;
 begin
-(* FALTA *)
-done := true;
+ listObjects(Parameter1, true);
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PROCESS;
 begin
     if (Parameter1 >= DDBHeader.numPro) then Error(3, 'Process ' + inttostr(parameter1) + 'does not exist');
@@ -761,20 +1180,24 @@ begin
     { increased by 2 on return and jump to entry validation        }
     EntryPTR :=  getWord(ProcessPTR) - 4;
     condactResult := false;
-    {Done is not set, as it will basically depend on the PROCESS result}
+    {Done is cleared on exit, so ISDONE after a PROCESS call refers to the process and not to any previous execucition}
+    Done := falsE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SAME;
 begin
     condactResult := getFlag(Parameter1) = getFlag(parameter2);
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _MES;
 begin
   WriteText(getPcharMessage(DDBHeader.messagePos, parameter1));
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WINDOW;
 begin
  if (parameter1<NUM_WINDOWS) then
@@ -785,22 +1208,26 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTEQ;
 begin
     condactResult := getFlag(Parameter1) <> Parameter2;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTSAME;
 begin
     condactResult := getFlag(Parameter1) <> getFlag(parameter2);
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _MODE;
 begin
  Windows[ActiveWindow].OperationMode := parameter1;
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WINAT;
 begin
  Windows[ActiveWindow].line := parameter1;
@@ -808,6 +1235,7 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _TIME;
 begin
  SetFlag(FTIMEOUT, parameter1);
@@ -815,62 +1243,167 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PICTURE;
 begin
-(* FALTA *)
-done := true;
+ (* PENDING *)
+ (* Note: PICTURE WILL FAIL AS CONDITION Y THE PICTURE FILE IS ABSENT*)
+ (* Note2: PICTURE apparenty only loads the picture to a buffer, its DISPLAY the one painting the picture
+   so I guess this will be all about loading the picture to some kind of buffer, or actually to just set
+   the buffer to the filename value to simulate there is a buffer. Today, for hard disk based games this is
+   actually irrelevant *)
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _DOALL;
 var objno: TFlagType;
 begin
  DoallPTR := CondactPTR + 1; {Point to next Condact after DOALL}
  DoallEntryPTR := EntryPTR;
- objno := getNextObjectForDoall(-1, parameter1);
+ objno := getNextObjectAt(-1, parameter1);
  SetFlag(FDOALL,objno);
  SetReferencedObject(objno);
  done := true; (* Falta ver si el DOALL en si hace done *)
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _MOUSE;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _GFX;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ISNOTAT;
 begin
     condactResult := getObjectLocation(Parameter1) <> parameter2;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WEIGH;
 begin
  Setflag(parameter2, getObjectFullWeight(parameter1));
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PUTIN;
+var ObjectLocation : TFlagType;
+    WeightCarried, WeightWorn :  Word;
 begin
-(* FALTA *)
+ ObjectLocation :=getObjectLocation(parameter1);
+ if (ObjectLocation = LOC_WORN) then 
+ begin
+  Sysmess(SM24); {I can't. I'm wearing the_.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation = getFlag(FPLAYER)) then 
+ begin
+  Sysmess(SM49); {I don't have the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then 
+ begin
+  Sysmess(SM28); {I don't have one of those.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ setObjectLocation(parameter1, parameter2);
+ setFlag(FCARRIED, getFlag(FCARRIED) - 1);
+ Sysmess(SM44); {The _ is in the }
+ WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+ Sysmess(SM51); {.}
+ done := true;
 end;
 
-procedure _TAKEOUT;
-begin
-(* FALTA *)
-end;
-
+(*--------------------------------------------------------------------------------------*)
 procedure _NEWTEXT;
 begin
     newtext;
     done := true;
 end;
 
+
+(*--------------------------------------------------------------------------------------*)
+procedure _TAKEOUT;
+var ObjectLocation : TFlagType;
+    WeightCarried, WeightWorn :  Word;
+begin
+ ObjectLocation :=getObjectLocation(parameter1);
+ if (ObjectLocation = LOC_WORN) or (ObjectLocation=LOC_CARRIED) then 
+ begin
+  Sysmess(SM45); {I already have the _.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+ if (ObjectLocation = getFlag(FPLAYER)) then 
+ begin
+  Sysmess(SM49); {The _ isn't in the}
+  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+  Sysmess(SM51);{.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> parameter2) then 
+ begin
+  Sysmess(SM52); {There isn't one of those in the}
+  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+  Sysmess(SM51);{.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+
+if (ObjectLocation <> LOC_CARRIED) and (ObjectLocation <> LOC_WORN) then 
+begin
+ WeightCarried := getObjectFullWeight(LOC_CARRIED);
+ WeightWorn := getObjectFullWeight(LOC_WORN);
+ if (WeightCarried + WeightWorn + getObjectFullWeight(parameter1) > getFlag(FPLAYER_STRENGTH)) then
+ begin
+   Sysmess(SM43); {The _ weighs too much for me.}
+  _NEWTEXT;
+  _DONE;
+  exit;
+ end;
+end; 
+
+if (GetFlag(FCARRIED) >=  GetFlag(FOBJECTS_CONVEYABLE)) then
+ begin
+  Sysmess(SM27); {"I can't carry any more things.}
+  _NEWTEXT;
+  DoallPTR := 0;
+  _DONE;
+  exit;
+ end;
+
+ setObjectLocation(parameter1, LOC_CARRIED);
+ setFlag(FCARRIED, getFlag(FCARRIED) + 1);
+ Sysmess(SM36); {I now have the _.}
+ done := true;
+end;
+
+
+(*--------------------------------------------------------------------------------------*)
 procedure _ABILITY;
 begin
  setFlag(FOBJECTS_CONVEYABLE, Parameter1);
@@ -878,6 +1411,7 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WEIGHT;
 var i, w, w2 : word;
     l : TLocationType;
@@ -897,36 +1431,42 @@ begin
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _RANDOM;
 begin
  SetFlag(parameter1, random(101));
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _INPUT;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SAVEAT;
 begin
   SaveAt;
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _BACKAT;
 begin
   BackAt;
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PRINTAT;
 begin
   Printat(parameter1, parameter2);
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WHATO;
 var currentNoun, currentAdjective : TFlagType;
     objno : TFlagtype;
@@ -953,21 +1493,26 @@ begin
     end
    end;
  end;
+ done := true;
 end; 
 
-
+(*--------------------------------------------------------------------------------------*)
 procedure _CALL;
 begin
-(* FALTA *)
+(* PENDING *)
 done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _PUTO;
 begin
-(* FALTA *)
-done := true;
+ parameter2 := parameter1;
+ parameter1 := getFlag(FREFOBJ);
+ _PLACE;
+ done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _NOTDONE;
 begin
  done := false;
@@ -976,21 +1521,108 @@ begin
  condactResult := false; 
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _AUTOP;
+var Noun, Adject : TFlagType;
 begin
-(* FALTA *)
+ Parameter2 := Parameter1; {To use it with PUTIN}
+ Noun := getFlag(FNOUN);
+ Adject := getFlag(FADJECT);
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _PUTIN;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _PUTIN;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _PUTIN;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
+ if (Parameter1 <> MAX_OBJECT) then Sysmess(SM28) {I don't have one of those.}
+                               else Sysmess(SM8); {I can't do that.}
+ _NEWTEXT;
+ _DONE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _AUTOT;
+var Noun, Adject : TFlagType;
 begin
-(* FALTA *)
+ Parameter2 := Parameter1; {To use it with PUTIN}
+ Noun := getFlag(FNOUN);
+ Adject := getFlag(FADJECT);
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, parameter2); {In container}
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _TAKEOUT;
+  exit;
+ end;
+
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _TAKEOUT;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _TAKEOUT;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ if (Parameter1 <> MAX_OBJECT) then
+ begin
+  _TAKEOUT;
+  exit;
+ end;
+
+ Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
+ if (Parameter1 <> MAX_OBJECT) then begin
+                                     Sysmess(SM52); {There isn't one of those in the}
+                                     WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+                                     Sysmess(SM51); {. }
+                                    end
+                               else Sysmess(SM8); {I can't do that.}
+ _NEWTEXT;
+ _DONE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _MOVE;
+var Ptr : Word;
+    Direction : TFlagType;
 begin
-(* FALTA *)
-end;
+ Ptr := GetWord(DDBHeader.connectionPos + 2 * getFlag(parameter1));
+ repeat
+  Direction := GetByte(Ptr);
+  if (Direction<>END_OF_CONNECTIONS_MARK) and (Direction = getFlag(FVERB)) then 
+  begin
+   setFlag(parameter1, GetByte(Ptr+1));
+   exit;
+  end; 
+  Ptr := Ptr + 2;
+ until Direction = END_OF_CONNECTIONS_MARK;
+ condactResult := false; {If no movement, condition fails}
+ end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _WINSIZE;
 begin
  Windows[ActiveWindow].height := parameter1;
@@ -998,6 +1630,7 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _REDO;
 begin
   {Point two bytes below first entry because on return the engine will add 4}
@@ -1006,11 +1639,13 @@ begin
   (* falta poner el done = true ??*)
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _CENTRE;
 begin
-(* FALTA *)
+(* PENDING *)
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _EXIT;
 begin
  if (parameter1 = 0) then halt(0);
@@ -1020,6 +1655,7 @@ begin
  _RESTART;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _INKEY;
 var inkey : word;
 begin
@@ -1029,26 +1665,31 @@ begin
   done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _BIGGER;
 begin
  condactResult := getFlag(Parameter1) > getFlag(Parameter2);
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SMALLER;
 begin
  condactResult := getFlag(Parameter1) < getFlag(Parameter2);
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ISDONE;
 begin
  condactResult := done;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _ISNDONE;
 begin
  condactResult := not done;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _SKIP;
 var OriginalSkip: integer;
 begin
@@ -1057,6 +1698,7 @@ begin
  condactResult := false;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _RESTART;
 begin
  {Reset the stack and the processes to go back to process 0}
@@ -1068,18 +1710,21 @@ begin
  condactResult := false;
  end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _TAB;
 begin
  Tab(parameter1);
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _COPYOF;
 begin
  setFlag(parameter2, getObjectLocation(parameter1));
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _COPYOO;
 var aux: TFlagType;
 begin
@@ -1090,6 +1735,7 @@ begin
  _PLACE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _COPYFO;
 var aux: TFlagType;
 begin
@@ -1100,22 +1746,26 @@ begin
  _PLACE;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _dumb;
 begin
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _COPYFF;
 begin
  SetFlag(Parameter2, getFlag(Parameter1));
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _COPYBF;
 begin
  SetFlag(Parameter1, getFlag(Parameter2));
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
 procedure _RESET;
 begin
  resetObjects;

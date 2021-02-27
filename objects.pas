@@ -19,6 +19,9 @@ const   NUM_OBJECTS = 256;
 function getObjectLocation(objno: word):TLocationType;
 procedure setObjectLocation(objno: word; value: TLocationType);
 
+{get the number of objects at location}
+function getObjectCountAt(locno: TFlagType): TFlagType;
+
 {Return weight of an object itself}
 function getObjectWeight(objno: word): TFlagType;
 
@@ -43,11 +46,12 @@ procedure RAMSaveObjects;
 {Restore a copy of object locations in RAM}
 procedure RAMLoadObjects; 
 
-{Finds object at location with that noun/adjective}
+{Finds object at location with that noun/adjective. If location = MAX_LOCATION any location matches}
 function getObjectByVocabularyAtLocation(aNoun, anAdjective, location  :TFlagType): TFlagtype;
 
-{gets next object for DOAL loop}                                                       
-function getNextObjectForDoall(objno: integer; locno: TFlagType): TFlagType;
+{gets next object at locno, starting by object objno. Use -1 to find first object, when no more objects
+ the function returns MAX_OBJECT}                                                       
+function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;
 
 implementation
 
@@ -55,7 +59,18 @@ uses flags, ddb;
 
 var objLocations: array [0..NUM_OBJECTS-1] of byte;
     objLocationsRAMSAVE: array [0..NUM_OBJECTS-1] of byte;
-    
+
+function getObjectCountAt(locno: TFlagType): TFlagType;
+var i: word;
+    count : TFlagType;
+begin
+ count := 0;
+ for i := 0 to DDBHeader.numObj - 1 do 
+  if (getObjectLocation(i)=locno) then count := count + 1;
+ getObjectCountAt := count; 
+end;
+
+
 procedure RAMSaveObjects;
 begin   
  move(objLocations, objLocationsRAMSAVE, sizeof(objLocations));
@@ -156,13 +171,13 @@ begin
      getObjectByVocabularyAtLocation := MAX_OBJECT;
 end;
 
-function getNextObjectForDoall(objno: integer; locno: TFlagType): TFlagType;
+function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;
 begin
  if locno = MAX_LOCATION then locno := getFlag(FPLAYER);
  repeat
  objno := objno + 1;
  until (objno = MAX_OBJECT) or  (getObjectLocation(objno) = locno);
- getNextObjectForDoall := objno;   
+ getNextObjectAt := objno;   
 end;
 
 

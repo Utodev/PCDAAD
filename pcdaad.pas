@@ -10,7 +10,7 @@
 
 program PCDAAD;
 
-uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, tokens;
+uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc;
 
 var ddbFilename : String;
 
@@ -18,7 +18,6 @@ var  Indirection, ValidEntry :  boolean;
      Opcode : TOpcodeType;
      i, j : integer;
      DebugStr :String;
-
 
 { OK, this code runs the processes in a very assembly style, that's why the labels  }
 { and GOTO are used. It would have been possible to make a structured code with     }
@@ -41,7 +40,7 @@ begin
   if DoallPTR <> 0 then 
   begin
     {Try to get next object at the doall location}
-    nextDoallObjno := getNextObjectForDoall(getFlag(FDOALL), DoallLocation);
+    nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
     {If a valid object found jump back to DOALL entry/condact}
     if nextDoallObjno <> MAX_OBJECT then
     begin
@@ -64,6 +63,10 @@ begin
   Goto RunCondact;
  end;
 
+(*
+ Debug('Entry:' + inttostr(getByte(EntryPTR)) + ' ' + inttostr(getByte(EntryPTR+1)));
+ Debug('LS   :' + inttostr(getFlag(FVERB)) + ' ' + inttostr(getFlag(FNOUN)));
+ *)
  
  ValidEntry := ((getByte(EntryPTR) = getFlag(FVERB)) OR (getByte(EntryPTR) = NO_WORD))
                  and ((getByte(EntryPTR+1) = getFlag(FNOUN)) OR (getByte(EntryPTR+1) = NO_WORD));
@@ -92,8 +95,10 @@ begin
   opcode := opcode AND $7F;
  end
  else Indirection := false;
+ {$ifdef DEBUG}
  DebugStr := condactTable[opcode].condactName + ' ';
  if (Indirection) then DebugStr := DebugStr + '@';
+ {$endif}
  
  {get parameters}
  if (condactTable[opcode].numParams>0) then
@@ -102,6 +107,7 @@ begin
   Parameter1 := getByte(CondactPTR);
   DebugStr := DebugStr + inttostr(Parameter1) + ' ';
   if Indirection then parameter1 := getFlag(Parameter1);
+  if Indirection then DebugStr := DebugStr + '('+inttostr(parameter1)+') ';
   if (condactTable[opcode].numParams>1) then
   begin
    CondactPTR := CondactPTR + 1;
@@ -112,8 +118,8 @@ begin
  
  {run condact}
  Debug('>> ' + DebugStr);
-{$ifdef DEBUG}
- Delay(1);
+ {$ifdef DEBUG}
+ {Delay(0.001);}
  {$endif}
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}

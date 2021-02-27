@@ -3,18 +3,11 @@ unit tokens;
 interface
 
 function getToken(id: word): String;
-procedure dumpTokens;
 
 implementation
 
 uses ddb, utils;
 
-procedure dumpTokens;
-var i : integer;
-begin
-for i:=0 to 127 do WriteLn(i, ' ', getToken(i));
-halt(0);
-end;
 
 
 function getToken(id: word): String;

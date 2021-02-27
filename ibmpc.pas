@@ -24,6 +24,7 @@ VAR INK, PAPER, BORDER: byte;
     ActiveWindow : Byte;
 
 function GetKey:Word; 
+procedure Delay(seconds: real);
 procedure resetWindows;
 procedure startVideoMode;
 procedure terminateVideoMode;
@@ -40,6 +41,29 @@ implementation
 
 uses strings;
 
+function getTicks: word; Assembler;
+asm
+ SUB AH,AH
+ INT $1A
+ MOV AX, DX
+end;
+
+procedure Delay(seconds: real);
+{ The getTicks funcion returns just the lower value of BIOS timer ticks.
+  A tick happens 18.2 times per second, so the tick counter overflows 
+  every hour. To avoid misscalculation when the system notices the 
+  current tick count is smaller than the original one, it considers an
+  overflow happened, and adds $10000 to proparly check. Despite that is
+  very unlikely to happen (only happens once an hour and the delay has
+  to happen just before the overflow)}
+var initialTicks, currentTicks : longint;
+begin
+ initialTicks := getTicks;
+ repeat
+  currentTicks := getTicks;
+  if (currentTicks<getTicks) then currentTicks := currentTicks and $10000;
+ until (currentTicks - initialTicks) / 18.2 >= seconds;
+end;
 
 function GetKey : Word; Assembler;
 (* Returns keyboard code:
@@ -136,7 +160,7 @@ end;
 
 procedure CarriageReturn;
 begin
- (* FALTA *)
+ WriteText(#13#10);
 end;
 
 

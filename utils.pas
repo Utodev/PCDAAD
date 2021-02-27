@@ -17,25 +17,10 @@ function strpad(str: string; filler: string; minLength:byte):string;
 function StringReplace(Str:String; Origin, Dest: String): String;
 function StrUpper(Str: String) :String;
 procedure Debug(Str: string);
-procedure Delay(Seconds : Word);
 
 implementation
 
 uses dos, ibmpc;
-
-
-procedure Delay(Seconds : Word);
-var h, m, s, hund : Word;
-    Timestamp1,Timestamp2 : Longint;
-begin
- GetTime(h,m,s,hund);
- TimeStamp1 :=h*24*60*100 + m*60*100 + s*100 + hund;
- repeat 
-  GetTime(h,m,s,hund);
-  TimeStamp2 :=h*24*60*100 + m*60*100 + s*100 + hund;
-  if (GetKey<>0) then break;
- until  TimeStamp2 - Timestamp1 > Seconds * 100;
-end;
 
 function strpad(str: string; filler: string; minLength:byte):string;
 begin
