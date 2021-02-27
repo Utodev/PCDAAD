@@ -93,8 +93,10 @@ PROCEDURE startVideoMode; Assembler;
 ASM
 {$ifdef VGA}
  MOV AX, $13
- INT $10
+{$else }
+ MOV AX, $03
 {$endif}
+ INT $10
 END;
 
 
@@ -152,15 +154,15 @@ begin
  i :=0 ;
  while (Str[i]<>#0) do 
  begin
-  write(Str[i]);
+  if (Str[i]=#13) then write(''#10)
+                  else write(Str[i]);
   i := i + 1;
  end; 
- {Write(Str);}
 end;
 
 procedure CarriageReturn;
 begin
- WriteText(#13#10);
+ WriteText(''#10);
 end;
 
 

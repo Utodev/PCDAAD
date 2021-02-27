@@ -34,7 +34,7 @@ procedure newtext;
 
 implementation
 
-uses ddb, flags, graph, errors, utils, messages;
+uses ddb, flags, graph, errors, utils, messages, strings;
 
 var PreviousVerb: TFlagType;
 
@@ -89,7 +89,7 @@ var i, ptr : Word;
 begin
  Ptr := DDBHeader.vocabularyPos;
  Result.ACode := -1;
- AWord := StrUpper(AWord);
+ AWord := StrToUpper(AWord);
  while (GetByte(Ptr)<> 0) do
  begin
  {Get a word from Vocabulary}
@@ -113,18 +113,59 @@ begin
  end; {While}
 end;
 
+procedure DiagFlagDump;
+var i: TFlagType;
+    value : TFlagType;
+    S: String;
+    workPchar : array[0..10] of char;
+begin
+ for i := 0 to High(TFlagType) do
+ begin
+  value := getFlag(i);
+  S := strpad(IntToStr(i),' ',3) + ':'  + IntToStr(Value) + ' ';
+  StrPCopy(workPchar, S);
+  WriteText(workPchar);
+  if ((i mod 8) = 0) then CarriageReturn;
+ end;
+ if ((i mod 8) <> 0) then CarriageReturn;
+end;
+
+procedure Diagnostics(DiagStr: String);
+var value, code : integer;
+    valstr : array[0..2] of char;
+begin
+ if (DiagStr = '+') then DiagFlagDump
+ else
+ begin
+  Val(Copy(DiagStr, 2, 255), value, code);
+  if (code=0) and (value>=0) and (value<=high(TFlagType)) then 
+  begin
+    value := getFlag(value);
+    StrPCopy(valstr, inttostr(value) + #10);
+    WriteText(valstr);
+  end 
+  else WriteText('Invalid diagnostics input.');
+ end; 
+end;
 
 procedure getPlayerOrders;
 var i : word;
 begin
  i := random(4);
  WriteText(getPcharMessage(DDBHeader.sysmessPos ,i+SM2));
- WriteText(''#13#10);
+ WriteText(''#10);
+ repeat
  ReadLn(inputBuffer);
+  if (Length(inputBuffer)>0) and (inputBuffer[1]='+') then
+  begin
+    Diagnostics(inputBuffer);
+    inputBuffer := '';
+  end;
+ until inputBuffer<>'';
  for i:= 0 to ConjunctionsCount - 1 do
   while (Pos(Conjunctions[i], inputBuffer)>0) do
     inputBuffer := StringReplace(inputBuffer, Conjunctions[i], '.');
- inputBuffer := StrUpper(inputBuffer);
+ inputBuffer := StrToUpper(inputBuffer);
 end; 
 
 

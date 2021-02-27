@@ -88,7 +88,7 @@ end;
 
 function getFlagBit(index:word;bitno:byte): boolean;
 begin
-    getFlagBit := getFlag(index) AND (1 SHL bitno) <> 0;
+    getFlagBit := (getFlag(index) AND (1 SHL bitno)) <> 0;
 end;
 
 end.

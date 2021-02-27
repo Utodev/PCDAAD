@@ -15,7 +15,7 @@ function intToHex(value:Word): String;
 function strpad(str: string; filler: string; minLength:byte):string;
 {Just as freepascal StringReplace, only if will enter and endless lookp if Origin is a substring of Dest}
 function StringReplace(Str:String; Origin, Dest: String): String;
-function StrUpper(Str: String) :String;
+function StrToUpper(Str: String) :String;
 procedure Debug(Str: string);
 
 implementation
@@ -60,11 +60,11 @@ begin
     StringReplace := Str;
 end;
 
-function StrUpper(Str: String) :String;
+function StrToUpper(Str: String) :String;
 var i : integer;
 begin
  for i := 1 to Length(Str) do Str[i] := UpCase(Str[i]);
- StrUpper := Str;
+ StrToUpper := Str;
 end;
 
 procedure Debug(Str: String);

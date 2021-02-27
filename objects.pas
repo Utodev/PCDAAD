@@ -89,7 +89,8 @@ end;
 function getObjectFullWeight(objno:TLocationType):  TFlagType;
 var w,w2,i: Word;
 begin
-    w := getObjectWeight(objno);
+   if (objno<DDBHeader.numObj) then w := getObjectWeight(objno)     
+                               else w := 0;
     if (isObjectContainer(objno) and (w<>0)) then 
         for i:= 0 to DDBHeader.numObj - 1 do
          if getObjectLocation(i) = objno then
@@ -137,6 +138,8 @@ begin
                                else setFlag(FREFOBJWEARABLE, 0);
     setFlag(FREFOBJATTR2, getByte(DDBHeader.objAttributesPos + objno * 2));
     setFlag(FREFOBJATTR1, getByte(DDBHeader.objAttributesPos + objno * 2 + 1));
+    setFlag(FNOUN, getByte(DDBHeader.objNamePos + 2 * objno));
+    setFlag(FADJECT, getByte(DDBHeader.objNamePos + 2 * objno + 1));
 end;
 
 function isObjectWearable(objno:TLocationType):boolean;
@@ -165,10 +168,11 @@ begin
          then 
          begin
           getObjectByVocabularyAtLocation := i;
-          break;
+          exit;
          end;
      end;
      getObjectByVocabularyAtLocation := MAX_OBJECT;
+
 end;
 
 function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;

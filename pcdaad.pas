@@ -17,8 +17,8 @@ var ddbFilename : String;
 var  Indirection, ValidEntry :  boolean;
      Opcode : TOpcodeType;
      i, j : integer;
-     DebugStr :String;
-
+     DebugStr : String;
+     
 { OK, this code runs the processes in a very assembly style, that's why the labels  }
 { and GOTO are used. It would have been possible to make a structured code with     }
 { several while loops and conditions, but code would have been a much less readable }
@@ -82,6 +82,7 @@ begin
  {First check if no more condacts in the entry, if so, move to next entry}
  condactResult := true;
  opcode := getByte(CondactPTR);
+ DebugStr := condactTable[opcode].condactName + ' ';
  if opcode = END_OF_CONDACTS_MARK then
  begin
   EntryPTR := EntryPTR + 4;
@@ -93,33 +94,32 @@ begin
  begin
   Indirection := true;
   opcode := opcode AND $7F;
+  DebugStr := condactTable[opcode].condactName + ' @';
  end
  else Indirection := false;
- {$ifdef DEBUG}
- DebugStr := condactTable[opcode].condactName + ' ';
- if (Indirection) then DebugStr := DebugStr + '@';
- {$endif}
  
  {get parameters}
  if (condactTable[opcode].numParams>0) then
  begin
   CondactPTR := CondactPTR + 1;
   Parameter1 := getByte(CondactPTR);
-  DebugStr := DebugStr + inttostr(Parameter1) + ' ';
-  if Indirection then parameter1 := getFlag(Parameter1);
-  if Indirection then DebugStr := DebugStr + '('+inttostr(parameter1)+') ';
+  DebugStr := DebugStr + IntToStr(Parameter1) + ' ';
+  if Indirection then 
+  begin
+   parameter1 := getFlag(Parameter1);
+   DebugStr := DebugStr + '(' + IntToStr(parameter1) +') ';
+  end; 
   if (condactTable[opcode].numParams>1) then
   begin
    CondactPTR := CondactPTR + 1;
    Parameter2 := getByte(CondactPTR);
-   DebugStr := DebugStr + inttostr(Parameter2);
+   DebugStr := DebugStr + IntToStr(parameter2);
   end;
  end;
  
  {run condact}
- Debug('>> ' + DebugStr);
  {$ifdef DEBUG}
- {Delay(0.001);}
+ WriteLn('{'+DebugStr+'}');
  {$endif}
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}

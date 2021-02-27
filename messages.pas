@@ -24,7 +24,7 @@ var i : word;
 begin
  {$ifdef SPANISH}
  {un -> el}
- if (Upcase(ObjMessage[0]) = 'U') and (ObjMessage[1] = 'n') and (ObjMessage[2]=' ') then
+ if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1] = 'N')) and (ObjMessage[2]=' ') then
  begin
   ObjMessage[0] := 'e';
   ObjMessage[1] := 'l';
@@ -32,7 +32,7 @@ begin
  end;
  
  {una, unos, unas --> la, los, las}
- if (Upcase(ObjMessage[0]) = 'U') and (ObjMessage[1] = 'n') then
+ if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') then
  begin
   ObjMessage[0] := 'l';
   for i := 1 to StrLen(ObjMessage) do ObjMessage[i] := ObjMessage[i+1];
@@ -40,24 +40,19 @@ begin
  end;
  {$else}
 
- {a -> the}
+ {a -> empty string}
  if (Upcase(ObjMessage[0]) = 'A') and (ObjMessage[1] = ' ') then
  begin
-  ObjMessage[0] := 't';
-  for i := StrLen(ObjMessage) downto 1 do ObjMessage[i+2] := ObjMessage[i];
-  ObjMessage[1] := 'h';
-  ObjMessage[2] := 'e';
+  for i := 0 to StrLen(ObjMessage)-2 do ObjMessage[i] := ObjMessage[i+2];
   exit;
  end;
  
 
- {some -> the}
- if (Upcase(ObjMessage[0]) = 'S') and (ObjMessage[1] = 'o') and (ObjMessage[2] = 'm') 
-     and (ObjMessage[3] = 'e') and (ObjMessage[4] = ' ') then
+ {some -> empty string}
+ if (Upcase(ObjMessage[0]) = 'S') and (Upcase(ObjMessage[1]) = 'O') and (Upcase(ObjMessage[2]) = 'M') 
+     and (Upcase(ObjMessage[3]) = 'E') and (ObjMessage[4] = ' ') then
  begin
-  for i := 2 to StrLen(ObjMessage) do ObjMessage[i] := ObjMessage[i+1];
-  ObjMessage[0] := 't';
-  ObjMessage[1] := 'h';
+  for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
   exit;
  end;
   {$endif}
@@ -71,9 +66,11 @@ var Ptr : Word;
     Token : String;
     TokenID : byte;
     EscapeText : PChar;
+    PreviousWasCR : boolean;
     
 begin
     Ptr := getWord(TableOffset + 2 * messageNumber);
+    PreviousWasCR:= false;
     i := 0;
     AByte := GetByte(Ptr);
     while (AByte <> ($0A xor OFUSCATE_VALUE)) and ( i < MAX_MESSAGE_LENGTH) do 
