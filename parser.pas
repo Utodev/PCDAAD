@@ -16,6 +16,11 @@ type TWordRecord = record
                    end; 
 
 
+{This string contains what has been received from the player input}   
+{but when read, conjunctions are replaced with a dot to ease order}
+{split later.}
+var inputBuffer: String;
+
 {Returns the code for a specific word of a specific type, or any}
 {type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
 procedure FindWord(AWord: TWord; AVocType : TVocType; var Result: TWordRecord);
@@ -31,21 +36,18 @@ procedure InitializeParser;
 {Clears the inputBufffer}
 procedure newtext;
 
+{Request string from keyboard. Used by parser, but also for QUIT, SAVE, END, LOAD, etc.}
+procedure getCommand;
 
 implementation
 
-uses ddb, flags, graph, errors, utils, messages, strings;
+uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc;
 
 var PreviousVerb: TFlagType;
 
 {This array keeps the conjuctions provided by the DDB}
 var Conjunctions : array [0..MAX_CONJUNCTIONS-1] of TWord;
-	ConjunctionsCount : Byte;
-   
-{This string contains what has been received from the player input}   
-{but when read, conjunctions are replaced with a dot to ease order}
-{split later.}
-    inputBuffer: String;
+	ConjunctionsCount : Byte; 
 
 procedure newtext;
 begin
@@ -56,7 +58,6 @@ procedure InitializeParser;
 var i, ptr : Word;
 	AVocWord : TWord;
 begin
- Debug('Initializing parser');
  {Clears the input buffer}
  inputBuffer := '';
  { Creates the Conjunctions array}
@@ -148,14 +149,21 @@ begin
  end; 
 end;
 
+procedure getCommand;
+begin
+ {$ifdef VGA}
+ Sysmess(SM33); {the prompt}
+ ReadText(inputBuffer);
+ {$else}
+ ReadLn(inputBuffer);
+{$endif}
+end;
+
 procedure getPlayerOrders;
 var i : word;
 begin
- i := random(4);
- WriteText(getPcharMessage(DDBHeader.sysmessPos ,i+SM2));
- WriteText(''#10);
  repeat
- ReadLn(inputBuffer);
+ getCommand;
   if (Length(inputBuffer)>0) and (inputBuffer[1]='+') then
   begin
     Diagnostics(inputBuffer);
@@ -181,7 +189,12 @@ var playerOrder : string;
     PronounNoun, PronounAdject : TFlagType;
 begin
  Result := false;
- if (inputBuffer='') then getPlayerOrders;
+ if (inputBuffer='') then
+ begin
+  i := random(4);
+  Sysmess(SM2 + i);
+  getPlayerOrders;
+ end; 
  {Extract an order}
  playerOrder := '';
  i := 1;

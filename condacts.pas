@@ -282,6 +282,9 @@ const condactTable : TCondactTable = (
 (condactName: 'RESET  '; condactRoutine: _RESET  ; numParams: 0)  { 127 $7F}
 );
 
+procedure Sysmess(sysno: integer);
+
+
 implementation
 
 
@@ -489,15 +492,38 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _QUIT;
+var YesResponse : char;
 begin
-(* FALTA *)
+   Sysmess(SM12); {"Are you sure? "}
+   {Get first char of SM30, uppercased}
+   YesResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM30)) xor OFUSCATE_VALUE)); 
+   inputBuffer := '';
+
+   while inputBuffer = '' do
+   begin
+    getCommand;
+    if (inputBuffer<> '') and (Upcase(inputBuffer[1])<>YesResponse) then condactResult := false;
+   end; 
+   done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _END;
+var NoResponse : char;
 begin
- halt(0);
-(* FALTA HACERLO BIEN*)
+   Sysmess(SM13); {"Are you sure? "}
+   {Get first char of SM31, uppercased}
+   NoResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM31)) xor OFUSCATE_VALUE)); 
+   inputBuffer := '';
+   DoallPTR := 0;
+   while inputBuffer = '' do
+   begin
+    getCommand;
+    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
+    inputBuffer := '';
+    _EXIT;
+   end; 
+   done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -821,7 +847,6 @@ begin
 
  WeightCarried := getObjectFullWeight(LOC_CARRIED);
  WeightWorn := getObjectFullWeight(LOC_WORN);
- WriteLn(intToStr(WeightWorn) + ' ' + inttostr(WeightCarried) + ' ' +  inttostr(getObjectFullWeight(parameter1)));
  if (WeightWorn + WeightCarried + getObjectFullWeight(parameter1) > getFlag(FPLAYER_STRENGTH)) then
  begin
   Sysmess(SM43); {The _ weighs too much for me.}
@@ -1095,21 +1120,21 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _PAPER;
 begin
- PAPER := parameter1;
+ windows[ActiveWindow].PAPER := parameter1;
  done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _INK;
 begin
- INK := parameter1;
+ windows[ActiveWindow].INK := parameter1;
  done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _BORDER;
 begin
- BORDER := parameter1;
+ windows[ActiveWindow].BORDER := parameter1;
  done := true;
 end;
 
@@ -1230,7 +1255,10 @@ end;
 procedure _WINAT;
 begin
  Windows[ActiveWindow].line := parameter1;
+ Windows[ActiveWindow].currentY := parameter1 * 8;
  Windows[ActiveWindow].col := parameter2;
+ Windows[ActiveWindow].currentX := parameter2 * 8;
+ ReconfigureWindow;
  done := true;
 end;
 
@@ -1627,6 +1655,7 @@ procedure _WINSIZE;
 begin
  Windows[ActiveWindow].height := parameter1;
  Windows[ActiveWindow].width := parameter2;
+ ReconfigureWindow;
  done := true;
 end;
 
@@ -1648,10 +1677,15 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _EXIT;
 begin
- if (parameter1 = 0) then halt(0);
+ if (parameter1 = 0) then 
+ begin
+  terminateVideoMode;
+  halt(0);
+ end; 
  resetWindows;
  resetFlags;
  resetObjects;
+ resetStack; 
  _RESTART;
 end;
 

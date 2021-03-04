@@ -1,3 +1,5 @@
+{$I SETTINGS.INC}
+
 unit ibmpc;
 (* IBM PC specific functions *)
 
@@ -5,7 +7,7 @@ interface
 
 const NUM_WINDOWS = 8;
 {$ifdef VGA}
-      NUM_COLUMNS = 53;
+      NUM_COLUMNS = 40; {40 colums of 8x8, but proportional fonts will do better}
       NUM_LINES=25;
 {$else}
       NUM_COLUMNS = 80;
@@ -13,14 +15,14 @@ const NUM_WINDOWS = 8;
 {$endif}
 
 type TWindow = record
-                line, col, height, width: Word;
+                line, col, height, width: Word; (* In characters as DAAD understands it*)
                 operationMode: Byte;
-                currentLine, currentCol : Word;
-                BackupCurrentLine, BackupCurrentCol : Word;
+                currentY, currentX : Word; (* In pixels for internal use*)
+                BackupCurrentY, BackupCurrentX : Word; (* In pixels for internal use*)
+                INK, PAPER, BORDER : byte;
                end; 
 
-VAR INK, PAPER, BORDER: byte;
-    Windows :  array [0..NUM_WINDOWS-1] of TWindow;
+VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
 
 function GetKey:Word; 
@@ -33,13 +35,18 @@ procedure Tab(col:word);
 procedure SaveAt;
 procedure BackAt;
 procedure WriteText(Str: Pchar);
+procedure WriteTextPas(Str: String);
+procedure ReadText(var Str: String);
 procedure CarriageReturn;
 procedure ClearCurrentWindow;
-
+{When pos or size of window is set, this function is called to make sure it doesn't exceed the size}
+procedure ReconfigureWindow;
+{Scrolls currently selected window 1 line up}
+procedure ScrollCurrentWindow;
 
 implementation
 
-uses strings;
+uses strings, charset;
 
 function getTicks: word; Assembler;
 asm
@@ -84,9 +91,49 @@ asm
 end;
 
 
-procedure ClearCurrentWindow;
+procedure ReadText(var Str: String);
+var key : word; 
+    SaveX, SaveY : Word;
 begin
- (* FALTA *)
+ Str := '';
+ SaveX := windows[ActiveWindow].currentX;
+ SaveY := windows[ActiveWindow].currentY;
+ repeat
+  key := GetKey;
+  if (key>=32) and (key<=255) then Str := Str + chr(key); {printable characters}
+  if key = 8 then Str := Copy(Str, 1, Length(Str)-1); {backspace}
+  windows[ActiveWindow].currentX := SaveX;
+  windows[ActiveWindow].currentY := SaveY;
+  WriteTextPas(Str + '  '); {the spaces are there to clear content when backspace pressed}
+ until key = 13; {Intro}
+end;
+
+function getVGAAddr(X, Y: word): word;
+begin
+ getVGAAddr := X + Y * 320;
+end;
+
+procedure ClearCurrentWindow;
+var  i: integer;
+     x, y : word;
+     widthInPixels : word;
+     paper: byte;
+begin
+{$ifdef VGA}
+   x := windows[ActiveWindow].col * 8;
+   y := windows[ActiveWindow].line * 8;
+   widthInPixels := windows[ActiveWindow].width * 8;
+   paper  := windows[ActiveWindow].PAPER;
+   for i:=  0 to windows[ActiveWindow].height * 8 do
+   begin
+    FillChar(mem[$a000: 320 * y + x], widthInPixels, char(paper));  
+    y := y + 1;
+   end;
+   windows[ActiveWindow].currentY := windows[ActiveWindow].line * 8;
+   windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
+ {$else}
+  startVideoMode;
+ {$endif}
 end;
 
 PROCEDURE startVideoMode; Assembler;
@@ -108,30 +155,40 @@ ASM
 {$endif}
 END;
 
+procedure ReconfigureWindow;
+begin
+ if (Windows[ActiveWindow].col + Windows[ActiveWindow].width > NUM_COLUMNS) then
+    Windows[ActiveWindow].width := NUM_COLUMNS - Windows[ActiveWindow].col;
+
+ if (Windows[ActiveWindow].line + Windows[ActiveWindow].height > NUM_LINES) then
+    Windows[ActiveWindow].height := NUM_LINES - Windows[ActiveWindow].line;
+end;
+
 procedure Printat(line, col : word);
 begin
+(* Falta comprobar este if porque no me cuadra mucho*)
  if (line < Windows[ActiveWindow].height) and (col < Windows[ActiveWindow].width) then
  begin
-    Windows[ActiveWindow].CurrentLine := line;
-    Windows[ActiveWindow].CurrentCol := col;
+    Windows[ActiveWindow].CurrentY := line * 8;
+    Windows[ActiveWindow].CurrentX := col * 8;
  end;
 end; 
 
 procedure Tab(col:word);
 begin
- if (col < Windows[ActiveWindow].width) then Windows[ActiveWindow].CurrentCol := col;
+ if (col < Windows[ActiveWindow].width) then Windows[ActiveWindow].CurrentX := col * 8;
 end; 
 
 procedure SaveAt;
 begin
- Windows[ActiveWindow].BackupCurrentLine := Windows[ActiveWindow].currentLine;
- Windows[ActiveWindow].BackupCurrentCol := Windows[ActiveWindow].CurrentCol;
+ Windows[ActiveWindow].BackupCurrentY := Windows[ActiveWindow].currentY;
+ Windows[ActiveWindow].BackupCurrentX := Windows[ActiveWindow].CurrentX;
 end;
 
 procedure BackAt;
 begin
-  Windows[ActiveWindow].CurrentLine := Windows[ActiveWindow].BackupCurrentLine;
-  Windows[ActiveWindow].CurrentCol := Windows[ActiveWindow].BackupCurrentCol;
+  Windows[ActiveWindow].CurrentY := Windows[ActiveWindow].BackupCurrentY;
+  Windows[ActiveWindow].CurrentX := Windows[ActiveWindow].BackupCurrentX;
 end;
 
 
@@ -145,7 +202,90 @@ begin
   Windows[i].height := NUM_LINES;
   Windows[i].width := NUM_COLUMNS;
   Windows[i].operationMode := 0;
+  Windows[i].currentX := 0;
+  Windows[i].currentY := 0;
+  Windows[i].backupCurrentX := 0;
+  Windows[i].backupCurrentY := 0;
+  Windows[i].PAPER := 0;
+  Windows[i].BORDER := 0;
+  Windows[i].INK := 15;
  end; 
+end;
+
+
+
+procedure ScrollCurrentWindow;
+var i, baseAddress, baseaddress2, linesToScroll, windowWidthInPixels : word;
+begin
+  {1. Move window up}
+   baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 , (windows[ActiveWindow].line + 1) * 8); 
+   linesToScroll := (windows[ActiveWindow].height -1) * 8; 
+   windowWidthInPixels := windows[ActiveWindow].width * 8;
+   baseaddress2 := baseAddress - 8 * 320;
+   for i := 0 to linesToScroll - 1 do 
+   begin
+    Move(mem[$a000:baseAddress], mem[$a000:baseAddress2], windowWidthInPixels);
+    baseAddress := baseAddress + 320;
+    baseAddress2 := baseAddress2 + 320;
+   end; 
+
+   {2. Fill new empty space at the bottom with paper colour}
+   baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 ,  
+          (windows[ActiveWindow].line + windows[ActiveWindow].height -1) * 8); 
+   for i := 0 to 7 do FillChar(Mem[$a000: baseAddress + i *320], windowWidthInPixels, chr(windows[ActiveWindow].PAPER));  
+   {3. Update cursor}
+   windows[ActiveWindow].currentY := windows[ActiveWindow].currentY - 8; 
+   windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8; 
+
+end;
+
+
+procedure NextChar(width: word);
+begin
+ {Increase X}
+ windows[ActiveWindow].currentX := windows[ActiveWindow].currentX + width; 
+ {If out of boundary increase Y}
+ if (windows[ActiveWindow].currentX >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then  
+ begin
+  windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
+  windows[ActiveWindow].currentY := windows[ActiveWindow].currentY + 8;
+  {if out of boundary scroll window}
+  if (windows[ActiveWindow].currentY >= (windows[ActiveWindow].line + windows[ActiveWindow].height) * 8 ) then
+    ScrollCurrentWindow;
+ end;
+end;
+
+procedure WriteChar(c: char);
+var i, j : word;
+    baseAddress : word;
+    scan: byte;
+    width :  byte;
+begin
+ {$ifdef VGA}
+ baseAddress := getVGAAddr(windows[ActiveWindow].currentX , windows[ActiveWindow].currentY);
+ width := charsetWidth[byte(c)];
+ if (windows[ActiveWindow].currentX + width >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then 
+ begin
+   NextChar(width);
+   WriteChar(c);
+ end
+ else
+ begin
+    for i := 0 to 7 do
+    begin
+    scan := charsetData[ord(c) * 8 + i];  {Get definition for this scanline}
+    scan := scan shr (8-width);
+    for j := 0 to width-1 do
+    begin
+      if (scan and (1 shl (width - j)) <> 0) then mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].INK
+                                    else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
+    end;
+    end;
+ end;
+ NextChar(width); {Move pointer to next printing position}
+ {$else}
+ Write(C);
+ {$endif}
 end;
 
 procedure WriteText(Str: Pchar);
@@ -154,15 +294,30 @@ begin
  i :=0 ;
  while (Str[i]<>#0) do 
  begin
-  if (Str[i]=#13) then write(''#10)
-                  else write(Str[i]);
+  if (Str[i]=#13) then CarriageReturn
+                  else writechar(Str[i]);
   i := i + 1;
  end; 
 end;
 
 procedure CarriageReturn;
 begin
- WriteText(''#10);
+{$ifdef VGA}
+  windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
+  windows[ActiveWindow].currentY := windows[ActiveWindow].currentY + 8;
+  {if out of boundary scroll window}
+  if (windows[ActiveWindow].currentY >= (windows[ActiveWindow].line + windows[ActiveWindow].height) * 8 ) then 
+   ScrollCurrentWindow;
+{$else}
+WriteText(''#10);
+{$endif}
+end;
+
+procedure WriteTextPas(Str: String);
+var temp : array[0..256] of char;
+begin
+ StrPCopy(temp, Str + #13) ;
+ WriteText(temp);
 end;
 
 
