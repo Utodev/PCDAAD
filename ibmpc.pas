@@ -25,17 +25,19 @@ type TWindow = record
 VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
 
-function GetKey:Word; 
 procedure Delay(seconds: real);
 procedure resetWindows;
 procedure startVideoMode;
 procedure terminateVideoMode;
+procedure ClearWindow(X, Y, Width, Height: Word; Paper: byte);
 procedure Printat(line, col : word);
 procedure Tab(col:word);
 procedure SaveAt;
 procedure BackAt;
-procedure WriteText(Str: Pchar);
-procedure WriteTextPas(Str: String);
+{Writes any text to output, zero-terminated string}
+procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
+{Same but uses a standard Pascal string}
+procedure WriteTextPas(Str: String; AvoidTranscript: boolean);
 procedure ReadText(var Str: String);
 procedure CarriageReturn;
 procedure ClearCurrentWindow;
@@ -43,10 +45,18 @@ procedure ClearCurrentWindow;
 procedure ReconfigureWindow;
 {Scrolls currently selected window 1 line up}
 procedure ScrollCurrentWindow;
+{Like CRT unit Sound}
+procedure Sound(Frequency:Word); 
+{Like CRT unit NoSound}
+procedure Nosound;
+{Like CRT unit ReadKey, but returns extended data}
+function ReadKey:Word; 
+{Like CRT unit Keypressed}
+function Keypressed:Boolean; 
 
 implementation
 
-uses strings, charset;
+uses strings, charset, crt, parser, utils, log;
 
 function getTicks: word; Assembler;
 asm
@@ -72,40 +82,113 @@ begin
  until (currentTicks - initialTicks) / 18.2 >= seconds;
 end;
 
-function GetKey : Word; Assembler;
-(* Returns keyboard code:
-
-            if  <256    ->  estandar  ASCII code
-                >=256   -> Extended ASCII code -> Hi(GetKey)= Code
-                =0      -> no key pressed *)
+function Keypressed:Boolean;  Assembler;
 asm
-    MOV AH,1
-    INT $16
-    MOV AX,0
-    JNZ @getKeyEnd
-    INT $16
-    OR AL,AL
-    JZ @getKeyEnd
-    SUB AH,AH
-    @getKeyEnd:
+ MOV AH,1
+ INT 16h
+ mov AL,0 { not using SUB to avoid CPU flags being modified}
+ JE @KeypressedEnd
+ mov AL,1
+ @KeypressedEnd:
+end;
+
+function ReadKey:Word; Assembler;
+asm
+ sub AH,AH
+ int 16h
 end;
 
 
+procedure Sound(Frequency:Word); Assembler;
+asm
+ mov bx,sp
+ mov bx,ss:[bx+6]
+ mov ax,34ddh
+ mov dx,0012h
+ cmp dx,bx
+ jnb @l1
+ div bx
+ mov bx,ax
+ in al,61h
+ test al,3
+ jne @l2
+ or al,3
+ out 61h,al
+ mov al,0b6h
+ out 43h,al
+ @l2:
+ mov al,bl
+ out 42h,al
+ mov al,bh
+ out 42h,al
+ @l1:
+end;
+
+procedure NoSound; Assembler;
+asm
+ in al,61h
+ and al,0fch
+ out 61h,al
+end;
+
+
+function StrLenInPixels(var Str: String): word;
+var i : byte;
+    PixelCount : Word;
+begin
+ PixelCount := 0;
+ for i:= 1 to Length(Str) do PixelCount :=  PixelCount + charsetWidth[ord(Str[i])];
+ StrLenInPixels := PixelCount;
+end;
+
 procedure ReadText(var Str: String);
 var key : word; 
+    keyHI, keyLO :Byte;
     SaveX, SaveY : Word;
+    Xlimit : Word;
+    historyStr : String;
 begin
  Str := '';
  SaveX := windows[ActiveWindow].currentX;
  SaveY := windows[ActiveWindow].currentY;
+ Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
  repeat
-  key := GetKey;
-  if (key>=32) and (key<=255) then Str := Str + chr(key); {printable characters}
-  if key = 8 then Str := Copy(Str, 1, Length(Str)-1); {backspace}
+   while not Keypressed do;
+   key := ReadKey;
+   keyHI := (key and $FF00) SHR 8;
+   keyLO := key and $FF;
+
+   if (keyLO>=32) and (keyLO<=255) then 
+   begin
+    {Avoid input exceeding the current line} 
+    if (StrLenInPixels(Str) + charsetWidth[keyLo] + SaveX  < Xlimit) and (length(Str)<255) 
+        then Str := Str + chr(keyLo) {printable characters}
+   end;
+
+  if (keyLO = 8) and (Str<>'') then 
+  begin
+    ClearWindow(SaveX + StrLenInPixels(Str) - charsetWidth[byte(Str[Length(Str)])], 
+                  SaveY, charsetWidth[byte(Str[Length(Str)])], 
+                  8 , windows[ActiveWindow].PAPER);
+    Str := Copy(Str, 1, Length(Str)-1); {backspace}
+  end;
+  if keyLO = 9 then {tab}
+  begin
+   historyStr := getNextOrderHistory; 
+   if historyStr<> str then 
+   begin
+    ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, windows[ActiveWindow].PAPER);
+    Str := historyStr;
+   end;
+  end; 
+
   windows[ActiveWindow].currentX := SaveX;
   windows[ActiveWindow].currentY := SaveY;
-  WriteTextPas(Str + '  '); {the spaces are there to clear content when backspace pressed}
- until key = 13; {Intro}
+  WriteTextPas(Str, true); {true -> Avoid transcript}
+ until (keyLO = 13) and (Str<>''); {Intro and not empty}
+ CarriageReturn;
+ addToOrderHistory(Str);
+ TranscriptPas(Str + #13#10);
 end;
 
 function getVGAAddr(X, Y: word): word;
@@ -113,22 +196,18 @@ begin
  getVGAAddr := X + Y * 320;
 end;
 
+procedure ClearWindow(X, Y, Width, Height: Word; Paper: byte);
+var i : word;
+begin
+ for i := 0 to Height - 1 do 
+  FillChar(mem[$a000:320*(y+i)+X], Width, Paper);
+end;
+
 procedure ClearCurrentWindow;
-var  i: integer;
-     x, y : word;
-     widthInPixels : word;
-     paper: byte;
 begin
 {$ifdef VGA}
-   x := windows[ActiveWindow].col * 8;
-   y := windows[ActiveWindow].line * 8;
-   widthInPixels := windows[ActiveWindow].width * 8;
-   paper  := windows[ActiveWindow].PAPER;
-   for i:=  0 to windows[ActiveWindow].height * 8 do
-   begin
-    FillChar(mem[$a000: 320 * y + x], widthInPixels, char(paper));  
-    y := y + 1;
-   end;
+   ClearWindow(windows[ActiveWindow].col * 8, windows[ActiveWindow].line * 8,
+     windows[ActiveWindow].width * 8, windows[ActiveWindow].height * 8, windows[ActiveWindow].PAPER);
    windows[ActiveWindow].currentY := windows[ActiveWindow].line * 8;
    windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
  {$else}
@@ -281,23 +360,47 @@ begin
                                     else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
     end;
     end;
- end;
  NextChar(width); {Move pointer to next printing position}
+ end;
  {$else}
  Write(C);
  {$endif}
 end;
 
-procedure WriteText(Str: Pchar);
+procedure WriteWord(Str:String);
 var i: integer;
+    Xlimit : Word;
 begin
+ Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
+ if (StrLenInPixels(Str) + windows[ActiveWindow].currentX >= Xlimit) then CarriageReturn;
+ for i:=1 to Length(Str) do WriteChar(Str[i]);
+end;
+
+procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
+var i: integer;
+    AWord : String;
+begin
+ if not AvoidTranscript then Transcript(Str);
  i :=0 ;
+ Aword := '';
  while (Str[i]<>#0) do 
  begin
-  if (Str[i]=#13) then CarriageReturn
-                  else writechar(Str[i]);
+  case (Str[i]) of
+    #13: begin
+          WriteWord(AWord);
+          AWord := '';
+          CarriageReturn;
+         end; 
+    ' ': begin
+          WriteWord(AWord);
+          AWord := '';
+          WriteChar(' ');
+         end; 
+    else AWord := Aword + Str[i];
+  end; {case}
   i := i + 1;
  end; 
+ WriteWord(Aword);
 end;
 
 procedure CarriageReturn;
@@ -313,11 +416,11 @@ WriteText(''#10);
 {$endif}
 end;
 
-procedure WriteTextPas(Str: String);
+procedure WriteTextPas(Str: String; AvoidTranscript: boolean);
 var temp : array[0..256] of char;
 begin
- StrPCopy(temp, Str + #13) ;
- WriteText(temp);
+ StrPCopy(temp, Str) ;
+ WriteText(temp, AvoidTranscript);
 end;
 
 

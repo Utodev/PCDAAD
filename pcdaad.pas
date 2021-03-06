@@ -10,7 +10,7 @@
 
 program PCDAAD;
 
-uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset;
+uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log;
 
 var ddbFilename : String;
 
@@ -119,7 +119,7 @@ begin
  
  {run condact}
  {$ifdef DEBUG}
- WriteTextPas('{'+DebugStr+'}');
+ WriteTextPas('{'+DebugStr+'}'#13);
  {$endif}
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}
@@ -145,6 +145,7 @@ begin
     {$ifdef VGA}
     if (not loadCharset('DAAD.FNT')) then Error(6, 'PCDAAD.FNT file not found or invalid.');
     {$endif}
+    if (ParamCount>1) then InitTranscript(ParamStr(2)) else InitTranscript('pcdaad.log');
     Randomize;        {Initialize the random generator}
     startVideoMode;   {Set the proper video mode}
     InitializeParser; {Initializes the parser}

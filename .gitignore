@@ -2,5 +2,6 @@ dosbox/*
 *.TPU
 *.EXE
 *.DDB
+*.LOG
 docs/*
 drc/*

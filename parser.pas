@@ -7,6 +7,7 @@ uses global;
 const WORD_LENGHT = 5;
 	  STANDARD_SEPARATORS : set of char = ['.',',',';',':','"',''''];
 	  MAX_CONJUNCTIONS = 256;
+    MAX_HISTORY = 20;
 
 type TWord = String[WORD_LENGHT];
 type TVocType = (VOC_VERB,VOC_ADVERB,VOC_NOUN, VOC_ADJECT, VOC_PREPOSITION, VOC_CONJUGATION,  VOC_PRONOUN, VOC_ANY);
@@ -20,6 +21,8 @@ type TWordRecord = record
 {but when read, conjunctions are replaced with a dot to ease order}
 {split later.}
 var inputBuffer: String;
+var inputHistory : array [0..MAX_HISTORY-1] of String;
+    inputHistoryCount, inputHistoryPointer : Byte;
 
 {Returns the code for a specific word of a specific type, or any}
 {type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
@@ -39,16 +42,21 @@ procedure newtext;
 {Request string from keyboard. Used by parser, but also for QUIT, SAVE, END, LOAD, etc.}
 procedure getCommand;
 
+{These two procedures bring order back from order history}
+function getNextOrderHistory: string;
+function getPreviousOrderHistory : String;
+{And this one adds one more sentence}
+procedure addToOrderHistory(Str: String);
+
 implementation
 
-uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc;
+uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc, log;
 
 var PreviousVerb: TFlagType;
 
 {This array keeps the conjuctions provided by the DDB}
 var Conjunctions : array [0..MAX_CONJUNCTIONS-1] of TWord;
 	ConjunctionsCount : Byte; 
-
 procedure newtext;
 begin
  inputBuffer := '';
@@ -125,7 +133,7 @@ begin
   value := getFlag(i);
   S := strpad(IntToStr(i),' ',3) + ':'  + IntToStr(Value) + ' ';
   StrPCopy(workPchar, S);
-  WriteText(workPchar);
+  WriteText(workPchar, true);
   if ((i mod 8) = 0) then CarriageReturn;
  end;
  if ((i mod 8) <> 0) then CarriageReturn;
@@ -143,9 +151,9 @@ begin
   begin
     value := getFlag(value);
     StrPCopy(valstr, inttostr(value) + #10);
-    WriteText(valstr);
+    WriteText(valstr, true);
   end 
-  else WriteText('Invalid diagnostics input.');
+  else WriteText('Invalid diagnostics input.', true);
  end; 
 end;
 
@@ -286,6 +294,38 @@ end;
  parse := Result;
 end;
 
+function getNextOrderHistory: string;
+begin
+ if (inputHistoryPointer <> 0) then getNextOrderHistory:= inputHistory[inputHistoryPointer-1    ] 
+                               else getNextOrderHistory:= '';
+ if (inputHistoryPointer <> 0) then inputHistoryPointer :=  inputHistoryPointer - 1;
+end;
+
+function getPreviousOrderHistory : String;
+begin
+ if (inputHistoryPointer <> inputHistoryCount) then
+ begin
+   inputHistoryPointer :=  inputHistoryPointer + 1;
+   getPreviousOrderHistory:= inputHistory[inputHistoryPointer];
+ end else getPreviousOrderHistory:='';
+ 
+end;
+procedure addToOrderHistory(Str: String);
+var i : byte;
+begin
+ if inputHistoryCount = MAX_HISTORY - 1 then 
+ begin
+  for i := 1 to 254 do inputHistory[i] := inputHistory[i + 1];
+  inputHistoryCount := 254;
+  inputHistoryPointer := inputHistoryPointer + 1;
+ end;
+ inputHistory[inputHistoryCount] := Str;
+ inputHistoryCount := inputHistoryCount  + 1;
+ inputHistoryPointer := inputHistoryCount;
+end;
+
 begin
  PreviousVerb := NO_WORD;
+ inputHistoryCount := 0;
+ inputHistoryPointer := 0;
 end.

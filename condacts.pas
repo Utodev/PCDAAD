@@ -337,7 +337,7 @@ begin
     begin
         if (getObjectLocation(i) = locno) then
         begin
-            WriteText(getPcharMessage(DDBHeader.objectPos, i));
+            WriteText(getPcharMessage(DDBHeader.objectPos, i), false);
             listed := listed + 1;
             if ((getFlag(FOBJECT_PRINT_FLAGS) AND 64) <> 0) then
             begin {continuous listing}
@@ -486,7 +486,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DESC;
 begin
-  WriteText(getPcharMessage(DDBHeader.locationPos, parameter1));
+  WriteText(getPcharMessage(DDBHeader.locationPos, parameter1), false);
   done := true;
 end;
 
@@ -545,7 +545,8 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _ANYKEY;
 begin
- while getKey = 0 do;
+ while not Keypressed do;
+ ReadKey;
  done := true; 
  (* PENDING. SOPORTE DE TIMEOUT EN ANYKEY *)
 end;
@@ -574,7 +575,7 @@ var value: Word;
 begin
     Value := getFlag(parameter1) + 256 * getFlag(parameter1 + 1);
     StrPCopy(valstr,inttostr(value));
-    WriteText(valstr);
+    WriteText(valstr, false);
     done := true;
 end;
 
@@ -1033,14 +1034,14 @@ var value : TFlagtype;
 begin
  value := getFlag(parameter1);
  StrPCopy(valstr,inttostr(value));
- WriteText(valstr);
+ WriteText(valstr, false);
  done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _SYSMESS;
 begin
- WriteText(getPcharMessage(DDBHeader.sysmessPos, parameter1));   
+ WriteText(getPcharMessage(DDBHeader.sysmessPos, parameter1), false);   
  done := true;
 end;
 
@@ -1062,7 +1063,7 @@ procedure _SPACE;
 var Str: array[0..1] of char;
 begin
     StrPCopy(Str, ' ');
-    WriteText(Str);
+    WriteText(Str, false);
     done := true;
 end;
 
@@ -1217,7 +1218,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _MES;
 begin
-  WriteText(getPcharMessage(DDBHeader.messagePos, parameter1));
+  WriteText(getPcharMessage(DDBHeader.messagePos, parameter1), false);
   done := true;
 end;
 
@@ -1355,7 +1356,7 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then
  setObjectLocation(parameter1, parameter2);
  setFlag(FCARRIED, getFlag(FCARRIED) - 1);
  Sysmess(SM44); {The _ is in the }
- WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+ WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
  Sysmess(SM51); {.}
  done := true;
 end;
@@ -1385,7 +1386,7 @@ begin
  if (ObjectLocation = getFlag(FPLAYER)) then 
  begin
   Sysmess(SM49); {The _ isn't in the}
-  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
   Sysmess(SM51);{.}
   _NEWTEXT;
   _DONE;
@@ -1395,7 +1396,7 @@ begin
 if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> parameter2) then 
  begin
   Sysmess(SM52); {There isn't one of those in the}
-  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
   Sysmess(SM51);{.}
   _NEWTEXT;
   _DONE;
@@ -1624,7 +1625,7 @@ begin
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then begin
                                      Sysmess(SM52); {There isn't one of those in the}
-                                     WriteText(getPcharMessage(DDBHeader.objectPos, parameter2));
+                                     WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
                                      Sysmess(SM51); {. }
                                     end
                                else Sysmess(SM8); {I can't do that.}
@@ -1693,7 +1694,7 @@ end;
 procedure _INKEY;
 var inkey : word;
 begin
-  inkey := getKey;
+  if Keypressed then inkey := ReadKey else inkey := 0;
   setflag(FKEY1, inkey and $FF);
   setflag(FKEY1, (inkey and $FF00) SHR 8);
   done := true;
