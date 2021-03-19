@@ -289,7 +289,7 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser;
+uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser, pcx;
 
 
 (*****************************************************************************************)
@@ -1274,9 +1274,10 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _PICTURE;
 begin
- (* PENDING *)
- (* Note: PICTURE WILL FAIL AS CONDITION Y THE PICTURE FILE IS ABSENT*)
- (* Note2: PICTURE apparenty only loads the picture to a buffer, its DISPLAY the one painting the picture
+ condactResult := LoadPCX(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
+                  Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8,
+                  parameter1);
+ (* PENDING: PICTURE apparenty only loads the picture to a buffer, it's DISPLAY the one painting the picture
    so I guess this will be all about loading the picture to some kind of buffer, or actually to just set
    the buffer to the filename value to simulate there is a buffer. Today, for hard disk based games this is
    actually irrelevant *)

@@ -5,3 +5,4 @@
 {$define DEBUGNO}
 (*{$define SPANISH} {Comment this line to generate English interpreter}*)
 {$define VGA}
+{$G-} {8086 compatibility}

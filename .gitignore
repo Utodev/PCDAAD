@@ -1,3 +1,4 @@
+.DS_Store
 dosbox/*
 *.TPU
 *.EXE
@@ -5,3 +6,6 @@ dosbox/*
 *.LOG
 docs/*
 drc/*
+*.pcx
+*.PCX
+*.BAK

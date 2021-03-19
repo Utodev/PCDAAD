@@ -18,7 +18,7 @@ var  Indirection, ValidEntry :  boolean;
      Opcode : TOpcodeType;
      i, j : integer;
      DebugStr : String;
-     
+
 { OK, this code runs the processes in a very assembly style, that's why the labels  }
 { and GOTO are used. It would have been possible to make a structured code with     }
 { several while loops and conditions, but code would have been a much less readable }
@@ -30,11 +30,11 @@ begin
 
  {Where a new entry is considered and evaluated}
  RunEntry:
- 
- 
+
+
  {Check if current process has finished}
- if getByte(EntryPTR) = END_OF_PROCESS_MARK then 
- begin 
+ if getByte(EntryPTR) = END_OF_PROCESS_MARK then
+ begin
 
   {If DOALL loop in execution}
   if DoallPTR <> 0 then 
@@ -119,7 +119,7 @@ begin
  
  {run condact}
  {$ifdef DEBUG}
- WriteTextPas('{'+DebugStr+'}'#13);
+ WriteTextPas('{'+DebugStr+'}'+#13, true);
  {$endif}
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}
@@ -134,11 +134,22 @@ begin
  goto RunCondact;
 end;
 
+procedure help;
+begin
+  WriteLn;
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [file]');
+  WriteLn;
+  WriteLn('DDB File: a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
+  WriteLn('Trascript file: Defaults to PCDAAD.LOG');
+  Halt(0);
+end;
+
 (************************************************************************************************)
 (**************************************** MAIN **************************************************)
 (************************************************************************************************)
 begin
     Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
+    if (ParamCount>0) and ((ParamStr(1)='?') or (ParamStr(1)='/?') or (ParamStr(1)='/h')) then help;
     Debug('DEBUG MODE ON');
     if (ParamCount>0) then ddbFilename := ParamStr(1) else ddbFilename := 'DAAD.DDB';
     if (not loadDDB(ddbFilename)) then Error(1, 'DDB file not found or invalid.');
