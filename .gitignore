@@ -1,3 +1,4 @@
+*.
 *.txt
 .DS_Store
 dosbox/*
@@ -11,3 +12,6 @@ drc/*
 *.PCX
 *.BAK
 *.sh
+*.o
+*.ppu
+tool/pcxfixer
