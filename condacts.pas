@@ -289,7 +289,7 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser, pcx;
+uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser, pcx, log;
 
 
 (*****************************************************************************************)
@@ -479,7 +479,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _SFX;
 begin
-(* PENDING *)
+(* FALTA CONDACTO SFX *)
  done := true;
 end;
 
@@ -504,6 +504,7 @@ begin
     getCommand;
     if (inputBuffer<> '') and (Upcase(inputBuffer[1])<>YesResponse) then condactResult := false;
    end; 
+   inputBuffer := '';
    done := true;
 end;
 
@@ -516,14 +517,9 @@ begin
    NoResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM31)) xor OFUSCATE_VALUE)); 
    inputBuffer := '';
    DoallPTR := 0;
-   while inputBuffer = '' do
-   begin
-    getCommand;
-    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
-    inputBuffer := '';
-    _EXIT;
-   end; 
-   done := true;
+   getCommand;
+   if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
+   _EXIT;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -544,28 +540,84 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _ANYKEY;
+var inkey :  word;
 begin
  while not Keypressed do;
- ReadKey;
+ inkey := ReadKey;
  done := true; 
- (* PENDING. SOPORTE DE TIMEOUT EN ANYKEY *)
+ (* FALTA: SOPORTE DE TIMEOUT EN ANYKEY *)
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _SAVE;
+var Savegame : FILE;
+    Header: String[32];
+    Aux: Word;
 begin
-    { Hay que grabar los flags, las localidades de los obejtos, la configuración de
-     ventanas (cada una con sus datos, y cual es la activa), y seguramente algunas
-     otras variables como la direccion de doall y no sé si algo más. PENSAR. }
-    (* PENDING *)
+   condactResult := false;
+   Sysmess(SM60); {Type in name of file}
+   inputBuffer := '';
+   getCommand;
+   if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
+   Assign(SaveGame, inputBuffer);
+   inputBuffer := '';
+   Rewrite(SaveGame, 1);
+   if (ioresult<>0) then Sysmess(SM59){File name error.}
+   else
+   begin
+    {Signature + version + filler}
+    Header := 'UTO' + #0 + '                            ';
+    BlockWrite(Savegame, Header[1], 32);
+    {Save the flags}
+    BlockWrite(SaveGame, flagsArray, Sizeof(flagsArray));
+    {Save the object locations}
+    BlockWrite(SaveGame, objLocations, Sizeof(objLocations));
+    {Save the DOALLPtr}
+    BlockWrite(SaveGame, DoallPTR, Sizeof(DoallPtr));
+    {Save the window status}
+    {BlockWrite(SaveGame, Windows, Sizeof(Windows));
+    BlockWrite(SaveGame, ActiveWindow, 1);}
+    Close(SaveGame);
+    condactResult := true;
     done := true;
+   end;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _LOAD;
+var Savegame : FILE;
+    Header: String[32];
+    Aux: Word;
 begin
-(* PENDING *)
-done := true;
+   condactResult := false;
+   Sysmess(SM60); {Type in name of file}
+   inputBuffer := '';
+   getCommand;
+   if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
+   Assign(SaveGame, inputBuffer);
+   inputBuffer := '';
+   Reset(SaveGame, 1);
+   if (ioresult<>0) then Sysmess(SM57) {I/O Error.}
+   else
+   begin
+    BlockRead(SaveGame, Header[1], 32);
+    if (Header[1]<>'U') or (Header[2]<>'T') or (Header[3]<>'O') or (Header[4]<>#0) then Sysmess(SM57) {I/O Error}
+    else
+    begin
+        {Load the flags}
+        BlockRead(SaveGame, flagsArray, sizeof(flagsArray));
+        {Load the object locations}
+        BlockRead(SaveGame, objLocations, sizeof(objLocations));
+        {Load the DOALLPtr}
+        BlockRead(SaveGame, DoallPTR, Sizeof(DoallPtr));
+        {Load the window status}
+        {BlockRead(SaveGame, Windows, Sizeof(Windows));
+        BlockRead(SaveGame, ActiveWindow, 1);}
+        Close(SaveGame);
+        done := true;
+        condactResult := true;
+    end;
+   end; 
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -582,7 +634,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DISPLAY;
 begin
-(* FALTA *)
+(* FALTA CONDACTO DISPLAY *)
 done := true;
 end;
 
@@ -622,31 +674,33 @@ begin
  Noun := getFlag(FNOUN);
  Adject := getFlag(FADJECT);
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
+ TranscriptPas('A1');
  if (Parameter1 <> MAX_OBJECT) then
  begin
   _GET;
   exit;
  end;
-
+TranscriptPas('A2');
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
  if (Parameter1 <> MAX_OBJECT) then
  begin
   _GET;
   exit;
  end;
-
+TranscriptPas('A3');
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
  if (Parameter1 <> MAX_OBJECT) then
  begin
   _GET;
   exit;
  end;
-
+TranscriptPas('A4');
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then Sysmess(SM26) {There isn't one of those here.}
                                else Sysmess(SM8); {I can't do that.}
- _NEWTEXT;
+ newtext;
  _DONE;
+ TranscriptPas('A5');
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -679,7 +733,7 @@ begin
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then Sysmess(SM28) {I don't have one of those.}
                                else Sysmess(SM8); {I can't do that.}
- _NEWTEXT;
+ newtext;
  _DONE;
 end;
 
@@ -713,7 +767,7 @@ begin
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then Sysmess(SM28) {I don't have one of those.}
                                else Sysmess(SM8); {I can't do that.}
- _NEWTEXT;
+ newtext;
  _DONE;
 end;
 
@@ -747,7 +801,7 @@ begin
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then Sysmess(SM23) {"I'm not wearing one of those.}
                                else Sysmess(SM8); {I can't do that.}
- _NEWTEXT;
+ newtext;
  _DONE;
  end;
 
@@ -786,11 +840,12 @@ procedure _REMOVE;
 var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
+ SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = LOC_CARRIED) or (ObjectLocation=getFlag(FPLAYER)) then 
  begin
   Sysmess(SM50); {I'm not wearing the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -798,7 +853,7 @@ begin
  if (ObjectLocation <> LOC_WORN) and (ObjectLocation<>getFlag(FPLAYER)) then 
  begin
   Sysmess(SM23);  {"I'm not wearing one of those.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -806,7 +861,7 @@ begin
  if (not isObjectWearable(parameter1)) then
  begin
   Sysmess(SM41); {I can't remove the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -814,7 +869,7 @@ begin
  if (getFlag(FPLAYER)>= getFlag(FOBJECTS_CONVEYABLE)) then
  begin
   Sysmess(SM42); {I can't remove the _. My hands are full.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -829,57 +884,69 @@ procedure _GET;
 var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
+ SetReferencedObject(parameter1);
+ TranscriptPas('G1 ' + inttostr(parameter1) + ' ' + inttostr(DoallPTR) + '}}'#13);
  ObjectLocation :=getObjectLocation(parameter1);
+ TranscriptPas('G1.1 ' + inttostr(ObjectLocation) + ' ');
  if (ObjectLocation = LOC_WORN) or (ObjectLocation=LOC_CARRIED) then 
  begin
+  TranscriptPas('G1.2 ' + inttostr(getFlag(FREFOBJ)) + ' ');
   Sysmess(SM25); {I already have the_.}
-  _NEWTEXT;
+  newtext;
   _DONE;
+  TranscriptPas('G1.3 ' + inttostr(parameter1) + ' ');
   exit;
  end;
+TranscriptPas('G2');
 
  if (ObjectLocation <> getFlag(FPLAYER)) then 
  begin
   Sysmess(SM26); {There isn't one of those here.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
+TranscriptPas('G3');
 
  WeightCarried := getObjectFullWeight(LOC_CARRIED);
  WeightWorn := getObjectFullWeight(LOC_WORN);
  if (WeightWorn + WeightCarried + getObjectFullWeight(parameter1) > getFlag(FPLAYER_STRENGTH)) then
  begin
   Sysmess(SM43); {The _ weighs too much for me.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
+TranscriptPas('G4');
 
  if (getFlag(FCARRIED)>= getFlag(FOBJECTS_CONVEYABLE)) then
  begin
   Sysmess(SM27);  {I can't carry any more things.}
   DoallPTR := 0;
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
+TranscriptPas('G5');
 
  setObjectLocation(parameter1, LOC_CARRIED);
  setFlag(FCARRIED, getFlag(FCARRIED) + 1);
  Sysmess(SM36); {I now have the _.}
  done := true;
+ TranscriptPas('G6');
+
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _DROP;
 var ObjectLocation : TFlagType;
 begin
+ SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = LOC_WORN)  then 
  begin
   Sysmess(SM24); {I can't. I'm wearing the_.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -887,7 +954,7 @@ begin
  if (ObjectLocation = getFlag(FPLAYER))  then 
  begin
   Sysmess(SM49); {I don't have the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -895,7 +962,7 @@ begin
  if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation<>LOC_CARRIED)  then 
  begin
   Sysmess(SM28); {I don't have one of those.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -910,11 +977,12 @@ end;
 procedure _WEAR;
 var ObjectLocation : TFlagType;
 begin
+ SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = getFlag(FPLAYER))  then 
  begin
   Sysmess(SM49); {I don't have the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -922,7 +990,7 @@ begin
  if (ObjectLocation = LOC_WORN)  then 
  begin
   Sysmess(SM29); {I'm already wearing the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -930,7 +998,7 @@ begin
  if (ObjectLocation <> LOC_CARRIED)  then 
  begin
   Sysmess(SM28); {I don't have one of those.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -938,7 +1006,7 @@ begin
  if (not isObjectWearable(parameter1)) then
 begin
   Sysmess(SM40); {I can't wear the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1091,7 +1159,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _EXTERN;
 begin
-(* PENDING *)
+(* FALTA CONDACTO EXTERN *)
 done := true;
 end;
 
@@ -1114,7 +1182,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _BEEP;
 begin
-(* PENDING *)
+(* FALTA CONDACTO BEEP*)
 done := true;
 end;
 
@@ -1277,7 +1345,7 @@ begin
  condactResult := LoadPCX(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
                   Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8,
                   parameter1);
- (* PENDING: PICTURE apparenty only loads the picture to a buffer, it's DISPLAY the one painting the picture
+ (* FALTA: PICTURE apparenty only loads the picture to a buffer, it's DISPLAY the one painting the picture
    so I guess this will be all about loading the picture to some kind of buffer, or actually to just set
    the buffer to the filename value to simulate there is a buffer. Today, for hard disk based games this is
    actually irrelevant *)
@@ -1294,20 +1362,20 @@ begin
  objno := getNextObjectAt(-1, parameter1);
  SetFlag(FDOALL,objno);
  SetReferencedObject(objno);
- done := true; (* Falta ver si el DOALL en si hace done *)
+ done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _MOUSE;
 begin
-(* PENDING *)
+(* FALTA CONDACTO MOUSE *)
 done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _GFX;
 begin
-(* PENDING *)
+(* FALTA CONDACTO GFX *)
 done := true;
 end;
 
@@ -1329,11 +1397,12 @@ procedure _PUTIN;
 var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
+ SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = LOC_WORN) then 
  begin
   Sysmess(SM24); {I can't. I'm wearing the_.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1341,7 +1410,7 @@ begin
  if (ObjectLocation = getFlag(FPLAYER)) then 
  begin
   Sysmess(SM49); {I don't have the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1349,7 +1418,7 @@ begin
 if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then 
  begin
   Sysmess(SM28); {I don't have one of those.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1375,11 +1444,12 @@ procedure _TAKEOUT;
 var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
+ SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = LOC_WORN) or (ObjectLocation=LOC_CARRIED) then 
  begin
   Sysmess(SM45); {I already have the _.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1389,7 +1459,7 @@ begin
   Sysmess(SM49); {The _ isn't in the}
   WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
   Sysmess(SM51);{.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1399,7 +1469,7 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> parameter2) then
   Sysmess(SM52); {There isn't one of those in the}
   WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
   Sysmess(SM51);{.}
-  _NEWTEXT;
+  newtext;
   _DONE;
   exit;
  end;
@@ -1411,16 +1481,16 @@ begin
  if (WeightCarried + WeightWorn + getObjectFullWeight(parameter1) > getFlag(FPLAYER_STRENGTH)) then
  begin
    Sysmess(SM43); {The _ weighs too much for me.}
-  _NEWTEXT;
-  _DONE;
-  exit;
+   newtext;
+   _DONE;
+   exit;
  end;
 end; 
 
 if (GetFlag(FCARRIED) >=  GetFlag(FOBJECTS_CONVEYABLE)) then
  begin
   Sysmess(SM27); {"I can't carry any more things.}
-  _NEWTEXT;
+  newtext;
   DoallPTR := 0;
   _DONE;
   exit;
@@ -1471,7 +1541,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _INPUT;
 begin
-(* PENDING *)
+(* FALTA CONDACTO INPUT *)
 done := true;
 end;
 
@@ -1529,7 +1599,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _CALL;
 begin
-(* PENDING *)
+(* FALTA CONDACTO CALL *)
 done := true;
 end;
 
@@ -1582,7 +1652,7 @@ begin
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then Sysmess(SM28) {I don't have one of those.}
                                else Sysmess(SM8); {I can't do that.}
- _NEWTEXT;
+ newtext;
  _DONE;
 end;
 
@@ -1630,7 +1700,7 @@ begin
                                      Sysmess(SM51); {. }
                                     end
                                else Sysmess(SM8); {I can't do that.}
- _NEWTEXT;
+ newtext;
  _DONE;
 end;
 
@@ -1666,14 +1736,13 @@ procedure _REDO;
 begin
   {Point two bytes below first entry because on return the engine will add 4}
   EntryPTR := getWord(ProcessPTR) - 4; 
-  condactResult := false;  {force}
-  (* falta poner el done = true ??*)
+  condactResult := false;  {force so we get out of current entry and the jump to first entry}
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _CENTRE;
 begin
-(* PENDING *)
+(* FALTA CONDACTO CENTRE *)
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1687,7 +1756,6 @@ begin
  resetWindows;
  resetFlags;
  resetObjects;
- resetStack; 
  _RESTART;
 end;
 

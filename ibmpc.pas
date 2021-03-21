@@ -14,7 +14,7 @@ const NUM_WINDOWS = 8;
       NUM_LINES=25;
 {$endif}
 
-type TWindow = record
+type TWindow = packed record
                 line, col, height, width: Word; (* In characters as DAAD understands it*)
                 operationMode: Byte;
                 currentY, currentX : Word; (* In pixels for internal use*)
@@ -172,7 +172,7 @@ begin
                   8 , windows[ActiveWindow].PAPER);
     Str := Copy(Str, 1, Length(Str)-1); {backspace}
   end;
-  if keyLO = 9 then {tab}
+  if keyLO = 9 then {tab} (* Pending: make this work with arrow up/down *)
   begin
    historyStr := getNextOrderHistory; 
    if historyStr<> str then 
@@ -238,14 +238,12 @@ procedure ReconfigureWindow;
 begin
  if (Windows[ActiveWindow].col + Windows[ActiveWindow].width > NUM_COLUMNS) then
     Windows[ActiveWindow].width := NUM_COLUMNS - Windows[ActiveWindow].col;
-
  if (Windows[ActiveWindow].line + Windows[ActiveWindow].height > NUM_LINES) then
     Windows[ActiveWindow].height := NUM_LINES - Windows[ActiveWindow].line;
 end;
 
 procedure Printat(line, col : word);
 begin
-(* Falta comprobar este if porque no me cuadra mucho*)
  if (line < Windows[ActiveWindow].height) and (col < Windows[ActiveWindow].width) then
  begin
     Windows[ActiveWindow].CurrentY := line * 8;
@@ -357,7 +355,7 @@ begin
     for j := 0 to width-1 do
     begin
       if (scan and (1 shl (width - j)) <> 0) then mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].INK
-                                    else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
+                                             else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
     end;
     end;
  NextChar(width); {Move pointer to next printing position}
@@ -380,6 +378,7 @@ procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
 var i: integer;
     AWord : String;
 begin
+ (*FALTA: Hay que controlar cuando sale mucho texto de golpe para que haga pausas *)
  if not AvoidTranscript then Transcript(Str);
  i :=0 ;
  Aword := '';

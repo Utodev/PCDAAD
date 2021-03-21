@@ -7,7 +7,7 @@ uses global;
 const WORD_LENGHT = 5;
 	  STANDARD_SEPARATORS : set of char = ['.',',',';',':','"',''''];
 	  MAX_CONJUNCTIONS = 256;
-    MAX_HISTORY = 20;
+    NUM_HISTORY_ORDERS = 20;
 
 type TWord = String[WORD_LENGHT];
 type TVocType = (VOC_VERB,VOC_ADVERB,VOC_NOUN, VOC_ADJECT, VOC_PREPOSITION, VOC_CONJUGATION,  VOC_PRONOUN, VOC_ANY);
@@ -21,7 +21,7 @@ type TWordRecord = record
 {but when read, conjunctions are replaced with a dot to ease order}
 {split later.}
 var inputBuffer: String;
-var inputHistory : array [0..MAX_HISTORY-1] of String;
+var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     inputHistoryCount, inputHistoryPointer : Byte;
 
 {Returns the code for a specific word of a specific type, or any}
@@ -47,6 +47,9 @@ function getNextOrderHistory: string;
 function getPreviousOrderHistory : String;
 {And this one adds one more sentence}
 procedure addToOrderHistory(Str: String);
+
+{For debugging: gets the vocabulary word for a specific value and type}
+function getVocabulary(AVocType: TVocType; aCode: integer): String;
 
 implementation
 
@@ -122,6 +125,34 @@ begin
  end; {While}
 end;
 
+function getVocabulary(AVocType: TVocType; aCode: integer): String;
+var ptr : Word;
+    AVocWord : TWord;
+    i: integer;
+begin
+ if (aCode = MAX_FLAG_VALUE) then
+ begin
+  getVocabulary := '_';
+  exit;
+ end;
+ {search word by code/type} 
+ Ptr := DDBHeader.vocabularyPos;
+ while (GetByte(Ptr)<> 0) do
+ begin
+  if (TVocType(GetByte(Ptr+6)) = AVocType) and (GetByte(Ptr+5)=ACode) then
+  begin
+   AVocWord := '';
+   for i := 0 to WORD_LENGHT -1 do 
+     if ((GetByte(Ptr+i) XOR OFUSCATE_VALUE)<>32) 
+      then AVocWord := AVocWord + CHR(GetByte(Ptr+i) XOR OFUSCATE_VALUE); 
+   getVocabulary := AVocWord;
+   exit;
+  end ;
+  Ptr := Ptr + 7;
+ end; 
+ getVocabulary := '* INVALID ' + inttostr(aCode) + ' *';
+end;
+
 procedure DiagFlagDump;
 var i: TFlagType;
     value : TFlagType;
@@ -194,7 +225,7 @@ var playerOrder : string;
     i : integer;
     AWordRecord : TWordRecord;
     Result : boolean;
-    PronounNoun, PronounAdject : TFlagType;
+    PronounInSentence : Boolean;
 begin
  Result := false;
  if (inputBuffer='') then
@@ -218,7 +249,6 @@ begin
  orderWordCount := 0;
  {remove double spaces}
  while (Pos('  ', playerOrder)> 0) do playerOrder := StringReplace(playerOrder, '  ', ' ');
-
  {split order into words}
  for i:= 0 to High(Byte) do orderWords[i] := '';
  orderWordCount := 0;
@@ -240,10 +270,6 @@ begin
 
  {parse the order}
 
- {Preserve previous noun and adject in case they are needed}
- PronounNoun := getFlag(FPRONOUN);
- PronounAdject := getFlag(FPRONOUN_ADJECT);
-
  setflag(FVERB, NO_WORD);
  setFlag(FNOUN, NO_WORD);
  setFlag(FADJECT, NO_WORD);
@@ -251,6 +277,7 @@ begin
  setFlag(FADJECT2, NO_WORD);
  setFlag(FADVERB, NO_WORD);
  setFlag(FPREP, NO_WORD);
+ PronounInSentence := false;
 
  i:= 0;
  while (i < orderWordCount) and (orderWords[i]<>'') do
@@ -265,32 +292,42 @@ begin
    if (AWordRecord.AType = VOC_ADJECT) and (getFlag(FADJECT2) = NO_WORD) then setFlag(FADJECT2,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_PREPOSITION) and (getFlag(FPREP) = NO_WORD) then setFlag(FPREP,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_ADVERB) and (getFlag(FADVERB) = NO_WORD) then setFlag(FADVERB,AWordRecord.ACode) else 
-   if (AWordRecord.AType = VOC_PRONOUN) and (getFlag(FPRONOUN) = NO_WORD) then setFlag(FPRONOUN,AWordRecord.ACode);
+   if (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then PronounInSentence := true;
    
   end;
   i := i + 1;
  end;
+
  {Convertible nouns}
  if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then
  begin
   setFlag(FVERB, getFlag(FNOUN));
   setflag(FNOUN, NO_WORD);
  end;
+
  {Mising verb but present noun, replace with previous verb}
  if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<>NO_WORD) AND (PreviousVerb<>NO_WORD) then setFlag(FVERB, PreviousVerb);
 
-{Pronouns and terminations}  (* Faltan las terminations *)
-if (getFlag(FNOUN)=NO_WORD) and (getFlag(FPRONOUN)<>NO_WORD) then
-begin
- setFlag(FNOUN, PronounNoun);
- setFlag(FADJECT, PronounAdject);
-end;
+ {Pronouns}  
+ if (getFlag(FNOUN)=NO_WORD) and (PronounInSentence) and (getFlag(FPRONOUN)<>NO_WORD) then
+ begin
+  setFlag(FNOUN, getFlag(FPRONOUN));
+  setFlag(FADJECT, getFlag(FPRONOUN_ADJECT));
+ end;
 
- {Save noun and adject from LS to maybe be used in future orders}
- setFlag(FPRONOUN, getFlag(FNOUN));
- setFlag(FPRONOUN_ADJECT, getFlag(FADJECT));
+ (*Falta: las terminaciones pronominales *)
 
- if (getFlag(FVERB)<>NO_WORD) then Result := true;
+ {Save noun and adject from LS to maybe be used in future orders, unless they are proper names ( < 50 )}
+ if (getFlag(FNOUN)>=50) and (FNOUN<>NO_WORD) then
+ begin
+  setFlag(FPRONOUN, getFlag(FNOUN));
+  setFlag(FPRONOUN_ADJECT, getFlag(FADJECT));
+ end;
+
+ {Preserve verb to be used by next sentence}
+ if (getFlag(FVERB)<>NO_WORD) then  PreviousVerb := getFlag(FVERB);
+
+ if (getFlag(FVERB)<>NO_WORD) OR (getFlag(FNOUN)<>NO_WORD) then Result := true;
  parse := Result;
 end;
 
@@ -313,15 +350,15 @@ end;
 procedure addToOrderHistory(Str: String);
 var i : byte;
 begin
- if inputHistoryCount = MAX_HISTORY - 1 then 
+ if inputHistoryCount = NUM_HISTORY_ORDERS then 
  begin
-  for i := 1 to 254 do inputHistory[i] := inputHistory[i + 1];
-  inputHistoryCount := 254;
-  inputHistoryPointer := inputHistoryPointer + 1;
+  for i := 0 to NUM_HISTORY_ORDERS - 2 do inputHistory[i] := inputHistory[i + 1];
+  inputHistoryCount := NUM_HISTORY_ORDERS - 1;
+  inputHistoryPointer := inputHistoryCount;
  end;
  inputHistory[inputHistoryCount] := Str;
- inputHistoryCount := inputHistoryCount  + 1;
  inputHistoryPointer := inputHistoryCount;
+ inputHistoryCount := inputHistoryCount  + 1; 
 end;
 
 begin

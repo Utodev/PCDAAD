@@ -45,6 +45,8 @@ const   FDARK=0;
         MAX_FLAGS = 256;
         MAX_FLAG_VALUE = $FF;
 
+{Public so SAVE/LOAD can access them}
+var flagsArray : array [0..MAX_FLAGS-1] of TFlagType;
 
 function getFlag(index: word):TFlagType;
 procedure setFlag(index: word; value: TFlagType);
@@ -56,8 +58,7 @@ procedure RAMLoadFlags(flagno: TFlagType); {Restores RAM saved copy up to flag f
 
 implementation
 
-var flagsArray : array [0..MAX_FLAGS-1] of TFlagType;
-    flagsArrayRAMSAVE : array [0..MAX_FLAGS-1] of TFlagType;
+var flagsArrayRAMSAVE : array [0..MAX_FLAGS-1] of TFlagType;
     
 procedure RAMSaveFlags;
 begin   

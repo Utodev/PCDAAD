@@ -18,6 +18,7 @@ var  Indirection, ValidEntry :  boolean;
      Opcode : TOpcodeType;
      i, j : integer;
      DebugStr : String;
+     TranscriptUnit : String;
 
 { OK, this code runs the processes in a very assembly style, that's why the labels  }
 { and GOTO are used. It would have been possible to make a structured code with     }
@@ -31,19 +32,21 @@ begin
  {Where a new entry is considered and evaluated}
  RunEntry:
 
-
  {Check if current process has finished}
  if getByte(EntryPTR) = END_OF_PROCESS_MARK then
  begin
-
+  TranscriptPas('{End Of Process found}'+#13);
   {If DOALL loop in execution}
   if DoallPTR <> 0 then 
   begin
+    TranscriptPas('{In Doall}'+#13)  ;
     {Try to get next object at the doall location}
     nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
+    TranscriptPas('{Next object:'+ inttostr(nextDoallObjno)+'}'+#13);
     {If a valid object found jump back to DOALL entry/condact}
     if nextDoallObjno <> MAX_OBJECT then
     begin
+      TranscriptPas('{Doall loops}'+#13);
       EntryPTR := DoallEntryPTR;
       CondactPTR :=  DoallPTR;
       SetReferencedObject(nextDoallObjno);
@@ -54,6 +57,7 @@ begin
       {If in DOALL but no more objects mark doall inactive and just let }
       {the process continue and finish normally}
       DoallPTR := 0; 
+      TranscriptPas('{Doall finished}'+#13);
     end;
   end;
 
@@ -63,40 +67,40 @@ begin
   Goto RunCondact;
  end;
 
-(*
- Debug('Entry:' + inttostr(getByte(EntryPTR)) + ' ' + inttostr(getByte(EntryPTR+1)));
- Debug('LS   :' + inttostr(getFlag(FVERB)) + ' ' + inttostr(getFlag(FNOUN)));
- *)
- 
  ValidEntry := ((getByte(EntryPTR) = getFlag(FVERB)) OR (getByte(EntryPTR) = NO_WORD))
                  and ((getByte(EntryPTR+1) = getFlag(FNOUN)) OR (getByte(EntryPTR+1) = NO_WORD));
+ TranscriptPas('{Entry: ' + getVocabulary(VOC_VERB, getByte(EntryPTR)) +
+                ' ' + getVocabulary(VOC_NOUN,getByte(EntryPTR+1)) + ' }');
  CondactPTR := getWord(EntryPTR + 2);
 
  if not ValidEntry then
  begin
+  TranscriptPas('{NO MATCH}'+#13);
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end; 
+
+ TranscriptPas('{MATCH ' + getVocabulary(VOC_VERB, getFlag(FVERB)) + ' ' + getVocabulary(VOC_NOUN, getFlag(FNOUN)) +'}'#13);
 
  RunCondact:
  {First check if no more condacts in the entry, if so, move to next entry}
  condactResult := true;
  opcode := getByte(CondactPTR);
- DebugStr := condactTable[opcode].condactName + ' ';
  if opcode = END_OF_CONDACTS_MARK then
  begin
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end; 
-
+ 
  {Let's run the condact}
  if (opcode AND $80 <> 0) then
  begin
   Indirection := true;
   opcode := opcode AND $7F;
-  DebugStr := condactTable[opcode].condactName + ' @';
  end
  else Indirection := false;
+ DebugStr := condactTable[opcode].condactName + ' ';
+ if Indirection then DebugStr := DebugStr + '@';
  
  {get parameters}
  if (condactTable[opcode].numParams>0) then
@@ -118,8 +122,9 @@ begin
  end;
  
  {run condact}
+ TranscriptPas('{'+DebugStr+'}'+#13);
  {$ifdef DEBUG}
- WriteTextPas('{'+DebugStr+'}'+#13, true);
+ (*WriteTextPas('{'+DebugStr+'}'+#13, true);}*)
  {$endif}
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}
@@ -137,7 +142,7 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [file]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [Transcript file]');
   WriteLn;
   WriteLn('DDB File: a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
   WriteLn('Trascript file: Defaults to PCDAAD.LOG');
@@ -157,6 +162,10 @@ begin
     if (not loadCharset('DAAD.FNT')) then Error(6, 'PCDAAD.FNT file not found or invalid.');
     {$endif}
     if (ParamCount>1) then InitTranscript(ParamStr(2)) else InitTranscript('pcdaad.log');
+    TranscriptUnit := ParamStr(0);
+    TranscriptUnit :=  Upcase(TranscriptUnit[1]);
+    if (TranscriptUnit='A') or (TranscriptUnit='B') then TranscriptDisabled := true;
+    
     Randomize;        {Initialize the random generator}
     startVideoMode;   {Set the proper video mode}
     InitializeParser; {Initializes the parser}

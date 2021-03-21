@@ -78,10 +78,11 @@ begin
  end; 
 
  { Get the real dimension of the file}
- ImgWidth := Word(Buffer^[8]) - Word (Buffer^[4]);
- ImgHeight := Word(Buffer^[10]) - Word(Buffer^[6]);
- LastX := X + ImgWidth ;
- LastY := Y + ImgHeight;
+ ImgWidth := Buffer^[8] + 256 * Buffer^[9]  - (Buffer^[4] + 256 *Buffer^[5]) + 1;
+ ImgHeight := Buffer^[10] + 256 * Buffer^[11] - (Buffer^[6] + 256 * Buffer^[7]+ 1);
+ LastX := X + ImgWidth - 1;
+ LastY := Y + ImgHeight - 1;
+ TranscriptPas('ImgSize: ' + IntToStr(ImgWidth) + ','+ IntToStr(ImgHeight));
 
  
  { Fix VGA Palette. It' a 18 bit DAC, 6+6+6 and PCX format saves each 6 bits in 
@@ -108,15 +109,15 @@ begin
   CurrentPtr := CurrentPtr + 1;
   while  Reps>0 do
   begin
-   Dec(Reps);
+   Reps := Reps -1;
    {Now we paint each pixel only if it fits within the window, otherwise, just skip}
    if (CurrentX -  X  < width) and (CurrentY - Y < height ) then
      Mem[$A000: 320 * CurrentY + CurrentX] := Color;
-   Inc(CurrentX);
+   CurrentX := CurrentX + 1;
    if (CurrentX  > LastX) then
    begin
     CurrentX := X;
-    Inc(CurrentY);
+    CurrentY := CurrentY + 1;
    end;
   end;
  until (CurrentY  > LastY);

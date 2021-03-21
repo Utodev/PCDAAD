@@ -14,7 +14,10 @@ const   NUM_OBJECTS = 256;
         LOC_NOT_CREATED = 252;
         LOC_CARRIED = 254;
         LOC_WORN = 253;
-      
+
+{Public so LOAD/SAVE can access}
+var objLocations: array [0..NUM_OBJECTS-1] of byte;
+
 
 function getObjectLocation(objno: word):TLocationType;
 procedure setObjectLocation(objno: word; value: TLocationType);
@@ -57,8 +60,7 @@ implementation
 
 uses flags, ddb;
 
-var objLocations: array [0..NUM_OBJECTS-1] of byte;
-    objLocationsRAMSAVE: array [0..NUM_OBJECTS-1] of byte;
+var objLocationsRAMSAVE: array [0..NUM_OBJECTS-1] of byte;
 
 function getObjectCountAt(locno: TFlagType): TFlagType;
 var i: word;
@@ -177,11 +179,15 @@ end;
 
 function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;
 begin
- if locno = MAX_LOCATION then locno := getFlag(FPLAYER);
- repeat
- objno := objno + 1;
- until (objno = MAX_OBJECT) or  (getObjectLocation(objno) = locno);
- getNextObjectAt := objno;   
+ if objno = MAX_OBJECT then getNextObjectAt := MAX_OBJECT
+ else 
+ begin
+    if locno = MAX_LOCATION then locno := getFlag(FPLAYER);
+    repeat
+    objno := objno + 1;
+    until (objno = MAX_OBJECT) or  (getObjectLocation(objno) = locno);
+    getNextObjectAt := objno;   
+ end;
 end;
 
 

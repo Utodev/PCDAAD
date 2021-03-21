@@ -1,3 +1,4 @@
+*.txt
 .DS_Store
 dosbox/*
 *.TPU
@@ -9,3 +10,4 @@ drc/*
 *.pcx
 *.PCX
 *.BAK
+*.sh
