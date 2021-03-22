@@ -5,11 +5,16 @@ interface
 uses global;
 
 const WORD_LENGHT = 5;
-	  STANDARD_SEPARATORS : set of char = ['.',',',';',':','"',''''];
-	  MAX_CONJUNCTIONS = 256;
-    NUM_HISTORY_ORDERS = 20;
+      COMPLETE_WORD_LENGHT = 15;
+	    STANDARD_SEPARATORS : set of char = ['.',',',';',':','"',''''];
+      {$ifdef SPANISH}
+      SPANISH_TERMINATIONS : array [0..3] of String = ('LO','LA','LOS','LAS');
+      {$endif}
+	    MAX_CONJUNCTIONS = 256;
+      NUM_HISTORY_ORDERS = 20;
 
 type TWord = String[WORD_LENGHT];
+     TCompleteWord = String[COMPLETE_WORD_LENGHT];
 type TVocType = (VOC_VERB,VOC_ADVERB,VOC_NOUN, VOC_ADJECT, VOC_PREPOSITION, VOC_CONJUGATION,  VOC_PRONOUN, VOC_ANY);
 type TWordRecord = record
                     ACode: integer;
@@ -231,10 +236,11 @@ end;
 
 function parse(Option:TFlagType):boolean;
 var playerOrder : string;
-	  orderWords : array[0..High(Byte)] of TWord;
+	  orderWords : array[0..High(Byte)] of TCompleteWord;
 	  orderWordCount : Byte;
-    i : integer;
+    i, j : integer;
     AWordRecord : TWordRecord;
+    ASearchWord : TWord;
     Result : boolean;
     PronounInSentence : Boolean;
 begin
@@ -293,7 +299,8 @@ begin
  i:= 0;
  while (i < orderWordCount) and (orderWords[i]<>'') do
  begin
-  FindWord(orderWords[i], VOC_ANY, AWordRecord);
+  ASearchWord := orderWords[i]; {Convert TCompleteWord to TWord}
+  FindWord(ASearchWord, VOC_ANY, AWordRecord);
   if AWordRecord.ACode<> - 1 then
   begin
    if (AWordRecord.AType = VOC_VERB) and (getFlag(FVERB) = NO_WORD) then setFlag(FVERB,AWordRecord.ACode) else
@@ -302,13 +309,41 @@ begin
    if (AWordRecord.AType = VOC_ADJECT) and (getFlag(FADJECT) = NO_WORD) then setFlag(FADJECT,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_ADJECT) and (getFlag(FADJECT2) = NO_WORD) then setFlag(FADJECT2,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_PREPOSITION) and (getFlag(FPREP) = NO_WORD) then setFlag(FPREP,AWordRecord.ACode) else
-   if (AWordRecord.AType = VOC_ADVERB) and (getFlag(FADVERB) = NO_WORD) then setFlag(FADVERB,AWordRecord.ACode) else 
-   if (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then PronounInSentence := true;
+   if (AWordRecord.AType = VOC_ADVERB) and (getFlag(FADVERB) = NO_WORD) then setFlag(FADVERB,AWordRecord.ACode)
+   {If English, pronouns work independently, if Spanish, pronouns are applied a pronominal suffixes}
+   {$ifndef SPANISH}
+   else if (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then PronounInSentence := true;
+   {$else}
+   ;
+   if (AWordRecord.AType = VOC_VERB) and (not PronounInSentence) then
+   begin
+    j := 0;
+    while (j<4) and (not PronounInSentence) do
+    begin
+      {check if the verb ends with one of the pronominal suffixes}
+      if (Pos(SPANISH_TERMINATIONS[j], StrToUpper(orderWords[i])) 
+          = 1 + Length(orderWords[i]) - Length(SPANISH_TERMINATIONS[j]))
+      then
+      begin
+      {If we have a word ending with pronominal suffixes, we need to check whether the word is a verb 
+      also without the termination, to avoid the HABLA bug where "LA" is part of the verb habLAr and
+      not a suffix. So first we remove the termination:}
+      ASearchWord := Copy(orderWords[i], 1, Length(orderWords[i])-Length(SPANISH_TERMINATIONS[j]));
+      {Then check if still can be recognized as a verb}
+      FindWord(ASearchWord, VOC_VERB, AWordRecord);
+      if AWordRecord.ACode<>-1 then PronounInSentence := true;
+      {Please notice the word has to be first recognized as verb, so all Spanish verbs which are not
+       5 characters long should have synonyms including the suffix or part of it: DAR->DARLO, COGE->COGEL}
+      end;
+      j := j +1;
+    end;  (* loop over the terminations *)
+   end; (* if a Verb and no pronoun *) 
+   {$endif}
    
   end;
   i := i + 1;
  end;
-
+ 
  {Convertible nouns}
  if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then
  begin
@@ -319,17 +354,15 @@ begin
  {Mising verb but present noun, replace with previous verb}
  if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<>NO_WORD) AND (PreviousVerb<>NO_WORD) then setFlag(FVERB, PreviousVerb);
 
- {Pronouns}  
+ {Apply pronouns or terminations if needed}  
  if (getFlag(FNOUN)=NO_WORD) and (PronounInSentence) and (getFlag(FPRONOUN)<>NO_WORD) then
  begin
   setFlag(FNOUN, getFlag(FPRONOUN));
   setFlag(FADJECT, getFlag(FPRONOUN_ADJECT));
  end;
 
- (*Falta: las terminaciones pronominales *)
-
  {Save noun and adject from LS to maybe be used in future orders, unless they are proper names ( < 50 )}
- if (getFlag(FNOUN)>=50) and (FNOUN<>NO_WORD) then
+ if (getFlag(FNOUN)>=50) and (getFlag(FNOUN)<>NO_WORD) then
  begin
   setFlag(FPRONOUN, getFlag(FNOUN));
   setFlag(FPRONOUN_ADJECT, getFlag(FADJECT));

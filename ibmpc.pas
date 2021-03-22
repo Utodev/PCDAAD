@@ -374,6 +374,7 @@ begin
  for i:=1 to Length(Str) do WriteChar(Str[i]);
 end;
 
+(* FALTA: controlar cuando sale mucho texto de golpe para que se hagan pausas *)
 procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
 var i: integer;
     AWord : String;

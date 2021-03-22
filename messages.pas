@@ -24,7 +24,7 @@ var i : word;
 begin
  {$ifdef SPANISH}
  {un -> el}
- if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1] = 'N')) and (ObjMessage[2]=' ') then
+ if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') and (ObjMessage[2]=' ') then
  begin
   ObjMessage[0] := 'e';
   ObjMessage[1] := 'l';

@@ -674,34 +674,29 @@ begin
  Noun := getFlag(FNOUN);
  Adject := getFlag(FADJECT);
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, getFlag(FPLAYER));
- TranscriptPas('A1');
  if (Parameter1 <> MAX_OBJECT) then
  begin
   _GET;
   exit;
  end;
-TranscriptPas('A2');
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_WORN);
  if (Parameter1 <> MAX_OBJECT) then
  begin
   _GET;
   exit;
  end;
-TranscriptPas('A3');
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, LOC_CARRIED);
  if (Parameter1 <> MAX_OBJECT) then
  begin
   _GET;
   exit;
  end;
-TranscriptPas('A4');
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then Sysmess(SM26) {There isn't one of those here.}
                                else Sysmess(SM8); {I can't do that.}
  newtext;
  _DONE;
- TranscriptPas('A5');
-end;
+ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _AUTOD;
@@ -885,19 +880,14 @@ var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
  SetReferencedObject(parameter1);
- TranscriptPas('G1 ' + inttostr(parameter1) + ' ' + inttostr(DoallPTR) + '}}'#13);
  ObjectLocation :=getObjectLocation(parameter1);
- TranscriptPas('G1.1 ' + inttostr(ObjectLocation) + ' ');
  if (ObjectLocation = LOC_WORN) or (ObjectLocation=LOC_CARRIED) then 
  begin
-  TranscriptPas('G1.2 ' + inttostr(getFlag(FREFOBJ)) + ' ');
   Sysmess(SM25); {I already have the_.}
   newtext;
   _DONE;
-  TranscriptPas('G1.3 ' + inttostr(parameter1) + ' ');
   exit;
  end;
-TranscriptPas('G2');
 
  if (ObjectLocation <> getFlag(FPLAYER)) then 
  begin
@@ -906,7 +896,6 @@ TranscriptPas('G2');
   _DONE;
   exit;
  end;
-TranscriptPas('G3');
 
  WeightCarried := getObjectFullWeight(LOC_CARRIED);
  WeightWorn := getObjectFullWeight(LOC_WORN);
@@ -917,7 +906,6 @@ TranscriptPas('G3');
   _DONE;
   exit;
  end;
-TranscriptPas('G4');
 
  if (getFlag(FCARRIED)>= getFlag(FOBJECTS_CONVEYABLE)) then
  begin
@@ -927,13 +915,11 @@ TranscriptPas('G4');
   _DONE;
   exit;
  end;
-TranscriptPas('G5');
 
  setObjectLocation(parameter1, LOC_CARRIED);
  setFlag(FCARRIED, getFlag(FCARRIED) + 1);
  Sysmess(SM36); {I now have the _.}
  done := true;
- TranscriptPas('G6');
 
 end;
 

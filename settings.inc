@@ -3,7 +3,7 @@
 {$B+} {Shortcut boolean expressions}
 {$M 65520, 163840, 655360}
 {$define DEBUG}
-(*{$define SPANISH} {Comment this line to generate English interpreter}*)
+{$define SPANISHE}
 {$define VGA}
 {$G-} {8086 compatibility}
 {$R+} {Range checking}
