@@ -1168,8 +1168,14 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _BEEP;
 begin
-(* FALTA CONDACTO BEEP*)
-done := true;
+ (* Falta: sacar nueva version de DRC soportando BEEP para un target PC, subtarget VGA256 *)
+ if (Parameter2>=24) and (Parameter2<=238) and (Parameter2 mod 2 = 0) then
+ begin
+   Sound(FREQ_TABLE[(Parameter2-24) SHR 1]);
+   Delay(Parameter1 / 100);
+   Nosound;
+ end;
+ done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)

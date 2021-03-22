@@ -6,6 +6,8 @@
 
     This code is to be built with Borland Pascal 7.0, although it's likely to work
     fine with Turbo Pascal 7.0 and maybe with Turbo pascal 6.0
+
+    Greetings: to Natalia Pujol for her help with BEEP condact
 *)
 
 program PCDAAD;
