@@ -69,18 +69,17 @@ begin
 
  ValidEntry := ((getByte(EntryPTR) = getFlag(FVERB)) OR (getByte(EntryPTR) = NO_WORD))
                  and ((getByte(EntryPTR+1) = getFlag(FNOUN)) OR (getByte(EntryPTR+1) = NO_WORD));
- TranscriptPas('{Entry: ' + getVocabulary(VOC_VERB, getByte(EntryPTR)) +
-                ' ' + getVocabulary(VOC_NOUN,getByte(EntryPTR+1)) + ' }');
  CondactPTR := getWord(EntryPTR + 2);
 
  if not ValidEntry then
  begin
-  TranscriptPas('{NO MATCH}'+#13);
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end; 
 
- TranscriptPas('{MATCH ' + getVocabulary(VOC_VERB, getFlag(FVERB)) + ' ' + getVocabulary(VOC_NOUN, getFlag(FNOUN)) +'}'#13);
+ TranscriptPas('{> ' + getVocabulary(VOC_VERB, getByte(EntryPTR)) +' ' + getVocabulary(VOC_NOUN,getByte(EntryPTR+1))); 
+ TranscriptPas(' matches ' + getVocabulary(VOC_VERB, getFlag(FVERB)) 
+              + ' ' + getVocabulary(VOC_NOUN, getFlag(FNOUN)) +' }'#13);
 
  RunCondact:
  {First check if no more condacts in the entry, if so, move to next entry}
@@ -161,7 +160,12 @@ begin
     {$ifdef VGA}
     if (not loadCharset('DAAD.FNT')) then Error(6, 'PCDAAD.FNT file not found or invalid.');
     {$endif}
-    if (ParamCount>1) then InitTranscript(ParamStr(2)) else InitTranscript('pcdaad.log');
+    if (ParamCount>1) then 
+    begin
+      InitTranscript(ParamStr(2));
+      if ParamStr(2)='NOLOG' then TranscriptDisabled := true;
+    end else InitTranscript('pcdaad.log');
+    
     TranscriptUnit := ParamStr(0);
     TranscriptUnit :=  Upcase(TranscriptUnit[1]);
     if (TranscriptUnit='A') or (TranscriptUnit='B') then TranscriptDisabled := true;

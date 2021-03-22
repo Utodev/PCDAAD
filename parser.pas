@@ -125,6 +125,8 @@ begin
  end; {While}
 end;
 
+var KnownVocabulary:  array[Byte] of TWord;
+
 function getVocabulary(AVocType: TVocType; aCode: integer): String;
 var ptr : Word;
     AVocWord : TWord;
@@ -135,6 +137,13 @@ begin
   getVocabulary := '_';
   exit;
  end;
+
+ if (AVocType = VOC_VERB) and (KnownVocabulary[aCode] <> '')  then
+ begin
+  getVocabulary := KnownVocabulary[aCode];
+  exit;
+ end;
+
  {search word by code/type} 
  Ptr := DDBHeader.vocabularyPos;
  while (GetByte(Ptr)<> 0) do
@@ -145,12 +154,14 @@ begin
    for i := 0 to WORD_LENGHT -1 do 
      if ((GetByte(Ptr+i) XOR OFUSCATE_VALUE)<>32) 
       then AVocWord := AVocWord + CHR(GetByte(Ptr+i) XOR OFUSCATE_VALUE); 
+   if (AVocType =VOC_VERB) then KnownVocabulary[aCode] := AVocWord;
    getVocabulary := AVocWord;
    exit;
   end ;
   Ptr := Ptr + 7;
  end; 
- getVocabulary := '* INVALID ' + inttostr(aCode) + ' *';
+ if (AVocType = VOC_VERB) then KnownVocabulary[aCode] := '?' + inttostr(aCode) + '?';
+ getVocabulary := KnownVocabulary[aCode];
 end;
 
 procedure DiagFlagDump;
@@ -361,8 +372,11 @@ begin
  inputHistoryCount := inputHistoryCount  + 1; 
 end;
 
+
+var i : word;
 begin
  PreviousVerb := NO_WORD;
  inputHistoryCount := 0;
  inputHistoryPointer := 0;
+ for i := 0 to 255 do KnownVocabulary[i]:='';
 end.
