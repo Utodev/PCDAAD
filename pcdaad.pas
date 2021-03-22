@@ -7,7 +7,8 @@
     This code is to be built with Borland Pascal 7.0, although it's likely to work
     fine with Turbo Pascal 7.0 and maybe with Turbo pascal 6.0
 
-    Greetings: to Natalia Pujol for her help with BEEP condact
+    Greetings: 
+    + to Natalia Pujol for her help with BEEP condact
 *)
 
 program PCDAAD;
@@ -20,7 +21,6 @@ var  Indirection, ValidEntry :  boolean;
      Opcode : TOpcodeType;
      i, j : integer;
      DebugStr : String;
-     TranscriptUnit : String;
 
 { OK, this code runs the processes in a very assembly style, that's why the labels  }
 { and GOTO are used. It would have been possible to make a structured code with     }
@@ -143,35 +143,50 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [Transcript file]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-nolog] [-i<orders file>] [-h]');
   WriteLn;
-  WriteLn('DDB File: a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
-  WriteLn('Trascript file: Defaults to PCDAAD.LOG');
+  WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
+  WriteLn('-nolog : don''t dump transcript on PCDAAD.LOG');
+  WriteLn('-i<orders file> : take player orders from text file until exhausted');
+  WriteLn('-h : show this help');
   Halt(0);
 end;
+
+procedure ParseParameters;
+var i : integer;
+begin
+ for i:=1 to ParamCount do
+ begin
+  if StrToUpper(ParamStr(i)) = '-H' then Help
+  else if StrToUpper(ParamStr(i)) = '-NOLOG' then TranscriptDisabled := true
+  else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
+  begin
+   useOrderInputFile := true;
+   orderInputFileName := Copy(ParamStr(i),3,255);
+  end 
+  else if Copy(StrToUpper(ParamStr(i)),1,1) <> '-' then {If no hyphen, then it's DDB name}
+  begin
+   ddbFilename := ParamStr(i);
+  end
+  else Error(10,'Invalid or unknown parameter: ' + ParamStr(i));
+ end;
+end; 
 
 (************************************************************************************************)
 (**************************************** MAIN **************************************************)
 (************************************************************************************************)
 begin
     Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
-    if (ParamCount>0) and ((ParamStr(1)='?') or (ParamStr(1)='/?') or (ParamStr(1)='/h')) then help;
-    Debug('DEBUG MODE ON');
-    if (ParamCount>0) then ddbFilename := ParamStr(1) else ddbFilename := 'DAAD.DDB';
+    ddbFilename := 'DAAD.DDB';
+    ParseParameters;
     if (not loadDDB(ddbFilename)) then Error(1, 'DDB file not found or invalid.');
     {$ifdef VGA}
     if (not loadCharset('DAAD.FNT')) then Error(6, 'PCDAAD.FNT file not found or invalid.');
     {$endif}
-    if (ParamCount>1) then 
-    begin
-      InitTranscript(ParamStr(2));
-      if ParamStr(2)='NOLOG' then TranscriptDisabled := true;
-    end else InitTranscript('pcdaad.log');
-    
-    TranscriptUnit := ParamStr(0);
-    TranscriptUnit :=  Upcase(TranscriptUnit[1]);
-    if (TranscriptUnit='A') or (TranscriptUnit='B') then TranscriptDisabled := true;
-    
+
+    InitTranscript('pcdaad.log');
+    InitOrderFile;
+      
     Randomize;        {Initialize the random generator}
     startVideoMode;   {Set the proper video mode}
     InitializeParser; {Initializes the parser}
@@ -181,4 +196,9 @@ begin
     resetStack;
     resetProcesses;
     run;
+
+    {Cleaning}
+    CloseOrderFile;
+    CloseTranscript;
+    Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
 end.

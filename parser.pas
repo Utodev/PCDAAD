@@ -28,6 +28,9 @@ type TWordRecord = record
 var inputBuffer: String;
 var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     inputHistoryCount, inputHistoryPointer : Byte;
+    useOrderInputFile: Boolean;
+    orderInputFile: text;
+    orderInputFileName: string;
 
 {Returns the code for a specific word of a specific type, or any}
 {type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
@@ -56,6 +59,12 @@ procedure addToOrderHistory(Str: String);
 {For debugging: gets the vocabulary word for a specific value and type}
 function getVocabulary(AVocType: TVocType; aCode: integer): String;
 
+{Initializes the input from file system}
+procedure InitOrderFile;
+{Finalizes the order file}
+procedure CloseOrderFile;
+
+
 implementation
 
 uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc, log;
@@ -64,10 +73,29 @@ var PreviousVerb: TFlagType;
 
 {This array keeps the conjuctions provided by the DDB}
 var Conjunctions : array [0..MAX_CONJUNCTIONS-1] of TWord;
-	ConjunctionsCount : Byte; 
+   	ConjunctionsCount : Byte; 
+
 procedure newtext;
 begin
  inputBuffer := '';
+end;
+
+procedure InitOrderFile;
+begin
+if useOrderInputFile then
+begin
+  Assign(orderInputFile, orderInputFileName);
+  Reset(orderInputFile);
+  if (ioresult<>0) then Error(9,'Invalid or missing orders file');
+end;  
+end;
+
+procedure CloseOrderFile;
+begin
+if useOrderInputFile then
+begin
+ Close(orderInputFile);
+end;
 end;
 
 procedure InitializeParser;
@@ -206,12 +234,22 @@ end;
 
 procedure getCommand;
 begin
- {$ifdef VGA}
- Sysmess(SM33); {the prompt}
- ReadText(inputBuffer);
- {$else}
- ReadLn(inputBuffer);
-{$endif}
+ inputBuffer := '';
+ if (useOrderInputFile) then
+ while (inputBuffer ='') and  (not eof(orderInputFile)) do
+ begin
+  ReadLn(orderInputFile, inputBuffer);
+ end;
+ if inputBuffer = '' then
+ begin
+  {$ifdef VGA}
+  Sysmess(SM33); {the prompt}
+  ReadText(inputBuffer);
+  {$else}
+  ReadLn(inputBuffer);
+  {$endif}
+ end
+ else WriteTextPas(#13'>' + inputBuffer + #13, false);
 end;
 
 procedure getPlayerOrders;
@@ -412,4 +450,5 @@ begin
  inputHistoryCount := 0;
  inputHistoryPointer := 0;
  for i := 0 to 255 do KnownVocabulary[i]:='';
+ useOrderInputFile := false;
 end.

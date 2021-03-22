@@ -9,6 +9,7 @@ uses strings;
 function InitTranscript(Filename: String): boolean;
 procedure Transcript(LogText: Pchar); {Transcript a Pchar string}
 procedure TranscriptPas(LogText: String); {Transcript a classic pascal string}
+procedure CloseTranscript;
 
 var TranscriptDisabled: boolean;
 
@@ -17,14 +18,18 @@ implementation
 uses errors;
 
 var TranscriptFile: text;
+    TranscriptUnit : String;
 
 
 function InitTranscript(Filename: String): boolean;
 begin
+    if not TranscriptDisabled  then
+    begin
         Assign(TranscriptFile, Filename);
         Rewrite(TranscriptFile);
         if (ioresult<>0) then Error(7, 'Unable to create transcript file');
         Close(TranscriptFile);
+    end;
 end;
 
 procedure Transcript(LogText: Pchar);
@@ -49,6 +54,15 @@ begin
     end;
 end;
 
+procedure CloseTranscript;
 begin
- TranscriptDisabled := false;
+ if not TranscriptDisabled then Close(TranscriptFile);
+end;
+
+begin
+    TranscriptDisabled := false;
+    (* Check to never do transcript on floppy disk *)
+    TranscriptUnit := ParamStr(0);
+    TranscriptUnit :=  Upcase(TranscriptUnit[1]);
+    if (TranscriptUnit='A') or (TranscriptUnit='B') then TranscriptDisabled := true;
 end.
