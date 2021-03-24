@@ -43,8 +43,13 @@ var FPCXFile : file;
     ImageFileName : String;
 
 begin
- ImageFileName := IntToStr(ImageNumber);
- while (length(ImageFileName)<3) do ImageFileName := '0' + ImageFileName;
+ if (ImageNumber = 65535) then ImageFileName := 'DAAD'
+ else
+ begin
+  ImageFileName := IntToStr(ImageNumber);
+  while (length(ImageFileName)<3) do ImageFileName := '0' + ImageFileName;
+ end; 
+ 
  
  Assign(FPCXFile, ImageFileName + '.vga');
  Reset(FPCXFile, 1);

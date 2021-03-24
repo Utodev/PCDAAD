@@ -13,7 +13,7 @@
 
 program PCDAAD;
 
-uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log;
+uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log, pcx;
 
 var ddbFilename : String;
 
@@ -43,8 +43,9 @@ begin
   begin
     TranscriptPas('{In Doall}'+#13)  ;
     {Try to get next object at the doall location}
+    TranscriptPas('{Last doall object:'+ inttostr(getFlag(FDOALL))+'}'+#13);
     nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
-    TranscriptPas('{Next object:'+ inttostr(nextDoallObjno)+'}'+#13);
+    TranscriptPas('{Next doall object:'+ inttostr(nextDoallObjno)+'}'+#13);
     {If a valid object found jump back to DOALL entry/condact}
     if nextDoallObjno <> MAX_OBJECT then
     begin
@@ -52,6 +53,7 @@ begin
       EntryPTR := DoallEntryPTR;
       CondactPTR :=  DoallPTR;
       SetReferencedObject(nextDoallObjno);
+      SetFlag(FDOALL, nextDoallObjno);
       goto RunCondact;
     end
     else  
@@ -195,6 +197,13 @@ begin
     resetWindows;     {clears all windows setup}
     resetStack;
     resetProcesses;
+    if loadPCX(0,0,320,200, 65535) then  {Load intro screen if present}
+    begin
+      TranscriptPas('Loading screen shown');
+      while not Keypressed do;
+      ReadKey;
+     TranscriptPas('Key pressed'); 
+    end; 
     run;
 
 end.

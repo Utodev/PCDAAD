@@ -24,6 +24,7 @@ type TWindow = packed record
 
 VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
+    LastPrintedIsCR : boolean;
 
 procedure Delay(seconds: real);
 procedure resetWindows;
@@ -368,10 +369,13 @@ end;
 procedure WriteWord(Str:String);
 var i: integer;
     Xlimit : Word;
+    
 begin
- Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
- if (StrLenInPixels(Str) + windows[ActiveWindow].currentX >= Xlimit) then CarriageReturn;
- for i:=1 to Length(Str) do WriteChar(Str[i]);
+  Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
+  if (StrLenInPixels(Str) + windows[ActiveWindow].currentX >= Xlimit) then CarriageReturn;
+  if not (LastPrintedIsCR  and (Str=' ')) then 
+      for i:=1 to Length(Str) do WriteChar(Str[i]);
+  LastPrintedIsCR := false;
 end;
 
 (* FALTA: controlar cuando sale mucho texto de golpe para que se hagan pausas *)
@@ -379,6 +383,7 @@ procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
 var i: integer;
     AWord : String;
 begin
+ LastPrintedIsCR := false;
  (*FALTA: Hay que controlar cuando sale mucho texto de golpe para que haga pausas *)
  if not AvoidTranscript then Transcript(Str);
  i :=0 ;
@@ -394,7 +399,7 @@ begin
     ' ': begin
           WriteWord(AWord);
           AWord := '';
-          WriteChar(' ');
+          WriteWord(' ');
          end; 
     else AWord := Aword + Str[i];
   end; {case}
@@ -414,6 +419,7 @@ begin
 {$else}
 WriteText(''#10);
 {$endif}
+LastPrintedIsCR := true;
 end;
 
 procedure WriteTextPas(Str: String; AvoidTranscript: boolean);
@@ -423,5 +429,6 @@ begin
  WriteText(temp, AvoidTranscript);
 end;
 
-
+begin
+ LastPrintedIsCR := false;
 end.

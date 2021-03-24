@@ -1348,12 +1348,15 @@ end;
 procedure _DOALL;
 var objno: TFlagType;
 begin
- DoallPTR := CondactPTR + 1; {Point to next Condact after DOALL}
- DoallEntryPTR := EntryPTR;
- DoallLocation := parameter1;
  objno := getNextObjectAt(-1, parameter1);
- SetFlag(FDOALL,objno);
- SetReferencedObject(objno);
+ if (objno<>MAX_OBJECT) then
+ begin
+    DoallPTR := CondactPTR + 1; {Point to next Condact after DOALL}
+    DoallEntryPTR := EntryPTR;
+    DoallLocation := parameter1;
+    SetFlag(FDOALL,objno);
+    SetReferencedObject(objno);
+ end;
  done := true;
 end;
 

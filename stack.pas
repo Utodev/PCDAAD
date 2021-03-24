@@ -10,7 +10,6 @@ const MAX_PROCESS_STACK = 500;
       
 type TStackElement = record
                         ProcessPTR, EntryPTR, CondactPTR, DoallPTR, DoallEntryPTR, DoallFlag, DoallLocation : Word;
-
                      end;
 
 var ProcessStack : array [0..MAX_PROCESS_STACK-1] of TStackElement;
