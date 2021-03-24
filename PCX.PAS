@@ -74,6 +74,7 @@ begin
  if (Aux <> $0C) then  {Mark of 256 color palette}
  begin
   LoadPCX := false;
+  FreeMem(Buffer,PCXFileSize);
   exit;
  end; 
 
@@ -122,6 +123,7 @@ begin
   end;
  until (CurrentY  > LastY);
  Close(FPCXFile);
+ FreeMem(Buffer,PCXFileSize);
  LoadPCX := true;
 end;
 

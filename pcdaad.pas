@@ -197,8 +197,4 @@ begin
     resetProcesses;
     run;
 
-    {Cleaning}
-    CloseOrderFile;
-    CloseTranscript;
-    Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
 end.
