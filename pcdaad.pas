@@ -178,7 +178,7 @@ end;
 (**************************************** MAIN **************************************************)
 (************************************************************************************************)
 begin
-    Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
+    CopyRight;
     ddbFilename := 'DAAD.DDB';
     ParseParameters;
     if (not loadDDB(ddbFilename)) then Error(1, 'DDB file not found or invalid.');
@@ -204,6 +204,5 @@ begin
       ReadKey;
      TranscriptPas('Key pressed'); 
     end; 
-    run;
-
+    run; {there is no way back from this procedure, so cleaning isn't here}
 end.

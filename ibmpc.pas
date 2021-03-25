@@ -333,6 +333,7 @@ begin
  end;
 end;
 
+(* FALTA SOPORTE DEL UPPER FONT  y de las secuencias #r #k, etc*)
 procedure WriteChar(c: char);
 var i, j : word;
     baseAddress : word;

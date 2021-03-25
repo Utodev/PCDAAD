@@ -15,7 +15,10 @@ implementation
 
 uses utils, log; 
 
-type FileBuffer = array[0..65534] of Byte;
+type TFileBuffer = array[0..65534] of Byte;
+     TScreenBuffer = array[0..63999] of Byte;
+
+var ScreenBuffer: ^TScreenBuffer;
 
 (*FALTA HACER ESTO COMPATIBLE CON 8086 , PORQUE $G+ es 286 *)
 
@@ -31,7 +34,7 @@ end;
 
 function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
 var FPCXFile : file;
-    Buffer : ^FileBuffer;
+    Buffer : ^TFileBuffer;
     Aux : Byte;
     AuxWord : Word;
     PCXFileSize : Longint;
@@ -41,6 +44,7 @@ var FPCXFile : file;
     CurrentX, CurrentY : Word;
     LastX, LastY : Word;
     ImageFileName : String;
+    i, j: word;
 
 begin
  if (ImageNumber = 65535) then ImageFileName := 'DAAD'
@@ -88,8 +92,7 @@ begin
  ImgHeight := Buffer^[10] + 256 * Buffer^[11] - (Buffer^[6] + 256 * Buffer^[7]+ 1);
  LastX := X + ImgWidth - 1;
  LastY := Y + ImgHeight - 1;
- TranscriptPas('ImgSize: ' + IntToStr(ImgWidth) + ','+ IntToStr(ImgHeight));
-
+ if  Y + Height - 1 < LastY then LastY := Y + Height - 1; {Not higher than window}
  
  { Fix VGA Palette. It' a 18 bit DAC, 6+6+6 and PCX format saves each 6 bits in 
    a byte, but aligned to the most significative bit}
@@ -105,32 +108,36 @@ begin
  repeat
   
   Color := Buffer^[CurrentPtr];
-  if Color > 192 then       { If color > 192 it's not a color but a rep count }
+  if (Color AND $C0) = $C0 then       { If color > 192 it's not a color but a rep count }
   begin
-   Reps := Color - 192;
-   CurrentPtr := CurrentPtr + 1;
+   Reps := Color AND $3F;
+   Inc(CurrentPtr); {CurrentPtr := CurrentPtr + 1;}
    Color := Buffer^[CurrentPtr];
   end
   else Reps := 1;
-  CurrentPtr := CurrentPtr + 1;
+  Inc(CurrentPtr); {CurrentPtr := CurrentPtr + 1;}
   while  Reps>0 do
   begin
-   Reps := Reps -1;
+   Dec(Reps); {Reps := Reps -1;}
    {Now we paint each pixel only if it fits within the window, otherwise, just skip}
-   if (CurrentX -  X  < width) and (CurrentY - Y < height ) then
-     Mem[$A000: 320 * CurrentY + CurrentX] := Color;
-   CurrentX := CurrentX + 1;
+   if (CurrentX -  X  < width) then
+     ScreenBuffer^[320 * CurrentY + CurrentX] := Color;
+   Inc(CurrentX); {CurrentX := CurrentX + 1;}
    if (CurrentX  > LastX) then
    begin
     CurrentX := X;
-    CurrentY := CurrentY + 1;
+    Inc(CurrentY); {CurrentY := CurrentY + 1;}
    end;
-  end;
+  end;  
  until (CurrentY  > LastY);
  Close(FPCXFile);
  FreeMem(Buffer,PCXFileSize);
  LoadPCX := true;
+ for i:= Y to LastY do Move(ScreenBuffer^[320*i+X], Mem[$A000:320*i+x], ImgWidth);
+
 end;
 
 
+begin
+ GetMem(ScreenBuffer, Sizeof(TScreenBuffer));
 end.

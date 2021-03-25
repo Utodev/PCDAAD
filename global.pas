@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.0 alpha 3';
+const VERSION='1.0 alpha 5';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;
@@ -107,6 +107,13 @@ const VERSION='1.0 alpha 3';
 type DWORD=longint;
 type TFlagType = byte;
 
+procedure CopyRight;
+
 implementation
+
+procedure CopyRight;
+begin
+  Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
+end;
 
 end.

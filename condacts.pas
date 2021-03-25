@@ -1746,7 +1746,7 @@ begin
  if (parameter1 = 0) then 
  begin
   terminateVideoMode;
-  Writeln('PC DAAD Interpreter ',version,' (C) Uto 2021');
+  CopyRight;
   {Cleaning}
   CloseOrderFile;
   CloseTranscript;
