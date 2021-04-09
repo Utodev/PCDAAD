@@ -14,4 +14,6 @@ drc/*
 *.sh
 *.o
 *.ppu
+*.SAV
+*.sav
 tool/pcxfixer
