@@ -1,7 +1,7 @@
 {$I SETTINGS.INC}
 (* All the condacts stuff, including implementation of condacts *)
 
-(* FALTA: todo el funcionamiento del flag 41 y el 49 *)
+(* FALTA: todo el funcionamiento del flag 41, 48 y el 49 *)
 unit condacts;
 
 interface
@@ -1565,13 +1565,13 @@ end;
 procedure _INPUT;
 var flag49: TFlagType;
 begin
-  SetFlag(41, parameter1);
+  SetFlag(FINPUT, parameter1);
    
    parameter2 := parameter2 SHL 3; { Move the three bits to their position in flag 49}
    parameter2 := parameter2 AND $38; {Isolate them: 00111000} 
  
-   flag49 := getFlag(49) AND $C7; {Get flag 49 and clear the three bits affected by INPUT}
-   SetFlag(49, flag49 OR parameter2);  {Combine bits}
+   flag49 := getFlag(FINPUT) AND $C7; {Get flag 49 and clear the three bits affected by INPUT}
+   SetFlag(FINPUT, flag49 OR parameter2);  {Combine bits}
 
    done := true;
 end;
