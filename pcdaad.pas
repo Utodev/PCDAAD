@@ -11,9 +11,12 @@
     + to Natalia Pujol for her help with BEEP condact
 *)
 
+
+(* FALTA HACER que el flag  62 tenga un modo nuevo  para VGA 256 #define fScreenMode   
+    62     ; 2=Text, 4=CGA, 13=EGA, 141=VGA *)
 program PCDAAD;
 
-uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log, pcx;
+uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log, pcx, maluva;
 
 var ddbFilename : String;
 
@@ -145,10 +148,11 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-nolog] [-i<orders file>] [-h]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-nolog] [-nomaluva] [-i<orders file>] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
   WriteLn('-nolog : don''t dump transcript on PCDAAD.LOG');
+  WriteLn('-nomaluva : turns off Maluva extension emulation');
   WriteLn('-i<orders file> : take player orders from text file until exhausted');
   WriteLn('-h : show this help');
   Halt(0);
@@ -161,6 +165,7 @@ begin
  begin
   if StrToUpper(ParamStr(i)) = '-H' then Help
   else if StrToUpper(ParamStr(i)) = '-NOLOG' then TranscriptDisabled := true
+  else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
   begin
    useOrderInputFile := true;
@@ -187,8 +192,10 @@ begin
     {$endif}
 
     InitTranscript('pcdaad.log');
+    TranscriptPas('PCDAAD Log ' + VERSION + #13);
+    
     InitOrderFile;
-      
+    
     Randomize;        {Initialize the random generator}
     startVideoMode;   {Set the proper video mode}
     InitializeParser; {Initializes the parser}
@@ -199,10 +206,10 @@ begin
     resetProcesses;
     if loadPCX(0,0,320,200, 65535) then  {Load intro screen if present}
     begin
-      TranscriptPas('Loading screen shown');
+      TranscriptPas('Loading screen shown'#13);
       while not Keypressed do;
       ReadKey;
-     TranscriptPas('Key pressed'); 
+     TranscriptPas('Key pressed'#13); 
     end; 
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.

@@ -289,7 +289,7 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser, pcx, log;
+uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser, pcx, log, maluva;
 
 
 (*****************************************************************************************)
@@ -357,6 +357,25 @@ begin
  
 end;
 
+(*****************************************************************************************)
+(************************************* MALUVA CONDACTS ***********************************)
+(*****************************************************************************************)
+
+procedure _XMES;
+var XmessageOffset : Word;
+begin 
+ XmessageOffset := Parameter1;
+ CondactPTR := CondactPTR + 1;
+ XmessageOffset := XmessageOffset + getByte(CondactPTR) * 256;
+ Xmes(XmessageOffset);
+ done := true;
+end;       
+
+(*--------------------------------------------------------------------------------------*)
+procedure _XPART;
+begin
+ Xpart(parameter1);
+end;
 
 (*****************************************************************************************)
 (****************************************** CONDACTS *************************************)
@@ -1145,8 +1164,18 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _EXTERN;
 begin
+if not MaluvaDisabled THEN  (* Maluva Emulation *)
+begin
+ TranscriptPas('Maluva Condact ' + IntToStr(Parameter2));
+ case parameter2 of
+ 3:  begin _XMES; exit; end;
+ 4:  begin _XPART;exit; end;
+ end;
+end;
+(*Please notice even with Maluva Enabled additional EXTERN code can be run, it just happens Maluva functions 
+  can intervene and don't let execution come to this point, but if not, then standard EXTERN code may run *)
 (* FALTA CONDACTO EXTERN *)
-done := true;
+ done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1168,7 +1197,6 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _BEEP;
 begin
- (* Falta: sacar nueva version de DRC soportando BEEP para un target PC, subtarget VGA256 *)
  if (Parameter2>=24) and (Parameter2<=238) and (Parameter2 mod 2 = 0) then
  begin
    Sound(FREQ_TABLE[(Parameter2-24) SHR 1]);

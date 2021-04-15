@@ -46,6 +46,10 @@ function getWord(address: Word): word; {get word at address from DDB}
 procedure resetProcesses; {restarts pointers to restart game}
 procedure ConsumeProcess; {Goes to last entry of process}
 
+procedure MoveToDDB(var buffer; offset, size: word); {Fucntions to pacth the DDB, mainly for XMEssages}
+procedure MoveFromDDB(var buffer; offset, size: word);
+
+
 
 implementation
 
@@ -127,6 +131,16 @@ procedure ConsumeProcess;
 begin
  while (GetByte(EntryPtr) <> END_OF_PROCESS_MARK) do EntryPtr := EntryPtr + 4;
  EntryPtr := EntryPtr - 4;
+end;
+
+procedure MoveToDDB(var buffer; offset, size: word);
+begin
+ Move(buffer, pointer(DWORD(DDBRAM)+offset)^, size);
+end;
+
+procedure MoveFromDDB(var buffer; offset, size: word);
+begin
+ Move(pointer(DWORD(DDBRAM)+offset)^, buffer, size);
 end;
 
 begin

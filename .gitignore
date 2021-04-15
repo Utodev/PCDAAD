@@ -1,4 +1,8 @@
 *.
+*.XMB
+*.png
+*.jpg
+*.bmp
 *.txt
 .DS_Store
 dosbox/*
