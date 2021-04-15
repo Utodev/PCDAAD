@@ -1266,10 +1266,8 @@ procedure _PARSE;
 var result : boolean;
 begin
  result := parse(parameter1);
- TranscriptPas('RESULT: ' + inttostr(byte(result))+ #13);
  condactResult := not result;
  done := false;
- {(* FALTA DAR SOPORTE A PARSE 1*)}
 end;
 
 (*--------------------------------------------------------------------------------------*)

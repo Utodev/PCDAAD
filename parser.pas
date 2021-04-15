@@ -325,12 +325,9 @@ begin
  then
  begin
   parse := false; (* To force next condact execution *)
-  TranscriptPas('Playerorded vacia'+#13);
   exit;
  end;
 end; 
-
-TranscriptPas('Player order :' + playerOrder + #13);
 
  orderWordCount := 0;
  {remove double spaces}
