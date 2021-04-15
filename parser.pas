@@ -6,7 +6,7 @@ uses global;
 
 const WORD_LENGHT = 5;
       COMPLETE_WORD_LENGHT = 15;
-	    STANDARD_SEPARATORS : set of char = ['.',',',';',':','"',''''];
+	    STANDARD_SEPARATORS : set of char = ['.',',',';',':'];
       {$ifdef SPANISH}
       SPANISH_TERMINATIONS : array [0..3] of String = ('LO','LA','LOS','LAS');
       {$endif}
@@ -70,6 +70,8 @@ implementation
 uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc, log;
 
 var PreviousVerb: TFlagType;
+    playerOrderQuoted : string;
+	  
 
 {This array keeps the conjuctions provided by the DDB}
 var Conjunctions : array [0..MAX_CONJUNCTIONS-1] of TWord;
@@ -273,14 +275,17 @@ end;
 
 
 function parse(Option:TFlagType):boolean;
-var playerOrder : string;
-	  orderWords : array[0..High(Byte)] of TCompleteWord;
+var orderWords : array[0..High(Byte)] of TCompleteWord;
 	  orderWordCount : Byte;
     i, j : integer;
     AWordRecord : TWordRecord;
     ASearchWord : TWord;
     Result : boolean;
     PronounInSentence : Boolean;
+    playerOrder : string;
+begin
+
+if (Option = 0) then (* parse 0, get order from the player or from orders buffer *)
 begin
  Result := false;
  if (inputBuffer='') then
@@ -299,8 +304,34 @@ begin
  end;
  if (i>=Length(inputBuffer)) then inputBuffer := '' {If finished, we empty the inputBuffer}
 							 else inputBuffer := Copy(inputBuffer, i + 1, 255); {If not , we set it to the remaining after the separator}
-
  
+  {Try to find a quoted sentence in the order. If found, text before the quoted setence goes to playerOrder,
+   and text after the quotes is stored in global variable playerOrderQuoted, in case it is later required by PARSE 1}
+  if (Pos('"', playerOrder)>0) then
+  begin
+    playerOrderQuoted := Copy(playerOrder, Pos('"', playerOrder) + 1, 255);
+    if (Pos('"', playerOrderQuoted)>0) then playerOrderQuoted := Copy(playerOrderQuoted, 1, Pos('"', playerOrderQuoted) - 1);
+    playerOrder := Copy(playerOrder, 1, Pos('"', playerOrder) - 1);
+    {Because orginal interpreters make a difference betwee 'SAY JOHN'  and 'SAY JOHN ""'}
+    if (playerOrderQuoted='') then playerOrderQuoted := ' '; 
+  end
+  else  playerOrderQuoted := '';
+end 
+else 
+begin
+ playerOrder := playerOrderQuoted; (* PARSE 1, get order from a quoted sentence in the current LS *)
+ 
+ if (playerOrder = '')
+ then
+ begin
+  parse := false; (* To force next condact execution *)
+  TranscriptPas('Playerorded vacia'+#13);
+  exit;
+ end;
+end; 
+
+TranscriptPas('Player order :' + playerOrder + #13);
+
  orderWordCount := 0;
  {remove double spaces}
  while (Pos('  ', playerOrder)> 0) do playerOrder := StringReplace(playerOrder, '  ', ' ');
@@ -410,7 +441,7 @@ begin
  if (getFlag(FVERB)<>NO_WORD) then  PreviousVerb := getFlag(FVERB);
 
  if (getFlag(FVERB)<>NO_WORD) OR (getFlag(FNOUN)<>NO_WORD) then Result := true;
- parse := Result;
+ parse := Result or (option>0);
 end;
 
 function getNextOrderHistory: string;
