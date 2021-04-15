@@ -98,8 +98,6 @@ begin
    a byte, but aligned to the most significative bit}
  for AuxWord := 0 to 767 do Buffer^[PCXFileSize-768+AuxWord] := Buffer^[PCXFileSize-768+AuxWord] SHR 2;
 
- { The palette is located at the last 768 bytes in the file}
- SetVGAPalette(Buffer^[PCXFileSize - 768]);
 
  { Load the pixels}
  CurrentX := X;
@@ -133,6 +131,13 @@ begin
  Close(FPCXFile);
  FreeMem(Buffer,PCXFileSize);
  LoadPCX := true;
+
+ {Now we really paint the picture}
+  
+ WaitVRetrace;
+ { The palette is located at the last 768 bytes in the file}
+ SetVGAPalette(Buffer^[PCXFileSize - 768]);
+ { Copy from doble buffer}
  for i:= Y to LastY do Move(ScreenBuffer^[320*i+X], Mem[$A000:320*i+x], ImgWidth);
 
 end;

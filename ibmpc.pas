@@ -1,3 +1,4 @@
+
 {$I SETTINGS.INC}
 
 unit ibmpc;
@@ -54,6 +55,8 @@ procedure Nosound;
 function ReadKey:Word; 
 {Like CRT unit Keypressed}
 function Keypressed:Boolean; 
+{Wait for vertical retrace}
+procedure WaitVRetrace;
 
 implementation
 
@@ -429,6 +432,14 @@ begin
  StrPCopy(temp, Str) ;
  WriteText(temp, AvoidTranscript);
 end;
+
+procedure WaitVRetrace; assembler:
+asm                                            
+  mov dx,3dah;
+  @r1: in al,dx; test al,8; jnz @r1
+  @r2: in al,dx; test al,8; jz @r2
+end;
+
 
 begin
  LastPrintedIsCR := false;
