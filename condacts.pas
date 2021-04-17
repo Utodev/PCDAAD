@@ -659,8 +659,8 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DISPLAY;
 begin
-(* FALTA CONDACTO DISPLAY *)
-done := true;
+ DisplayPCX(parameter1);
+ done := true;
 end;
 
 procedure _CLS;
@@ -1370,10 +1370,6 @@ begin
  condactResult := LoadPCX(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
                   Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8,
                   parameter1);
- (* FALTA: PICTURE apparenty only loads the picture to a buffer, it's DISPLAY the one painting the picture
-   so I guess this will be all about loading the picture to some kind of buffer, or actually to just set
-   the buffer to the filename value to simulate there is a buffer. Today, for hard disk based games this is
-   actually irrelevant *)
  done := true;
 end;
 

@@ -7,9 +7,10 @@ UNIT PCX;
 
 interface
 
-{ Defines the file name to load and the Window where to paint it. If the picture is smaller than the defined
-  window it is painted anyway, if the picture is larger than the window, it's}
+{Loads PCX file into double buffer}
 function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
+{This function really copies the buffer into the screen if option = 0, and clears the are otherwise}
+procedure DisplayPCX(option: Byte);
 
 implementation
 
@@ -19,6 +20,12 @@ type TFileBuffer = array[0..65534] of Byte;
      TScreenBuffer = array[0..63999] of Byte;
 
 var ScreenBuffer: ^TScreenBuffer;
+    LatestPCXFileSize : Word;
+    LatestPCXX, LatestPCXY : Word;
+    LatestPCXHeight, LatestPCXWidth :Word;
+    PaletteBuffer :  array[0..767] of Byte;
+
+      
 
 (*FALTA HACER ESTO COMPATIBLE CON 8086 , PORQUE $G+ es 286 *)
 
@@ -34,7 +41,6 @@ end;
 
 function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
 var FPCXFile : file;
-    Buffer : ^TFileBuffer;
     Aux : Byte;
     AuxWord : Word;
     PCXFileSize : Longint;
@@ -45,7 +51,8 @@ var FPCXFile : file;
     LastX, LastY : Word;
     ImageFileName : String;
     i, j: word;
-
+    Buffer : ^TFileBuffer;
+    
 begin
  if (ImageNumber = 65535) then ImageFileName := 'DAAD'
  else
@@ -130,23 +137,46 @@ begin
  until (CurrentY  > LastY);
  Close(FPCXFile);
  FreeMem(Buffer,PCXFileSize);
+ Move(Buffer^[PCXFileSize-768], PaletteBuffer, 768);
  LoadPCX := true;
 
- {Now we really paint the picture}
- WaitVRetrace;
- { The palette is located at the last 768 bytes in the file}
- SetVGAPalette(Buffer^[PCXFileSize - 768]);
- { Copy from doble buffer}
- for i:= Y to LastY do 
- begin
-    j := 320 * i + x;
-    Move(ScreenBuffer^[j], Mem[$A000:j], ImgWidth);
- end;
+ LatestPCXFileSize := PCXFileSize;
+ LatestPCXX := X;
+ LatestPCXY := Y;
+ LatestPCXHeight := Height;
+ LatestPCXWidth := Width;
+
  
 
 end;
 
 
+procedure DisplayPCX(option: Byte);
+var i, offset : Word;
+begin
+ if (option=0) then
+ begin
+  if (LatestPCXFileSize <> 0) then
+  begin
+    {Now we really paint the picture}
+    WaitVRetrace;
+    { The palette is located at the last 768 bytes in the file}
+    SetVGAPalette(PaletteBuffer);
+    { Copy from doble buffer}
+    for i:= LatestPCXY to LatestPCXY + LatestPCXHeight - 1 do
+    begin
+        offset := 320 * i + LatestPCXX;
+        Move(ScreenBuffer^[offset], Mem[$A000:offset], LatestPCXWidth);
+    end;
+   end 
+ end
+ else (* option <> 0 *)
+ begin
+    ClearWindow(LatestPCXX, LatestPCXY, LatestPCXWidth, LatestPCXHeight, Windows[ActiveWindow].PAPER);
+ end;
+end;
+
 begin
  GetMem(ScreenBuffer, Sizeof(TScreenBuffer));
+ LatestPCXFileSize :=0;
 end.
