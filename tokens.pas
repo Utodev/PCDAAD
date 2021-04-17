@@ -16,7 +16,7 @@ var Ptr : Word;
     AuxStr : String;
 begin
     Index := 0;
-    Ptr := DDBHeader.tokenPos + 2; {Apparently, token table starts one byte after the token pointer}
+    Ptr := DDBHeader.tokenPos + 1; {Apparently, token table starts one byte after the token pointer}
     while (Index < id) do
     begin
      if GetByte(Ptr) > 127 then Index := Index + 1;

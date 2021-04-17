@@ -433,7 +433,7 @@ begin
  WriteText(temp, AvoidTranscript);
 end;
 
-procedure WaitVRetrace; assembler:
+procedure WaitVRetrace; assembler;
 asm                                            
   mov dx,3dah;
   @r1: in al,dx; test al,8; jnz @r1

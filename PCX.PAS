@@ -13,7 +13,7 @@ function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
 
 implementation
 
-uses utils, log; 
+uses utils, log, ibmpc; 
 
 type TFileBuffer = array[0..65534] of Byte;
      TScreenBuffer = array[0..63999] of Byte;

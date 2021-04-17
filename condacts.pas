@@ -1,7 +1,7 @@
 {$I SETTINGS.INC}
 (* All the condacts stuff, including implementation of condacts *)
 
-(* FALTA: todo el funcionamiento del flag 41, 48 y el 49 *)
+(* FALTA: todo el funcionamiento del flag 29, 41, 48 y el 49 *)
 unit condacts;
 
 interface
