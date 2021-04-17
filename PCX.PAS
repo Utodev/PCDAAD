@@ -133,12 +133,16 @@ begin
  LoadPCX := true;
 
  {Now we really paint the picture}
-  
  WaitVRetrace;
  { The palette is located at the last 768 bytes in the file}
  SetVGAPalette(Buffer^[PCXFileSize - 768]);
  { Copy from doble buffer}
- for i:= Y to LastY do Move(ScreenBuffer^[320*i+X], Mem[$A000:320*i+x], ImgWidth);
+ for i:= Y to LastY do 
+ begin
+    j := 320 * i + x;
+    Move(ScreenBuffer^[j], Mem[$A000:j], ImgWidth);
+ end;
+ 
 
 end;
 
