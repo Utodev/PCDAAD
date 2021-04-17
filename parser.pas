@@ -247,6 +247,7 @@ begin
   {$ifdef VGA}
   Sysmess(SM33); {the prompt}
   ReadText(inputBuffer);
+  Windows[ActiveWindow]. LastPauseLine := 0;
   {$else}
   ReadLn(inputBuffer);
   {$endif}

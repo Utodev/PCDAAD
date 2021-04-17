@@ -524,6 +524,7 @@ begin
     getCommand;
     if (inputBuffer<> '') and (Upcase(inputBuffer[1])<>YesResponse) then condactResult := false;
    end; 
+   windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := '';
    done := true;
 end;
@@ -539,6 +540,7 @@ begin
    DoallPTR := 0;
    getCommand;
    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
+   windows[ActiveWindow].LastPauseLine := 0;
    _EXIT;
 end;
 
@@ -564,6 +566,7 @@ var inkey :  word;
 begin
  while not Keypressed do;
  inkey := ReadKey;
+ Windows[ActiveWindow]. LastPauseLine := 0;
  done := true; 
  (* FALTA: SOPORTE DE TIMEOUT EN ANYKEY *)
 end;
@@ -579,6 +582,7 @@ begin
    inputBuffer := '';
    getCommand;
    if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
+   windows[ActiveWindow].LastPauseLine := 0;
    Assign(SaveGame, inputBuffer);
    inputBuffer := '';
    Rewrite(SaveGame, 1);
@@ -614,6 +618,7 @@ begin
    inputBuffer := '';
    getCommand;
    if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
+   windows[ActiveWindow].LastPauseLine := 0;
    Assign(SaveGame, inputBuffer);
    inputBuffer := '';
    Reset(SaveGame, 1);

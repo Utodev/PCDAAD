@@ -21,6 +21,7 @@ type TWindow = packed record
                 currentY, currentX : Word; (* In pixels for internal use*)
                 BackupCurrentY, BackupCurrentX : Word; (* In pixels for internal use*)
                 INK, PAPER, BORDER : byte;
+                LastPauseLine: Word; (* Line where the text stopped for the user to read last *)
                end; 
 
 VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
@@ -212,8 +213,10 @@ begin
 {$ifdef VGA}
    ClearWindow(windows[ActiveWindow].col * 8, windows[ActiveWindow].line * 8,
      windows[ActiveWindow].width * 8, windows[ActiveWindow].height * 8, windows[ActiveWindow].PAPER);
+
    windows[ActiveWindow].currentY := windows[ActiveWindow].line * 8;
    windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
+   windows[ActiveWindow].LastPauseLine := 0;
  {$else}
   startVideoMode;
  {$endif}
@@ -297,7 +300,16 @@ end;
 
 procedure ScrollCurrentWindow;
 var i, baseAddress, baseaddress2, linesToScroll, windowWidthInPixels : word;
+
 begin
+  {0. Check if too much text listed in order to pause if so}
+  if (windows[ActiveWindow].LastPauseLine >= windows[ActiveWindow].height) then 
+  begin
+   while not Keypressed do;
+   i := ReadKey; {Discard key pressed}
+   windows[ActiveWindow].LastPauseLine := 0;
+  end; 
+
   {1. Move window up}
    baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 , (windows[ActiveWindow].line + 1) * 8); 
    linesToScroll := (windows[ActiveWindow].height -1) * 8; 
@@ -382,13 +394,11 @@ begin
   LastPrintedIsCR := false;
 end;
 
-(* FALTA: controlar cuando sale mucho texto de golpe para que se hagan pausas *)
 procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
 var i: integer;
     AWord : String;
 begin
  LastPrintedIsCR := false;
- (*FALTA: Hay que controlar cuando sale mucho texto de golpe para que haga pausas *)
  if not AvoidTranscript then Transcript(Str);
  i :=0 ;
  Aword := '';
@@ -417,6 +427,7 @@ begin
 {$ifdef VGA}
   windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
   windows[ActiveWindow].currentY := windows[ActiveWindow].currentY + 8;
+  windows[ActiveWindow].LastPauseLine := windows[ActiveWindow].LastPauseLine + 1;
   {if out of boundary scroll window}
   if (windows[ActiveWindow].currentY >= (windows[ActiveWindow].line + windows[ActiveWindow].height) * 8 ) then 
    ScrollCurrentWindow;
