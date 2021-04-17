@@ -1,7 +1,12 @@
 {$I SETTINGS.INC}
 (* All the condacts stuff, including implementation of condacts *)
-(* FALTA: todo el funcionamiento del flag 29, 41, 48 y el 49 *)
-(* FALTA hacer que al pulsar la Ñ o letras acentuadas en el input, salga el caracter correcto *)
+
+
+(* PENDING: everything about timeouts (input, More..., ANYKEY, flags 48 and 49, etc.*)
+(* PENDING: flag 41 stream for input implementation)
+(* PEDING:  support of international characters. Spanish characters work for output, but
+ not for input. Other german and portuguese characters don't work for input neither output *)
+
 unit condacts;
 
 interface
@@ -499,7 +504,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _SFX;
 begin
-(* FALTA CONDACTO SFX *)
+ (* PENDING: SFX CONDACT *)
  done := true;
 end;
 
@@ -568,7 +573,6 @@ begin
  inkey := ReadKey;
  Windows[ActiveWindow]. LastPauseLine := 0;
  done := true; 
- (* FALTA: SOPORTE DE TIMEOUT EN ANYKEY *)
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1180,7 +1184,7 @@ begin
 end;
 (*Please notice even with Maluva Enabled additional EXTERN code can be run, it just happens Maluva functions 
   can intervene and don't let execution come to this point, but if not, then standard EXTERN code may run *)
-(* FALTA CONDACTO EXTERN *)
+(* PENDING: EXTERN condact implementation *)
  done := true;
 end;
 
@@ -1392,14 +1396,14 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _MOUSE;
 begin
-(* FALTA CONDACTO MOUSE *)
+(* PENDING: MOUSE condact implementation*)
 done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _GFX;
 begin
-(* FALTA CONDACTO GFX *)
+(* PENDING: GFX condact implementation *)
 done := true;
 end;
 
@@ -1631,7 +1635,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _CALL;
 begin
-(* FALTA CONDACTO CALL *)
+(* PENDING: CALL condact implementation*)
 done := true;
 end;
 

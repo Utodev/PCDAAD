@@ -177,7 +177,8 @@ begin
                   8 , windows[ActiveWindow].PAPER);
     Str := Copy(Str, 1, Length(Str)-1); {backspace}
   end;
-  if keyLO = 9 then {tab} (* Pending: make this work with arrow up/down *)
+  (* Pending: make history of order accessible with arrow up/down instead of tab *)
+  if keyLO = 9 then {tab} 
   begin
    historyStr := getNextOrderHistory; 
    if historyStr<> str then 
@@ -348,7 +349,7 @@ begin
  end;
 end;
 
-(* FALTA SOPORTE DEL UPPER FONT  y de las secuencias #r #k, etc*)
+(* PENDING: upper font support, and escape sequences like #r #k, etc. *)
 procedure WriteChar(c: char);
 var i, j : word;
     baseAddress : word;

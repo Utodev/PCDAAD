@@ -27,8 +27,6 @@ var ScreenBuffer: ^TScreenBuffer;
 
       
 
-(*FALTA HACER ESTO COMPATIBLE CON 8086 , PORQUE $G+ es 286 *)
-
 procedure SetVGAPalette(var Palette); assembler;
 asm
  LES DX, [Palette]

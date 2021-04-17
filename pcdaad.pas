@@ -9,11 +9,10 @@
 
     Greetings: 
     + to Natalia Pujol for her help with BEEP condact
+    + to Rogerio Biondi and Daniel Carbonell, the very first alpha testers of this interpreter
 *)
 
 
-(* FALTA HACER que el flag  62 tenga un modo nuevo  para VGA 256 #define fScreenMode   
-    62     ; 2=Text, 4=CGA, 13=EGA, 141=VGA *)
 program PCDAAD;
 
 uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log, pcx, maluva;
@@ -97,7 +96,12 @@ begin
   EntryPTR := EntryPTR + 4;
   goto RunEntry;
  end; 
- 
+
+ {These flags should have specific values that code can use to determine the machine running the DDB
+  so they are being set after every condact to make sure even when modified, their value is restored} 
+ SetFlag(FSCREENMODE, 13 + 128); {Makes sure flag 62 has proper value: mode 13 (VGA or EGA) and bit 7 set}
+ SetFlag(FMOUSE, 128); {Makes sure flag 29 has "graphics" available set, and the rest is empty}
+
  {Let's run the condact}
  if (opcode AND $80 <> 0) then
  begin
@@ -206,10 +210,8 @@ begin
     resetProcesses;
     if loadPCX(0,0,320,200, 65535) then  {Load intro screen if present}
     begin
-      TranscriptPas('Loading screen shown'#13);
       while not Keypressed do;
       ReadKey;
-     TranscriptPas('Key pressed'#13); 
     end; 
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.
