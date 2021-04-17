@@ -58,7 +58,7 @@ function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;
 
 implementation
 
-uses flags, ddb;
+uses flags, ddb, log, utils;
 
 var objLocationsRAMSAVE: array [0..NUM_OBJECTS-1] of byte;
 
@@ -132,16 +132,19 @@ end;
 procedure SetReferencedObject(objno: TFlagtype);
 begin
     setFlag(FREFOBJ, objno);
-    setFlag(FREFOBJLOC, getObjectLocation(objno));
-    setFlag(FREFOBJWEIGHT, getByte(DDBHeader.objWeightContWearPos + objno) and $3F);
-    if isObjectContainer(objno) then setFlag(FREFOBJCONTAINER, 128) 
-                                else setFlag(FREFOBJCONTAINER, 0);
-    if isObjectWearable(objno) then setFlag(FREFOBJWEARABLE, 128) 
-                               else setFlag(FREFOBJWEARABLE, 0);
-    setFlag(FREFOBJATTR2, getByte(DDBHeader.objAttributesPos + objno * 2));
-    setFlag(FREFOBJATTR1, getByte(DDBHeader.objAttributesPos + objno * 2 + 1));
-    setFlag(FNOUN, getByte(DDBHeader.objNamePos + 2 * objno));
-    setFlag(FADJECT, getByte(DDBHeader.objNamePos + 2 * objno + 1));
+    if (objno <> NO_OBJECT) THEN
+    BEGIN
+        setFlag(FREFOBJLOC, getObjectLocation(objno));
+        setFlag(FREFOBJWEIGHT, getByte(DDBHeader.objWeightContWearPos + objno) and $3F);
+        if isObjectContainer(objno) then setFlag(FREFOBJCONTAINER, 128) 
+                                    else setFlag(FREFOBJCONTAINER, 0);
+        if isObjectWearable(objno) then setFlag(FREFOBJWEARABLE, 128) 
+                                else setFlag(FREFOBJWEARABLE, 0);
+        setFlag(FREFOBJATTR2, getByte(DDBHeader.objAttributesPos + objno * 2));
+        setFlag(FREFOBJATTR1, getByte(DDBHeader.objAttributesPos + objno * 2 + 1));
+        setFlag(FNOUN, getByte(DDBHeader.objNamePos + 2 * objno));
+        setFlag(FADJECT, getByte(DDBHeader.objNamePos + 2 * objno + 1));
+    END;
 end;
 
 function isObjectWearable(objno:TLocationType):boolean;
@@ -159,7 +162,7 @@ var  i: integer;
      objectNoun : TFlagtype;
      objectAdject : TFlagtype;
 begin
-    for i := 0 to NUM_OBJECTS-1 do
+    for i := 0 to DDBHeader.numObj -1 do
      { if location = MAX_LOCATION, any location is valid} 
      if (location=MAX_LOCATION) or (getObjectLocation(i)=location) then
      begin
@@ -174,7 +177,6 @@ begin
          end;
      end;
      getObjectByVocabularyAtLocation := MAX_OBJECT;
-
 end;
 
 function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;

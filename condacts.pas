@@ -1,7 +1,7 @@
 {$I SETTINGS.INC}
 (* All the condacts stuff, including implementation of condacts *)
-
 (* FALTA: todo el funcionamiento del flag 29, 41, 48 y el 49 *)
+(* FALTA hacer que al pulsar la Ñ o letras acentuadas en el input, salga el caracter correcto *)
 unit condacts;
 
 interface
@@ -210,7 +210,7 @@ const condactTable : TCondactTable = (
 (condactName: 'SYSMESS'; condactRoutine: _SYSMESS; numParams: 1), {  54 $36}
 (condactName: 'ISAT   '; condactRoutine: _ISAT   ; numParams: 2), {  55 $37}
 (condactName: 'SETCO  '; condactRoutine: _SETCO  ; numParams: 1), {  56 $38}
-(condactName: 'SPACE  '; condactRoutine: _SPACE  ; numParams: 1), {  57 $39}
+(condactName: 'SPACE  '; condactRoutine: _SPACE  ; numParams: 0), {  57 $39}
 (condactName: 'HASAT  '; condactRoutine: _HASAT  ; numParams: 1), {  58 $3A}
 (condactName: 'HASNAT '; condactRoutine: _HASNAT ; numParams: 1), {  59 $3B}
 (condactName: 'LISTOBJ'; condactRoutine: _LISTOBJ; numParams: 0), {  60 $3C}
@@ -1620,7 +1620,7 @@ begin
         { getObjectByVocabularyAtLocation searchs at any location if location = MAX_LOCATION}
         objno := getObjectByVocabularyAtLocation(currentNoun, currentAdjective, MAX_LOCATION);
         if (objno <> NO_OBJECT) then SetReferencedObject(objno)
-        else SetReferencedObject(MAX_LOCATION);
+        else SetReferencedObject(NO_OBJECT);
     end
    end;
  end;
