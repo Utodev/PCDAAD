@@ -152,13 +152,14 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-nolog] [-nomaluva] [-i<orders file>] [-h]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-nolog] [-nomaluva] [-i<orders file>] [-d] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
   WriteLn('-nolog : don''t dump transcript on PCDAAD.LOG');
   WriteLn('-nomaluva : turns off Maluva extension emulation');
   WriteLn('-i<orders file> : take player orders from text file until exhausted');
-  WriteLn('-h : show this help');
+  WriteLn('-d : enable diagnostics');
+  WriteLn('-h : shows this help');
   Halt(0);
 end;
 
@@ -169,6 +170,7 @@ begin
  begin
   if StrToUpper(ParamStr(i)) = '-H' then Help
   else if StrToUpper(ParamStr(i)) = '-NOLOG' then TranscriptDisabled := true
+  else if StrToUpper(ParamStr(i)) = '-D' then DiagnosticsEnabled := true
   else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
   begin

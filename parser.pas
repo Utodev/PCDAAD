@@ -11,7 +11,7 @@ const WORD_LENGHT = 5;
       SPANISH_TERMINATIONS : array [0..3] of String = ('LO','LA','LOS','LAS');
       {$endif}
 	    MAX_CONJUNCTIONS = 256;
-      NUM_HISTORY_ORDERS = 20;
+      NUM_HISTORY_ORDERS = 10;
 
 type TWord = String[WORD_LENGHT];
      TCompleteWord = String[COMPLETE_WORD_LENGHT];
@@ -31,6 +31,7 @@ var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     useOrderInputFile: Boolean;
     orderInputFile: text;
     orderInputFileName: string;
+    DiagnosticsEnabled: boolean;
 
 {Returns the code for a specific word of a specific type, or any}
 {type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
@@ -67,7 +68,7 @@ procedure CloseOrderFile;
 
 implementation
 
-uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc, log;
+uses ddb, flags, graph, errors, utils, messages, strings, condacts, ibmpc, log, objects;
 
 var PreviousVerb: TFlagType;
     playerOrderQuoted : string;
@@ -216,22 +217,69 @@ begin
  if ((i mod 8) <> 0) then CarriageReturn;
 end;
 
+procedure DiagObjDump;
+var i: TFlagType;
+    value : TFlagType;
+    S: String;
+    workPchar : array[0..10] of char;
+begin
+ for i := 0 to DDBHeader.numObj - 1 do
+ begin
+  value := getObjectLocation(i);
+  S := strpad(IntToStr(i),' ',3) + ':'  + IntToStr(Value) + ' ';
+  StrPCopy(workPchar, S);
+  WriteText(workPchar, true);
+  if ((i mod 8) = 0) then CarriageReturn;
+ end;
+ if ((i mod 8) <> 0) then CarriageReturn;
+end;
+
+procedure DiagHelp;
+begin
+  WriteText('+f to list all flags' + #13, false);
+  WriteText('+o to list all object locations' + #13, false);
+  WriteText('+f<flagno> to get flag value' + #13, false);
+  WriteText('+f<flagno>=<value> to set flag value' + #13, false);
+  WriteText('+ or +h to show this help' + #13, false);
+end;
+
 procedure Diagnostics(DiagStr: String);
-var value, code : integer;
+var value, value2, code : integer;
     valstr : array[0..2] of char;
 begin
- if (DiagStr = '+') then DiagFlagDump
- else
- begin
-  Val(Copy(DiagStr, 2, 255), value, code);
-  if (code=0) and (value>=0) and (value<=high(TFlagType)) then 
-  begin
-    value := getFlag(value);
-    StrPCopy(valstr, inttostr(value) + #10);
-    WriteText(valstr, true);
-  end 
-  else WriteText('Invalid diagnostics input.', true);
- end; 
+ if ((DiagStr = '+') or (DiagStr='+h')) then DiagHelp
+ else if (DiagStr ='+f') then DiagFlagDump
+ else if (DiagStr ='+o') then DiagObjDump
+ else if (Copy(DiagStr, 1, 2) = '+f')
+ then 
+ begin 
+  if (Pos('=', DiagStr)>0) then
+  begin (* set flag value *)
+    Val(Copy(DiagStr, 3, Pos('=', DiagStr) - 3), value, code);
+    if (code=0) and (value>=0) and (value<=high(TFlagType)) then 
+    begin
+      Val(Copy(DiagStr, Pos('=', DiagStr) + 1, 255), value2, code);
+      if (code=0) and (value2>=0) and (value2<=MAX_FLAG_VALUE) then 
+      begin
+        SetFlag(value, value2);
+        StrPCopy(valstr, '[' +IntToStr(value) + '] <== ' + inttostr(value2) + #10);
+        WriteText(valstr, false);
+      end else WriteText('Invalid flag value.'#10, true);
+    end  else WriteText('Invalid flag number.'#10, true);
+  end
+  else 
+  begin (* just get flag value *)
+    Val(Copy(DiagStr, 3, 255), value, code);
+    if (code=0) and (value>=0) and (value<=high(TFlagType)) then 
+    begin
+      value := getFlag(value);
+      StrPCopy(valstr, inttostr(value) + #13);
+      WriteText(valstr, false);
+    end else WriteText('Invalid flag number.'#13, true);
+  end;
+ end (* if starts by +f *)
+ else WriteText('Invalid diagnostics command.'#13, true);
+
 end;
 
 procedure getCommand;
@@ -259,8 +307,8 @@ procedure getPlayerOrders;
 var i : word;
 begin
  repeat
- getCommand;
-  if (Length(inputBuffer)>0) and (inputBuffer[1]='+') then
+  getCommand;
+  if (Length(inputBuffer)>0) and (inputBuffer[1]='+') and DiagnosticsEnabled then
   begin
     Diagnostics(inputBuffer);
     inputBuffer := '';
@@ -480,4 +528,5 @@ begin
  inputHistoryPointer := 0;
  for i := 0 to 255 do KnownVocabulary[i]:='';
  useOrderInputFile := false;
+ DiagnosticsEnabled := false;
 end.
