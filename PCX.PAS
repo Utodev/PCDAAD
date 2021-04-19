@@ -7,6 +7,8 @@ UNIT PCX;
 
 interface
 
+CONST LINE_WIDTH = 320;
+
 {Loads PCX file into double buffer}
 function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
 {This function really copies the buffer into the screen if option = 0, and clears the are otherwise}
@@ -124,7 +126,7 @@ begin
    Dec(Reps); {Reps := Reps -1;}
    {Now we paint each pixel only if it fits within the window, otherwise, just skip}
    if (CurrentX -  X  < width) then
-     ScreenBuffer^[320 * CurrentY + CurrentX] := Color;
+     ScreenBuffer^[LINE_WIDTH * CurrentY + CurrentX] := Color;
    Inc(CurrentX); {CurrentX := CurrentX + 1;}
    if (CurrentX  > LastX) then
    begin
@@ -161,10 +163,11 @@ begin
     { The palette is located at the last 768 bytes in the file}
     SetVGAPalette(PaletteBuffer);
     { Copy from doble buffer}
+    offset := LINE_WIDTH * LatestPCXY + LatestPCXX;
     for i:= LatestPCXY to LatestPCXY + LatestPCXHeight - 1 do
     begin
-        offset := 320 * i + LatestPCXX;
         Move(ScreenBuffer^[offset], Mem[$A000:offset], LatestPCXWidth);
+        Inc(offset,LINE_WIDTH);
     end;
    end 
  end
