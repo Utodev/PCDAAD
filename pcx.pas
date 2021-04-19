@@ -54,6 +54,8 @@ var FPCXFile : file;
     Buffer : ^TFileBuffer;
     
 begin
+
+ 
  if (ImageNumber = 65535) then ImageFileName := 'DAAD'
  else
  begin
@@ -70,6 +72,7 @@ begin
   Reset(FPCXFile, 1);
   if (ioresult <> 0) then
   begin
+   LatestPCXFileSize := 0;
    LoadPCX := false;
    exit;
   end; 
@@ -78,6 +81,7 @@ begin
  PCXFileSize := FileSize(FPCXFile);
  if (PCXFileSize>65535) then 
  begin
+  LatestPCXFileSize := 0;
   LoadPCX := false;
   exit;
  end; 
@@ -89,10 +93,15 @@ begin
  Aux := Buffer^[PCXFileSize - 769];
  if (Aux <> $0C) then  {Mark of 256 color palette}
  begin
-  LoadPCX := false;
   FreeMem(Buffer,PCXFileSize);
+  LatestPCXFileSize := 0;
+  LoadPCX := false;
   exit;
  end; 
+
+ {Clear the image buffer}
+ FillChar(ScreenBuffer^, Sizeof(TScreenBuffer), 0);
+
 
  { Get the real dimension of the file}
  ImgWidth := Buffer^[8] + 256 * Buffer^[9]  - (Buffer^[4] + 256 *Buffer^[5]) + 1;
@@ -138,16 +147,13 @@ begin
  Close(FPCXFile);
  FreeMem(Buffer,PCXFileSize);
  Move(Buffer^[PCXFileSize-768], PaletteBuffer, 768);
- LoadPCX := true;
 
  LatestPCXFileSize := PCXFileSize;
  LatestPCXX := X;
  LatestPCXY := Y;
  LatestPCXHeight := Height;
  LatestPCXWidth := Width;
-
- 
-
+ LoadPCX := true;
 end;
 
 
@@ -156,6 +162,8 @@ var i, offset : Word;
 begin
  if (option=0) then
  begin
+
+
   if (LatestPCXFileSize <> 0) then
   begin
     {Now we really paint the picture}
@@ -164,7 +172,7 @@ begin
     SetVGAPalette(PaletteBuffer);
     { Copy from doble buffer}
     offset := LINE_WIDTH * LatestPCXY + LatestPCXX;
-    for i:= LatestPCXY to LatestPCXY + LatestPCXHeight - 1 do
+    for i:= 0 to LatestPCXHeight - 1 do
     begin
         Move(ScreenBuffer^[offset], Mem[$A000:offset], LatestPCXWidth);
         Inc(offset,LINE_WIDTH);

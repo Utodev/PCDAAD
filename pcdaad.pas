@@ -210,10 +210,12 @@ begin
     resetWindows;     {clears all windows setup}
     resetStack;
     resetProcesses;
-    if loadPCX(0,0,320,200, 65535) then  {Load intro screen if present}
+    if loadPCX(0,0,LINE_WIDTH,200, 65535) then  {Load intro screen if present}
     begin
+      DisplayPCX(0); {Paint the picture}
       while not Keypressed do;
       ReadKey;
+      DisplayPCX(1); {Clear the PCX Window}
     end; 
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.
