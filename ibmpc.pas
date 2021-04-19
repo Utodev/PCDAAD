@@ -278,8 +278,6 @@ var i : word;
 begin
  for i := 0 to Height - 1 do 
   FillChar(mem[$a000:320*(y+i)+X], Width, Paper);
-  TranscriptPas('Clearing X:' +IntToStr(X) + ' Y:' + IntToStr(y) + ' W:' + 
-  IntToStr(Width) + ' H:' + IntToStr(height) +  ' P:' + IntToStr(paper) + #10 );
 end;
 
 procedure ClearCurrentWindow;
@@ -422,7 +420,6 @@ begin
  end;
 end;
 
-(* PENDING: upper font support, and escape sequences like #r #k, etc. *)
 procedure WriteChar(c: char);
 var i, j : word;
     baseAddress : word;
