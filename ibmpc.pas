@@ -27,6 +27,7 @@ type TWindow = packed record
 VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
     LastPrintedIsCR : boolean;
+    CharsetShift : Byte;
 
 procedure Delay(seconds: real);
 procedure resetWindows;
@@ -136,15 +137,83 @@ asm
  out 61h,al
 end;
 
+function PatchStr(Str: String): String;
+var i: word;
+    FinalStr: String;
+begin
+ FinalStr :='';
+ for i:= 1 to Length(Str) do 
+ case Str[i] of
+   { Original DAAD characters }
+   '¦': FinalStr := FinalStr + #16;
+   '­': FinalStr := FinalStr + #17;
+   '¨': FinalStr := FinalStr + #18;
+   '®': FinalStr := FinalStr + #19;
+   '¯': FinalStr := FinalStr + #20;
+   ' ': FinalStr := FinalStr + #21;
+   '‚': FinalStr := FinalStr + #22;
+   '¡': FinalStr := FinalStr + #23;
+   '¢': FinalStr := FinalStr + #24;
+   '£': FinalStr := FinalStr + #25;
+   '¤': FinalStr := FinalStr + #26;
+   '¥': FinalStr := FinalStr + #27;
+   '‡': FinalStr := FinalStr + #28;
+   '€': FinalStr := FinalStr + #29;
+   '': FinalStr := FinalStr + #30;
+   '': FinalStr := FinalStr + #31;
+   { New characters}
+   '…': FinalStr := FinalStr + #$0e#16#$0f;
+   '?': FinalStr := FinalStr + #$0e#17#$0f;
+   '„': FinalStr := FinalStr + #$0e#18#$0f;
+   'ƒ': FinalStr := FinalStr + #$0e#19#$0f;
 
-function StrLenInPixels(var Str: String): word;
+   'Š': FinalStr := FinalStr + #$0e#20#$0f;
+   '‰': FinalStr := FinalStr + #$0e#21#$0f;
+   'ˆ': FinalStr := FinalStr + #$0e#22#$0f;
+
+   '': FinalStr := FinalStr + #$0e#23#$0f;
+   '‹': FinalStr := FinalStr + #$0e#24#$0f;
+   'Œ': FinalStr := FinalStr + #$0e#25#$0f;
+
+   '•': FinalStr := FinalStr + #$0e#26#$0f;
+   '?': FinalStr := FinalStr + #$0e#27#$0f;
+   '”': FinalStr := FinalStr + #$0e#28#$0f;
+   '“': FinalStr := FinalStr + #$0e#29#$0f;
+
+   '—': FinalStr := FinalStr + #$0e#30#$0f;
+   '–': FinalStr := FinalStr + #$0e#31#$0f;
+
+   'á': FinalStr := FinalStr + #$0e#35#$0f;
+    else FinalStr := FinalStr + Str[i];
+ end;
+ PatchStr := FinalStr;
+end;
+
+
+function StrLenInPixels(Str: String): word;
 var i : byte;
     PixelCount : Word;
+    ShiftStatus: Byte;
 begin
  PixelCount := 0;
- for i:= 1 to Length(Str) do PixelCount :=  PixelCount + charsetWidth[ord(Str[i])];
+ shiftStatus := CharsetShift;
+ 
+ (* To properly check length, we need to make sure we use the proper characters *)
+ Str := PatchStr(Str); 
+
+ for i:= 1 to Length(Str) do 
+ begin
+  case  ord(Str[i]) of 
+   $0B: PixelCount := PixelCount + 8;  {Forced blank space}
+   $0E: ShiftStatus := 128;
+   $0F: ShiftStatus := 0;
+   $10..$FF : PixelCount :=  PixelCount + charsetWidth[(ord(Str[i]) + ShiftStatus) mod 256]; {All other printable characters}
+  end;
+ end;   
  StrLenInPixels := PixelCount;
 end;
+
+
 
 procedure ReadText(var Str: String);
 var key : word; 
@@ -152,6 +221,7 @@ var key : word;
     SaveX, SaveY : Word;
     Xlimit : Word;
     historyStr : String;
+    PatchedStr : String; (* Contains the String with international characters already patched *)
 begin
  Str := '';
  SaveX := windows[ActiveWindow].currentX;
@@ -166,14 +236,14 @@ begin
    if (keyLO>=32) and (keyLO<=255) then 
    begin
     {Avoid input exceeding the current line} 
-    if (StrLenInPixels(Str) + charsetWidth[keyLo] + SaveX  < Xlimit) and (length(Str)<255) 
+    if (StrLenInPixels(Str) + StrLenInPixels(char(keyLo)+'') + SaveX  < Xlimit) and (length(Str)<255) 
         then Str := Str + chr(keyLo) {printable characters}
    end;
 
   if (keyLO = 8) and (Str<>'') then 
   begin
-    ClearWindow(SaveX + StrLenInPixels(Str) - charsetWidth[byte(Str[Length(Str)])], 
-                  SaveY, charsetWidth[byte(Str[Length(Str)])], 
+    ClearWindow(SaveX + StrLenInPixels(Str) - StrLenInPixels(''+Str[Length(Str)]), 
+                  SaveY, StrLenInPixels(''+Str[Length(Str)]), 
                   8 , windows[ActiveWindow].PAPER);
     Str := Copy(Str, 1, Length(Str)-1); {backspace}
   end;
@@ -190,11 +260,11 @@ begin
 
   windows[ActiveWindow].currentX := SaveX;
   windows[ActiveWindow].currentY := SaveY;
-  WriteTextPas(Str, true); {true -> Avoid transcript}
+  PatchedStr := PatchStr(Str);
+  WriteTextPas(PatchedStr, false); {false -> Don't avoid transcript}
  until (keyLO = 13) and (Str<>''); {Intro and not empty}
  CarriageReturn;
  addToOrderHistory(Str);
- TranscriptPas(Str + #13#10);
 end;
 
 function getVGAAddr(X, Y: word): word;
@@ -357,27 +427,36 @@ var i, j : word;
     width :  byte;
 begin
  {$ifdef VGA}
- baseAddress := getVGAAddr(windows[ActiveWindow].currentX , windows[ActiveWindow].currentY);
- width := charsetWidth[byte(c)];
- if (windows[ActiveWindow].currentX + width >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then 
- begin
-   NextChar(width);
-   WriteChar(c);
- end
- else
- begin
-    for i := 0 to 7 do
+ case byte(c) of
+  $0E : CharsetShift := 128; {#g}
+  $0F : CharsetShift := 0; {#t}
+  $0B : ClearCurrentWindow; {#b}
+  $0C : begin while not keypressed do; i := Readkey; end; {#k}
+  else
+  begin
+    baseAddress := getVGAAddr(windows[ActiveWindow].currentX , windows[ActiveWindow].currentY);
+    width := charsetWidth[(byte(c) + CharsetShift) MOD 256];
+    if (windows[ActiveWindow].currentX + width >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then 
     begin
-    scan := charsetData[ord(c) * 8 + i];  {Get definition for this scanline}
-    scan := scan shr (8-width);
-    for j := 0 to width-1 do
+      NextChar(width);
+      WriteChar(c);
+    end
+    else
     begin
-      if (scan and (1 shl (width - j)) <> 0) then mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].INK
-                                             else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
+        for i := 0 to 7 do
+        begin
+        scan := charsetData[(ord(c) + CharsetShift) MOD 256 * 8 + i];  {Get definition for this scanline}
+        scan := scan shr (8-width);
+        for j := 0 to width-1 do
+        begin
+          if (scan and (1 shl (width - j)) <> 0) then mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].INK
+                                                else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
+        end;
+        end;
+    NextChar(width); {Move pointer to next printing position}
     end;
-    end;
- NextChar(width); {Move pointer to next printing position}
- end;
+   end
+ end; {case of}
  {$else}
  Write(C);
  {$endif}
@@ -455,4 +534,5 @@ end;
 
 begin
  LastPrintedIsCR := false;
+ CharsetShift := 0;
 end.
