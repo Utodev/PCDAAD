@@ -60,7 +60,7 @@ begin
 end;
 
 begin
-    TranscriptDisabled := false;
+    TranscriptDisabled := true;
     (* Check to never do transcript on floppy disk *)
     TranscriptUnit := ParamStr(0);
     TranscriptUnit :=  Upcase(TranscriptUnit[1]);
