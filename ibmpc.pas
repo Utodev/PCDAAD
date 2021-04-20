@@ -23,7 +23,9 @@ VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
     LastPrintedIsCR : boolean;
     CharsetShift : Byte;
+    
 
+function Extern(A, B: Byte): boolean;
 procedure Delay(seconds: real);
 procedure resetWindows;
 procedure startVideoMode;
@@ -57,7 +59,9 @@ procedure WaitVRetrace;
 
 implementation
 
-uses strings, charset, crt, parser, utils, log;
+uses strings, charset, crt, parser, utils, log, ddb, objects, flags;
+
+var ExternPTR: Pointer;
 
 function getTicks: word; Assembler;
 asm
@@ -511,10 +515,60 @@ asm
   @r2: in al,dx; test al,8; jz @r2
 end;
 
+procedure InitializeExtern;
+var SizeExtern : longint;
+    readBytes: word;
+    F: FILE;
+    dir, des_dir, seg_dir:longint;
+begin
+ Assign(F,'DAAD.EXT');
+ Reset(F,1);
+ if IOResult=0 then
+ begin
+  TranscriptPas('Loading extern file...'#13);
+   SizeExtern:=system.FileSize(F)+20;
+   getmem(ExternPTR,SizeExtern);
+   dir:=longint(ExternPTR);
+   des_dir:=dir AND $0000FFFF;
+   seg_dir:=dir AND $FFFF0000;
+   des_dir:=(des_dir+16) SHR 4;
+   ExternPTR:=pointer(seg_dir+(des_dir SHL 16));
+   BlockRead(F,ExternPTR^,SizeExtern-20,readBytes);
+   Close(F);
+ end else TranscriptPas('Failed to load DAAD.EXT'#13);
+end;   
+
+
+function Extern(A, B: Byte): boolean;
+var PObj, Pflags: Pointer;
+begin
+ Extern := false;
+ if ExternPTR = nil  THEN InitializeExtern;
+ if ExternPTR = nil then exit; {No Extern to load}
+ TranscriptPas('Extern Execution...'#13);
+ {$F+}   {Force Far calls}
+ PObj := @objLocations;
+ PFlags := @flagsArray;
+ Extern := true;
+ asm
+    PUSH DS
+    MOV AL,A  {Tengo dudas des i al hacer los LDS de tres cosas al 
+    final DS apunta a a vete a saber donde porque no están los tres en el mismo segmento}
+    MOV AH, B   {además, podriamos prescindir del DDBRAM porque si quiren lo pueden cargar desde el extern}
+    LDS BX, [PFlags] {Pointer to the flags}
+    LDS CX, [PObj]   {Pointer to object locations}
+    CALL ExternPTR
+    POP DS
+ end;
+{$F-}
+ TranscriptPas('Extern Completed...'#13);
+end;
+
 
 begin
  LastPrintedIsCR := false;
  CharsetShift := 0;
  ActiveWindow := 0;
  resetWindows;
+ ExternPTR := nil;
 end.

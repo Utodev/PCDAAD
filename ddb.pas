@@ -52,11 +52,12 @@ procedure MoveFromDDB(var buffer; offset, size: word);
 function IsSpanish: boolean;
 
 
+var DDBRAM : pointer;
+
 implementation
 
 uses utils;
 
-var DDBRAM : pointer;
     
 
 (* Loads DDB file "filename" and returns true if it is present and size <=64K *)
