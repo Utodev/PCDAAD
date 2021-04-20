@@ -7,13 +7,8 @@ unit ibmpc;
 interface
 
 const NUM_WINDOWS = 8;
-{$ifdef VGA}
       NUM_COLUMNS = 40; {40 colums of 8x8, but proportional fonts will do better}
       NUM_LINES=25;
-{$else}
-      NUM_COLUMNS = 80;
-      NUM_LINES=25;
-{$endif}
 
 type TWindow = packed record
                 line, col, height, width: Word; (* In characters as DAAD understands it*)
@@ -282,35 +277,25 @@ end;
 
 procedure ClearCurrentWindow;
 begin
-{$ifdef VGA}
    ClearWindow(windows[ActiveWindow].col * 8, windows[ActiveWindow].line * 8,
      windows[ActiveWindow].width * 8, windows[ActiveWindow].height * 8, windows[ActiveWindow].PAPER);
 
    windows[ActiveWindow].currentY := windows[ActiveWindow].line * 8;
    windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
    windows[ActiveWindow].LastPauseLine := 0;
- {$else}
-  startVideoMode;
- {$endif}
 end;
 
 PROCEDURE startVideoMode; Assembler;
 ASM
-{$ifdef VGA}
  MOV AX, $13
-{$else }
- MOV AX, $03
-{$endif}
  INT $10
 END;
 
 
 PROCEDURE terminateVideoMode; Assembler;
 ASM
-{$ifdef VGA}
  MOV AX, $03
  INT $10
-{$endif}
 END;
 
 procedure ReconfigureWindow;
@@ -426,7 +411,6 @@ var i, j : word;
     scan: byte;
     width :  byte;
 begin
- {$ifdef VGA}
  case byte(c) of
   $0E : CharsetShift := 128; {#g}
   $0F : CharsetShift := 0; {#t}
@@ -457,9 +441,6 @@ begin
     end;
    end
  end; {case of}
- {$else}
- Write(C);
- {$endif}
 end;
 
 procedure WriteWord(Str:String);
@@ -504,17 +485,13 @@ end;
 
 procedure CarriageReturn;
 begin
-{$ifdef VGA}
   windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
   windows[ActiveWindow].currentY := windows[ActiveWindow].currentY + 8;
   windows[ActiveWindow].LastPauseLine := windows[ActiveWindow].LastPauseLine + 1;
   {if out of boundary scroll window}
   if (windows[ActiveWindow].currentY >= (windows[ActiveWindow].line + windows[ActiveWindow].height) * 8 ) then 
    ScrollCurrentWindow;
-{$else}
-WriteText(''#10);
-{$endif}
-LastPrintedIsCR := true;
+  LastPrintedIsCR := true;
 end;
 
 procedure WriteTextPas(Str: String; AvoidTranscript: boolean);

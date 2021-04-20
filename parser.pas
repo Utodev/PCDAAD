@@ -290,13 +290,9 @@ begin
  end;
  if inputBuffer = '' then
  begin
-  {$ifdef VGA}
   Sysmess(SM33); {the prompt}
   ReadText(inputBuffer);
   Windows[ActiveWindow]. LastPauseLine := 0;
-  {$else}
-  ReadLn(inputBuffer);
-  {$endif}
  end
  else WriteTextPas(#13'>' + inputBuffer + #13, false);
 end;

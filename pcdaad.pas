@@ -133,9 +133,6 @@ begin
  
  {run condact}
  TranscriptPas('{'+DebugStr+'}'+#13);
- {$ifdef DEBUG}
- (*WriteTextPas('{'+DebugStr+'}'+#13, true);}*)
- {$endif}
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}
  {If condact execution failed, go to next entry}
@@ -193,9 +190,7 @@ begin
     ddbFilename := 'DAAD.DDB';
     ParseParameters;
     if (not loadDDB(ddbFilename)) then Error(1, 'DDB file not found or invalid.');
-    {$ifdef VGA}
     if (not loadCharset('DAAD.FNT')) then Error(6, 'PCDAAD.FNT file not found or invalid.');
-    {$endif}
 
     InitTranscript('pcdaad.log');
     TranscriptPas('PCDAAD Log ' + VERSION + #13);
@@ -205,7 +200,7 @@ begin
 
     if DiagnosticsEnabled then TranscriptPas('Diagnostics enabled.'#13);
     if MaluvaDisabled then TranscriptPas('Maluva emulation disabled.'#13);
-    if useOrderInputFile then TranscriptPas('Order Input file: '+)orderInputFileName+#13;
+    if useOrderInputFile then TranscriptPas('Order Input file: '+orderInputFileName+#13);
                      
     
     InitOrderFile;
