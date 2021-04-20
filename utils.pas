@@ -13,6 +13,7 @@ interface
 function inttostr(value: longint): string;
 function intToHex(value:Word): String;
 function strpad(str: string; filler: string; minLength:byte):string;
+function trim(Str: String) : String;
 {Just as freepascal StringReplace, only if will enter and endless lookp if Origin is a substring of Dest}
 function StringReplace(Str:String; Origin, Dest: String): String;
 function StrToUpper(Str: String) :String;
@@ -72,6 +73,13 @@ begin
 {$ifdef DEBUG}
     WriteLn(Str);
 {$endif}
+end;
+
+function trim(Str: String) : String;
+begin
+ while (Str<>'') and (Str[1]=' ') do Str := Copy(Str, 2, 255);
+ while (Str<>'') and (Str[Length(Str)]=' ') do Str := Copy(Str, 1, Length(Str)-1);
+ trim := Str;
 end;
 
 

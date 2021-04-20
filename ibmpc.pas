@@ -262,7 +262,7 @@ begin
   windows[ActiveWindow].currentX := SaveX;
   windows[ActiveWindow].currentY := SaveY;
   PatchedStr := PatchStr(Str);
-  WriteTextPas(PatchedStr, false); {false -> Don't avoid transcript}
+  WriteTextPas(PatchedStr, true); {true -> avoid transcript}
  until (keyLO = 13) and (Str<>''); {Intro and not empty}
  CarriageReturn;
  addToOrderHistory(Str);

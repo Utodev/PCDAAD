@@ -12,7 +12,7 @@
     + to Rogerio Biondi and Daniel Carbonell, the very first alpha testers of this interpreter
 *)
 
-
+(* Pending: no funciona concatenar ordenes *)
 program PCDAAD;
 
 uses strings, global, ddb, errors, stack, condacts, flags, objects, graph, utils, parser, ibmpc, charset, log, pcx, maluva;

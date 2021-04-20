@@ -121,7 +121,7 @@ begin
 			{way is how it should be found in player orders.}
 			if (ConjunctionsCount =  MAX_CONJUNCTIONS) 
 			  then Error(5,'Too many conjunctions. Maximum accepted is ' + inttostr(MAX_CONJUNCTIONS));
-			Conjunctions[ConjunctionsCount] := ' ' + AVocWord + ' ';
+			Conjunctions[ConjunctionsCount] := ' ' + StrToUpper(AVocWord) + ' ';
 			ConjunctionsCount := ConjunctionsCount + 1;
 	end;
 	Ptr := Ptr + 7; {point to next word}
@@ -314,10 +314,11 @@ begin
     inputBuffer := '';
   end;
  until inputBuffer<>'';
+ TranscriptPas(inputBuffer);
+ inputBuffer := StrToUpper(inputBuffer);
  for i:= 0 to ConjunctionsCount - 1 do
   while (Pos(Conjunctions[i], inputBuffer)>0) do
     inputBuffer := StringReplace(inputBuffer, Conjunctions[i], '.');
- inputBuffer := StrToUpper(inputBuffer);
 end; 
 
 
@@ -362,6 +363,7 @@ begin
     if (Pos('"', playerOrderQuoted)>0) then playerOrderQuoted := Copy(playerOrderQuoted, 1, Pos('"', playerOrderQuoted) - 1);
     playerOrder := Copy(playerOrder, 1, Pos('"', playerOrder) - 1);
     {Because orginal interpreters make a difference betwee 'SAY JOHN'  and 'SAY JOHN ""'}
+    playerOrderQuoted := trim(playerOrderQuoted);
     if (playerOrderQuoted='') then playerOrderQuoted := ' '; 
   end
   else  playerOrderQuoted := '';
@@ -369,7 +371,6 @@ end
 else 
 begin
  playerOrder := playerOrderQuoted; (* PARSE 1, get order from a quoted sentence in the current LS *)
- 
  if (playerOrder = '')
  then
  begin
@@ -377,6 +378,9 @@ begin
   exit;
  end;
 end; 
+
+
+ playerOrder := trim(playerOrder);
 
  orderWordCount := 0;
  {remove double spaces}
