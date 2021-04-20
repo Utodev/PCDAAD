@@ -429,10 +429,8 @@ end;
    {If Spanish, check pronominal terminations}
    if IsSpanish then 
     begin
-      TranscriptPas('Entering LO check 1'#13);
       if (AWordRecord.AType = VOC_VERB) and (not PronounInSentence) then
       begin
-        TranscriptPas('Entering LO check 2'#13);
         j := 0;
         while (j<4) and (not PronounInSentence) do
         begin
