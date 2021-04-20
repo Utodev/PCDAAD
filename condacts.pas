@@ -544,6 +544,7 @@ begin
    getCommand;
    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
    windows[ActiveWindow].LastPauseLine := 0;
+   inputBuffer := ''; {Make sure inputBuffer is emptied so in case of restart there is not a "Y" or "S" in the buffer}
    _EXIT;
 end;
 
