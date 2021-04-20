@@ -22,40 +22,42 @@ var LongMessage : array [0..MAX_MESSAGE_LENGTH-1] of char;
 procedure ReplaceArticles;
 var i : word;
 begin
- {$ifdef SPANISH}
- {un -> el}
- if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') and (ObjMessage[2]=' ') then
+ if IsSpanish then
  begin
-  ObjMessage[0] := 'e';
-  ObjMessage[1] := 'l';
-  exit;
- end;
- 
- {una, unos, unas --> la, los, las}
- if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') then
+  {un -> el}
+  if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') and (ObjMessage[2]=' ') then
+  begin
+    ObjMessage[0] := 'e';
+    ObjMessage[1] := 'l';
+    exit;
+  end;
+  
+  {una, unos, unas --> la, los, las}
+  if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') then
+  begin
+    ObjMessage[0] := 'l';
+    for i := 1 to StrLen(ObjMessage) do ObjMessage[i] := ObjMessage[i+1];
+    exit;
+  end;
+ end
+ else
  begin
-  ObjMessage[0] := 'l';
-  for i := 1 to StrLen(ObjMessage) do ObjMessage[i] := ObjMessage[i+1];
-  exit;
- end;
- {$else}
+  {a -> empty string}
+  if (Upcase(ObjMessage[0]) = 'A') and (ObjMessage[1] = ' ') then
+  begin
+    for i := 0 to StrLen(ObjMessage)-2 do ObjMessage[i] := ObjMessage[i+2];
+    exit;
+  end;
+  
 
- {a -> empty string}
- if (Upcase(ObjMessage[0]) = 'A') and (ObjMessage[1] = ' ') then
- begin
-  for i := 0 to StrLen(ObjMessage)-2 do ObjMessage[i] := ObjMessage[i+2];
-  exit;
+  {some -> empty string}
+  if (Upcase(ObjMessage[0]) = 'S') and (Upcase(ObjMessage[1]) = 'O') and (Upcase(ObjMessage[2]) = 'M') 
+      and (Upcase(ObjMessage[3]) = 'E') and (ObjMessage[4] = ' ') then
+  begin
+    for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
+    exit;
+  end;
  end;
- 
-
- {some -> empty string}
- if (Upcase(ObjMessage[0]) = 'S') and (Upcase(ObjMessage[1]) = 'O') and (Upcase(ObjMessage[2]) = 'M') 
-     and (Upcase(ObjMessage[3]) = 'E') and (ObjMessage[4] = ' ') then
- begin
-  for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
-  exit;
- end;
-  {$endif}
 end;
 
 

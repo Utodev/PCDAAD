@@ -7,9 +7,7 @@ uses global;
 const WORD_LENGHT = 5;
       COMPLETE_WORD_LENGHT = 15;
 	    STANDARD_SEPARATORS : set of char = ['.',',',';',':'];
-      {$ifdef SPANISH}
       SPANISH_TERMINATIONS : array [0..3] of String = ('LO','LA','LOS','LAS');
-      {$endif}
 	    MAX_CONJUNCTIONS = 256;
       NUM_HISTORY_ORDERS = 10;
 
@@ -314,7 +312,7 @@ begin
     inputBuffer := '';
   end;
  until inputBuffer<>'';
- TranscriptPas(inputBuffer);
+ TranscriptPas(inputBuffer + #13);
  inputBuffer := StrToUpper(inputBuffer);
  for i:= 0 to ConjunctionsCount - 1 do
   while (Pos(Conjunctions[i], inputBuffer)>0) do
@@ -430,38 +428,41 @@ end;
    if (AWordRecord.AType = VOC_PREPOSITION) and (getFlag(FPREP) = NO_WORD) then setFlag(FPREP,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_ADVERB) and (getFlag(FADVERB) = NO_WORD) then setFlag(FADVERB,AWordRecord.ACode)
    {If English, pronouns work independently, if Spanish, pronouns are applied a pronominal suffixes}
-   {$ifndef SPANISH}
-   else if (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then PronounInSentence := true;
-   {$else}
-   ;
-   if (AWordRecord.AType = VOC_VERB) and (not PronounInSentence) then
-   begin
-    j := 0;
-    while (j<4) and (not PronounInSentence) do
+   else if (not IsSpanish) and (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then PronounInSentence := true;
+
+   {If Spanish, check pronominal terminations}
+   if IsSpanish then 
     begin
-      {check if the verb ends with one of the pronominal suffixes}
-      if (Pos(SPANISH_TERMINATIONS[j], StrToUpper(orderWords[i])) 
-          = 1 + Length(orderWords[i]) - Length(SPANISH_TERMINATIONS[j]))
-      then
+      TranscriptPas('Entering LO check 1'#13);
+      if (AWordRecord.AType = VOC_VERB) and (not PronounInSentence) then
       begin
-      {If we have a word ending with pronominal suffixes, we need to check whether the word is a verb 
-      also without the termination, to avoid the HABLA bug where "LA" is part of the verb habLAr and
-      not a suffix. So first we remove the termination:}
-      ASearchWord := Copy(orderWords[i], 1, Length(orderWords[i])-Length(SPANISH_TERMINATIONS[j]));
-      {Then check if still can be recognized as a verb}
-      FindWord(ASearchWord, VOC_VERB, AWordRecord);
-      if AWordRecord.ACode<>-1 then PronounInSentence := true;
-      {Please notice the word has to be first recognized as verb, so all Spanish verbs which are not
-       5 characters long should have synonyms including the suffix or part of it: DAR->DARLO, COGE->COGEL}
-      end;
-      j := j +1;
-    end;  (* loop over the terminations *)
-   end; (* if a Verb and no pronoun *) 
-   {$endif}
+        TranscriptPas('Entering LO check 2'#13);
+        j := 0;
+        while (j<4) and (not PronounInSentence) do
+        begin
+          {check if the verb ends with one of the pronominal suffixes}
+          if (Pos(SPANISH_TERMINATIONS[j], StrToUpper(orderWords[i])) 
+              = 1 + Length(orderWords[i]) - Length(SPANISH_TERMINATIONS[j]))
+          then
+          begin
+            {If we have a word ending with pronominal suffixes, we need to check whether the word is a verb 
+            also without the termination, to avoid the HABLA bug where "LA" is part of the verb habLAr and
+            not a suffix. So first we remove the termination:}
+            ASearchWord := Copy(orderWords[i], 1, Length(orderWords[i])-Length(SPANISH_TERMINATIONS[j]));
+            {Then check if still can be recognized as a verb}
+            FindWord(ASearchWord, VOC_VERB, AWordRecord);
+            if AWordRecord.ACode<>-1 then PronounInSentence := true;
+            {Please notice the word has to be first recognized as verb, so all Spanish verbs which are not
+              5 characters long should have synonyms including the suffix or part of it: DAR->DARLO, COGE->COGEL}
+            end;
+          j := j +1;
+        end;  (* loop over the terminations *)
+      end; (* if a Verb and no pronoun *) 
+    end; {If IsSpanish}
    
-  end;
+  end; {if AWordRecord.ACode <> -1}
   i := i + 1;
- end;
+ end; {while}
  
  {Convertible nouns}
  if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then

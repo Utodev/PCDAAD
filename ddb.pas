@@ -49,6 +49,7 @@ procedure ConsumeProcess; {Goes to last entry of process}
 procedure MoveToDDB(var buffer; offset, size: word); {Fucntions to pacth the DDB, mainly for XMEssages}
 procedure MoveFromDDB(var buffer; offset, size: word);
 
+function IsSpanish: boolean;
 
 
 implementation
@@ -141,6 +142,11 @@ end;
 procedure MoveFromDDB(var buffer; offset, size: word);
 begin
  Move(pointer(DWORD(DDBRAM)+offset)^, buffer, size);
+end;
+
+function IsSpanish: boolean;
+begin
+ IsSpanish := (DDBHeader.targetMachineLanguage and 1) <> 0;
 end;
 
 begin

@@ -3,9 +3,7 @@
 
 
 (* PENDING: everything about timeouts (input, More..., ANYKEY, flags 48 and 49, etc.*)
-(* PENDING: flag 41 stream for input implementation)
-(* PEDING:  support of international characters. Spanish characters work for output, but
- not for input. Other german and portuguese characters don't work for input neither output *)
+(* PENDING: flag 41 stream for input implementation *)
 
 unit condacts;
 

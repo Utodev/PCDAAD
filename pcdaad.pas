@@ -199,6 +199,14 @@ begin
 
     InitTranscript('pcdaad.log');
     TranscriptPas('PCDAAD Log ' + VERSION + #13);
+    TranscriptPas('DDB Lang: ');
+    if IsSpanish then TranscriptPas('Spanish'#13)
+                 else TranscriptPas('English'#13);
+
+    if DiagnosticsEnabled then TranscriptPas('Diagnostics enabled.'#13);
+    if MaluvaDisabled then TranscriptPas('Maluva emulation disabled.'#13);
+    if useOrderInputFile then TranscriptPas('Order Input file: '+)orderInputFileName+#13;
+                     
     
     InitOrderFile;
     
