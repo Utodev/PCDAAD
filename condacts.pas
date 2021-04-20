@@ -1185,7 +1185,7 @@ end;
 (*Please notice even with Maluva Enabled additional EXTERN code can be run, it just happens Maluva functions 
   can intervene and don't let execution come to this point, but if not, then standard EXTERN code may run *)
  TranscriptPas('Trying standard extern execution'#13);
- done := Extern(parameter1, parameter2);
+ condactResult := Extern(parameter1, parameter2);
  TranscriptPas('Standard execution result: ' +IntToStr(byte(done)) + #13);
 end;
 
