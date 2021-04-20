@@ -319,7 +319,8 @@ procedure Tab(col:word);
 begin
  if (col < Windows[ActiveWindow].width) then Windows[ActiveWindow].CurrentX := (Windows[ActiveWindow].col + col) * 8
                                         else Tab(0);
-{Tested in ZX Spectrum interpreter: when the column provided exceeds the window, then it's like TAB 0,  beginning of line}                                        
+{Tested in ZX Spectrum interpreter: when the column provided exceeds the window, 
+then it's like TAB 0,  beginning of line}                                        
 end; 
 
 procedure SaveAt;
