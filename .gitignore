@@ -1,5 +1,9 @@
 *.
 *.BAT
+*.ERR
+*.OLD
+*.EXT
+*.SYM
 *.XMB
 *.png
 *.jpg
