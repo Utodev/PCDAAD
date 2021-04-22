@@ -190,7 +190,7 @@ begin
     ddbFilename := 'DAAD.DDB';
     ParseParameters;
     if (not loadDDB(ddbFilename)) then Error(1, 'DDB file not found or invalid.');
-    if (not loadCharset('DAAD.FNT')) then Error(6, 'PCDAAD.FNT file not found or invalid.');
+    if (not loadCharset('DAAD.FNT')) then Error(6, 'DAAD.FNT file not found or invalid.');
 
     InitTranscript('pcdaad.log');
     TranscriptPas('PCDAAD Log ' + VERSION + #13);
