@@ -149,12 +149,12 @@ end;
 
 function isObjectWearable(objno:TLocationType):boolean;
 begin
-    isObjectWearable := getByte(DDBHeader.objWeightContWearPos) AND $80 <> 0;
+    isObjectWearable := (getByte(DDBHeader.objWeightContWearPos) AND $80) <> 0;
 end;
 
 function isObjectContainer(objno:TLocationType):boolean;
 begin
-    isObjectContainer := getByte(DDBHeader.objWeightContWearPos) AND $40 <> 0;
+    isObjectContainer := (getByte(DDBHeader.objWeightContWearPos) AND $40) <> 0;
 end;
 
 function getObjectByVocabularyAtLocation(aNoun, anAdjective, location :TFlagType):TFlagType; 
