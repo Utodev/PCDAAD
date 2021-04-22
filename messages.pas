@@ -8,6 +8,7 @@ uses strings, global;
 
 const MAX_MESSAGE_LENGTH = 8192;
       ESCAPE_OBJNAME = '_';
+      ESCAPE_OBJNAME_CAPS = '@';
 
 function getPcharMessage(TableOffset: Word; messageNumber : TFlagType): PChar;
 
@@ -19,7 +20,7 @@ uses ddb, tokens, flags;
 var LongMessage : array [0..MAX_MESSAGE_LENGTH-1] of char;
     ObjMessage : array [0..512] of char;
 
-procedure ReplaceArticles;
+procedure ReplaceArticles(Caps: Boolean);
 var i : word;
 begin
  if IsSpanish then
@@ -27,7 +28,7 @@ begin
   {un -> el}
   if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') and (ObjMessage[2]=' ') then
   begin
-    ObjMessage[0] := 'e';
+    IF Caps then ObjMessage[0] := 'E' else ObjMessage[0] := 'e';
     ObjMessage[1] := 'l';
     exit;
   end;
@@ -35,7 +36,7 @@ begin
   {una, unos, unas --> la, los, las}
   if (Upcase(ObjMessage[0]) = 'U') and (Upcase(ObjMessage[1]) = 'N') then
   begin
-    ObjMessage[0] := 'l';
+    if Caps then ObjMessage[0] := 'L' else ObjMessage[0] := 'l';
     for i := 1 to StrLen(ObjMessage) do ObjMessage[i] := ObjMessage[i+1];
     exit;
   end;
@@ -90,10 +91,10 @@ begin
       else 
       begin
         WorkStr[i] := chr(AByte xor OFUSCATE_VALUE);
-        if (WorkStr[i] = ESCAPE_OBJNAME) then 
+        if (WorkStr[i] = ESCAPE_OBJNAME) OR (WorkStr[i] = ESCAPE_OBJNAME_CAPS) then 
         begin
          EscapeText := getPcharMessageInternal(DDBHeader.objectPos, getFlag(FREFOBJ), ObjMessage);
-         ReplaceArticles;
+         ReplaceArticles(WorkStr[i] = ESCAPE_OBJNAME_CAPS);
          for j:=0 to StrLen(EscapeText) - 1 do WorkStr[i+j] := EscapeText[j];
          i := i + StrLen(EscapeText);
         end 
