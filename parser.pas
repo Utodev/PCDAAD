@@ -47,7 +47,7 @@ procedure InitializeParser;
 procedure newtext;
 
 {Request string from keyboard. Used by parser, but also for QUIT, SAVE, END, LOAD, etc.}
-procedure getCommand;
+procedure getCommand(usePrompt: boolean);
 
 {These two procedures bring order back from order history}
 function getNextOrderHistory: string;
@@ -280,7 +280,7 @@ begin
 
 end;
 
-procedure getCommand;
+procedure getCommand(usePrompt: boolean);
 begin
  inputBuffer := '';
  if (useOrderInputFile) then
@@ -290,7 +290,7 @@ begin
  end;
  if inputBuffer = '' then
  begin
-  Sysmess(SM33); {the prompt}
+  if UsePrompt then Sysmess(SM33); {the prompt}
   ReadText(inputBuffer);
   Windows[ActiveWindow]. LastPauseLine := 0;
  end
@@ -301,7 +301,7 @@ procedure getPlayerOrders;
 var i : word;
 begin
  repeat
-  getCommand;
+  getCommand(true);;
   if (Length(inputBuffer)>0) and (inputBuffer[1]='+') and DiagnosticsEnabled then
   begin
     Diagnostics(inputBuffer);

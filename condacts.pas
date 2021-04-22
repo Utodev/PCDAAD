@@ -524,7 +524,7 @@ begin
 
    while inputBuffer = '' do
    begin
-    getCommand;
+    getCommand(false);
     if (inputBuffer<> '') and (Upcase(inputBuffer[1])<>YesResponse) then condactResult := false;
    end; 
    windows[ActiveWindow].LastPauseLine := 0;
@@ -541,7 +541,7 @@ begin
    NoResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM31)) xor OFUSCATE_VALUE)); 
    inputBuffer := '';
    DoallPTR := 0;
-   getCommand;
+   getCommand(false);
    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
    windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := ''; {Make sure inputBuffer is emptied so in case of restart there is not a "Y" or "S" in the buffer}
@@ -583,7 +583,7 @@ begin
    condactResult := false;
    Sysmess(SM60); {Type in name of file}
    inputBuffer := '';
-   getCommand;
+   getCommand(true);
    if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
    windows[ActiveWindow].LastPauseLine := 0;
    Assign(SaveGame, inputBuffer);
@@ -619,7 +619,7 @@ begin
    condactResult := false;
    Sysmess(SM60); {Type in name of file}
    inputBuffer := '';
-   getCommand;
+   getCommand(true);
    if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
    windows[ActiveWindow].LastPauseLine := 0;
    Assign(SaveGame, inputBuffer);
