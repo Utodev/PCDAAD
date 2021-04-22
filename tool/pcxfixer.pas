@@ -21,7 +21,7 @@ var InFileName, OutFileName : String;
     Color, Reps: Byte;
     ColorPaper, ColorInk: Word;
 
-
+TYPE TForbidden =  Set of byte;
 
 procedure Syntax;
 begin
@@ -41,6 +41,33 @@ begin
  WriteLn('.');
  Halt(1);
 end; 
+
+function getCloserColor(var Buffer: FileBuffer; BufferSize:word; Index: byte; forbidden: TForbidden): byte;
+var closerColor: byte;
+    Distance, closerCOlorDistance: real;
+    i, r, g, b, br, bg, bb: byte;
+begin
+ closerColor := Index;
+ closerCOlorDistance := 12000;
+  BR := Buffer[BufferSize - 768 + index *3 ] SHR 2;
+  BG := Buffer[BufferSize - 768 + index * 3 + 1] SHR 2;
+  BB := Buffer[BufferSize - 768 + index * 3 + 2] SHR 2;
+
+ for i:= 0 to 191 do
+ begin
+  if (i in forbidden) then continue;
+  R := Buffer[BufferSize - 768 + i*3] SHR 2;
+  G := Buffer[BufferSize - 768 + i*3 + 1] SHR 2;
+  B := Buffer[BufferSize - 768 + i*3 + 2] SHR 2;
+  Distance  := sqrt(( sqr(abs(r-br))*0.3) + sqr(abs(g-bg)*0.59) + sqr(abs(b-bb)*0.11));
+  if (Distance < closerCOlorDistance) then
+  begin
+    closerCOlorDistance := distance;
+    closerColor := i;
+  end;
+ end;
+ getCloserColor := closerColor;
+end;
 
 (* MAIN *)
 begin
@@ -102,7 +129,7 @@ begin
   WriteLn('Determining best colors to be replaced');
   { Now I have a list of colors and how many times they were used,
     let's look for not used colors in the 0-191 range, to avoid
-    modfying the compression}
+    modifying the compression}
   ColorPaper := 256;
   ColorInk := 256;
   i := 0 ;
@@ -116,8 +143,20 @@ begin
    i := i + 1;
   end;
 
+  {If some unused color has not been found we will need to replace
+  color 0 or 15 with whatever other palette color which is closer to
+  make space for color 0 and 15}
 
-  if (ColorPaper=256) or (ColorInk=256) then Error('No colors available for switching');
+ if (ColorPaper= 256) then 
+ begin
+  WriteLn('Couldn''t find a gap in the palette for paper color, the image palette will be modified.');
+  ColorPaper := getCloserColor(Buffer^, BufferSize ,0, [0,15]);
+ end;
+ if (ColorInk= 256) then
+ begin
+  WriteLn('Couldn''t find a gap in the palette for ink color, the image palette will be modified.');
+  ColorInk := getCloserColor(Buffer^, BufferSize, 15,  [0,15, ColorPaper]);
+end;
 
   WriteLn('PAPER will be replaced with color ', ColorPaper);
   WriteLn('INK will be replaced with color ', ColorInk);
