@@ -152,9 +152,7 @@ begin
       Result.ACode := GetByte(Ptr+5);
       Result.AType := TVocType(GetByte(Ptr+6));
 		  Exit;
-		end;  
-  {Vocabulary is sorted so if VocWord>AWord we will not find that word}
- 	if AVocWord>Aword then Exit;
+		end;   
   Ptr := ptr+ 7;
  end; {While}
 end;
@@ -280,6 +278,31 @@ begin
 
 end;
 
+function fixSpanishCharacters(Str:String): string;
+var i : byte;
+    EncodeStr : String;
+begin
+  EncodeStr := '§­¨®¯ ‚¡¢£¤¥‡€š';
+  for  i:= 1 to Length(Str) do
+  begin
+    case Str[i] of 
+      '¤': Str[i]:='¥';
+      '‡': Str[i]:='€';
+      '?',' ': Str[i]:='A';
+      '','‚': Str[i]:='E';
+      '?','¡': Str[i]:='I';
+      '?','¢': Str[i]:='O';
+      '?','£': Str[i]:='U';
+      '?','': Str[i]:='U';
+    end;
+    if (Pos(Str[i], EncodeStr)>0) then 
+    begin
+      Str[i]:=char(15+ Pos(Str[i], EncodeStr));
+    end;
+  end;  
+  fixSpanishCharacters := Str;
+end;
+
 procedure getCommand(usePrompt: boolean);
 begin
  inputBuffer := '';
@@ -293,6 +316,8 @@ begin
   if UsePrompt then Sysmess(SM33); {the prompt}
   ReadText(inputBuffer);
   Windows[ActiveWindow]. LastPauseLine := 0;
+  {The inputBuffer may come with Spanish characters that we need to convert to where DAAD stores them in the ASCII Table}
+   if IsSpanish then inputBuffer := fixSpanishCharacters(inputBuffer);
  end
  else WriteTextPas(#13'>' + inputBuffer + #13, false);
 end;
@@ -327,16 +352,19 @@ var orderWords : array[0..High(Byte)] of TCompleteWord;
     Result : boolean;
     PronounInSentence : Boolean;
     playerOrder : string;
+    InputTakenFromPlayer: boolean;
 begin
 
 if (Option = 0) then (* parse 0, get order from the player or from orders buffer *)
 begin
  Result := false;
+ InputTakenFromPlayer := false;
  if (inputBuffer='') then
  begin
   i := random(4);
   Sysmess(SM2 + i);
   getPlayerOrders;
+  InputTakenFromPlayer := true;
  end; 
  {Extract an order}
  playerOrder := '';
@@ -465,8 +493,9 @@ end;
   setflag(FNOUN, NO_WORD);
  end;
 
- {Mising verb but present noun, replace with previous verb}
- if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<>NO_WORD) AND (PreviousVerb<>NO_WORD) then setFlag(FVERB, PreviousVerb);
+ {Missing verb but present noun, replace with previous verb}
+ if not InputTakenFromPlayer then {If the current sentece came from buffer}
+   if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<>NO_WORD) AND (PreviousVerb<>NO_WORD) then setFlag(FVERB, PreviousVerb);
 
  {Apply pronouns or terminations if needed}  
  if (getFlag(FNOUN)=NO_WORD) and (PronounInSentence) and (getFlag(FPRONOUN)<>NO_WORD) then
