@@ -925,8 +925,8 @@ begin
   exit;
  end;
 
- WeightCarried := getObjectFullWeight(LOC_CARRIED);
- WeightWorn := getObjectFullWeight(LOC_WORN);
+ WeightCarried := getWeightOfObjectsAt(LOC_CARRIED);
+ WeightWorn := getWeightOfObjectsAt(LOC_WORN);
  if (WeightWorn + WeightCarried + getObjectFullWeight(parameter1) > getFlag(FPLAYER_STRENGTH)) then
  begin
   Sysmess(SM43); {The _ weighs too much for me.}
