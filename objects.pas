@@ -37,6 +37,9 @@ function isObjectContainer(objno:TLocationType):boolean;
 {Gets weight of object in depth if container}
 function getObjectFullWeight(objno:TLocationType): TFlagType; 
 
+{Gets the weight of al objects at a given location}
+function getWeightOfObjectsAt(locno: TLocationType): TFlagType;
+
 {Sets the currently referenced object}
 procedure SetReferencedObject(objno: TFlagtype); 
 
@@ -91,19 +94,51 @@ end;
 function getObjectFullWeight(objno:TLocationType):  TFlagType;
 var w,w2,i: Word;
 begin
-   if (objno<DDBHeader.numObj) then w := getObjectWeight(objno)     
-                               else w := 0;
-    if (isObjectContainer(objno) and (w<>0)) then 
+   if (objno>=DDBHeader.numObj) then w := 0
+   else 
+   begin
+      w := getObjectWeight(objno);
+     if (isObjectContainer(objno) and (w<>0)) then 
+     begin
         for i:= 0 to DDBHeader.numObj - 1 do
          if getObjectLocation(i) = objno then
           begin
-           w2 := getObjectFullWeight(i);;
-           if (w + w2 > high(TFlagType)) then w := high(TFlagType)
-                                         else w:= w + w2;
+           w2 := getObjectFullWeight(i);
+           if (w + w2 <= high(TFlagType)) then w:= w + w2   
+                                          else
+                                          begin
+                                           getObjectFullWeight := High(TFlagType);
+                                           exit;
+                                          end;
           end; 
-    getObjectFullWeight := w;
+     end;
+   end; (* if valid object*)  
+  
+   getObjectFullWeight := w;
 end; 
 
+
+function getWeightOfObjectsAt(locno: TLocationType): TFlagType;
+var i : word;
+    totalWeight : TFlagType;
+    currentObjWeight : TFlagType;
+begin
+ totalWeight := 0;
+ for i:= 0 to DDBHeader.numObj -1 do
+ begin
+    if (getObjectLocation(i)=locno) then
+    begin
+        currentObjWeight := getObjectFullWeight(i);
+        if (totalWeight + currentObjWeight) > High(TFlagType) then 
+        begin
+         getWeightOfObjectsAt := High(TFlagType);
+         exit;
+        end
+        else totalWeight := totalWeight + currentObjWeight;
+    end;    
+ end;
+ getWeightOfObjectsAt := totalWeight;
+end;
 
 
 procedure resetObjects;
@@ -149,12 +184,12 @@ end;
 
 function isObjectWearable(objno:TLocationType):boolean;
 begin
-    isObjectWearable := (getByte(DDBHeader.objWeightContWearPos) AND $80) <> 0;
+    isObjectWearable := (getByte(DDBHeader.objWeightContWearPos + objno) AND $80) <> 0;
 end;
 
 function isObjectContainer(objno:TLocationType):boolean;
 begin
-    isObjectContainer := (getByte(DDBHeader.objWeightContWearPos) AND $40) <> 0;
+    isObjectContainer := (getByte(DDBHeader.objWeightContWearPos + objno) AND $40) <> 0;
 end;
 
 function getObjectByVocabularyAtLocation(aNoun, anAdjective, location :TFlagType):TFlagType; 
