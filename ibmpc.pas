@@ -162,7 +162,7 @@ begin
    'Å': FinalStr := FinalStr + #31;
    { New characters}
    'Ö': FinalStr := FinalStr + #$0e#16#$0f;
-   chr(198): FinalStr := FinalStr + #$0e#17#$0f; {'?' in codepage 850}
+   chr(198): FinalStr := FinalStr + #$0e#17#$0f; {'Portuguese a with curly tilde' in codepage 850}
    'Ñ': FinalStr := FinalStr + #$0e#18#$0f;
    'É': FinalStr := FinalStr + #$0e#19#$0f;
 
@@ -175,14 +175,14 @@ begin
    'å': FinalStr := FinalStr + #$0e#25#$0f;
 
    'ï': FinalStr := FinalStr + #$0e#26#$0f;
-   chr(229): FinalStr := FinalStr + #$0e#27#$0f; {'?' in codepage 850}
+   chr(229): FinalStr := FinalStr + #$0e#27#$0f; {'Portuguese o with curly tilde' in codepage 850}
    'î': FinalStr := FinalStr + #$0e#28#$0f;
    'ì': FinalStr := FinalStr + #$0e#29#$0f;
 
    'ó': FinalStr := FinalStr + #$0e#30#$0f;
    'ñ': FinalStr := FinalStr + #$0e#31#$0f;
     
-    chr(225): FinalStr := FinalStr + #$0e#35#$0f; {'·', but it's actually "beta" in codepage 850 and 437}
+    chr(225): FinalStr := FinalStr + #$0e#35#$0f; {German '·', eszett in codepage 850 and 437 rather than eszett letter}
 
     else FinalStr := FinalStr + Str[i];
  end;
