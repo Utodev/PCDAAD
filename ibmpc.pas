@@ -263,6 +263,9 @@ begin
   PatchedStr := PatchStr(Str);
   WriteTextPas(PatchedStr +'_', true); {true -> avoid transcript}
  until (keyLO = 13) and (Str<>''); {Intro and not empty}
+ ClearWindow(SaveX + StrLenInPixels(Str), 
+                  SaveY, StrLenInPixels('_'), 
+                  8 , windows[ActiveWindow].PAPER); 
  CarriageReturn;
  addToOrderHistory(Str);
 end;
