@@ -452,7 +452,15 @@ end;
    if (AWordRecord.AType = VOC_PREPOSITION) and (getFlag(FPREP) = NO_WORD) then setFlag(FPREP,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_ADVERB) and (getFlag(FADVERB) = NO_WORD) then setFlag(FADVERB,AWordRecord.ACode)
    {If English, pronouns work independently, if Spanish, pronouns are applied a pronominal suffixes}
-   else if (not IsSpanish) and (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then PronounInSentence := true;
+   else if (not IsSpanish) and (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then
+   begin
+    PronounInSentence := true;
+    if getFlag(FNOUN)=NO_WORD then 
+    begin
+     setFlag(FNOUN, getFlag(FPRONOUN));
+     setFlag(FADJECT, getFlag(FPRONOUN_ADJECT));
+    end;
+   end;  
 
    {If Spanish, check pronominal terminations}
    if IsSpanish then 
@@ -467,16 +475,24 @@ end;
               = 1 + Length(orderWords[i]) - Length(SPANISH_TERMINATIONS[j]))
           then
           begin
-            {If we have a word ending with pronominal suffixes, we need to check whether the word is a verb 
-            also without the termination, to avoid the HABLA bug where "LA" is part of the verb habLAr and
-            not a suffix. So first we remove the termination:}
-            ASearchWord := Copy(orderWords[i], 1, Length(orderWords[i])-Length(SPANISH_TERMINATIONS[j]));
-            {Then check if still can be recognized as a verb}
-            FindWord(ASearchWord, VOC_VERB, AWordRecord);
-            if AWordRecord.ACode<>-1 then PronounInSentence := true;
-            {Please notice the word has to be first recognized as verb, so all Spanish verbs which are not
-              5 characters long should have synonyms including the suffix or part of it: DAR->DARLO, COGE->COGEL}
-            end;
+              {If we have a word ending with pronominal suffixes, we need to check whether the word is a verb 
+              also without the termination, to avoid the HABLA bug where "LA" is part of the verb habLAr and
+              not a suffix. So first we remove the termination:}
+              ASearchWord := Copy(orderWords[i], 1, Length(orderWords[i])-Length(SPANISH_TERMINATIONS[j]));
+              {Then check if still can be recognized as a verb}
+              FindWord(ASearchWord, VOC_VERB, AWordRecord);
+              if AWordRecord.ACode<>-1 then    
+              begin
+                PronounInSentence := true;
+                if getFlag(FNOUN)=NO_WORD then 
+                begin 
+                  setFlag(FNOUN, getFlag(FPRONOUN));
+                  setFlag(FADJECT, getFlag(FPRONOUN_ADJECT));
+                end;
+              end;  
+              {Please notice the word has to be first recognized as verb, so all Spanish verbs which are not
+                5 characters long should have synonyms including the suffix or part of it: DAR->DARLO, COGE->COGEL}
+          end;
           j := j +1;
         end;  (* loop over the terminations *)
       end; (* if a Verb and no pronoun *) 
