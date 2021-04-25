@@ -1,4 +1,3 @@
-
 {$I SETTINGS.INC}
 
 unit ibmpc;
@@ -227,6 +226,7 @@ begin
  SaveX := windows[ActiveWindow].currentX;
  SaveY := windows[ActiveWindow].currentY;
  Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
+ WriteText('_',true);
  repeat
    while not Keypressed do;
    key := ReadKey;
@@ -236,14 +236,14 @@ begin
    if (keyLO>=32) and (keyLO<=255) then 
    begin
     {Avoid input exceeding the current line} 
-    if (StrLenInPixels(Str) + StrLenInPixels(char(keyLo)+'') + SaveX  < Xlimit) and (length(Str)<255) 
+    if (StrLenInPixels(Str) + StrLenInPixels(char(keyLo)+'') + SaveX  + StrLenInPixels('_') < Xlimit) and (length(Str)<255) 
         then Str := Str + chr(keyLo) {printable characters}
    end;
 
   if (keyLO = 8) and (Str<>'') then 
   begin
-    ClearWindow(SaveX + StrLenInPixels(Str) - StrLenInPixels(''+Str[Length(Str)]), 
-                  SaveY, StrLenInPixels(''+Str[Length(Str)]), 
+    ClearWindow(SaveX + StrLenInPixels(Str) - StrLenInPixels(Str[Length(Str)]), 
+                  SaveY, StrLenInPixels(''+Str[Length(Str)]+'_'), 
                   8 , windows[ActiveWindow].PAPER);
     Str := Copy(Str, 1, Length(Str)-1); {backspace}
   end;
@@ -261,7 +261,7 @@ begin
   windows[ActiveWindow].currentX := SaveX;
   windows[ActiveWindow].currentY := SaveY;
   PatchedStr := PatchStr(Str);
-  WriteTextPas(PatchedStr, true); {true -> avoid transcript}
+  WriteTextPas(PatchedStr +'_', true); {true -> avoid transcript}
  until (keyLO = 13) and (Str<>''); {Intro and not empty}
  CarriageReturn;
  addToOrderHistory(Str);
