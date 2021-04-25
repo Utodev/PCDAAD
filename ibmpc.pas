@@ -1,5 +1,13 @@
 {$I SETTINGS.INC}
 
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* PLEASE DON'T REMOVE THIS COMMENT. IT'S MADE SO YOU CAN EASILY SEE IF THE SOURCE CODE HAS BEEN OPENED WITH THE CP437 OR   *)
+(* CP850 ENCODINCG (DOS), BECAUSE IF NOT, AND YOUR TEXT EDITOR USES SOME MODERN ENCODING AS UTF8 OR ISO, THEN YOUR CODE WILL*)
+(* EITHER NOT COMPILE OR COMPILE BUT MAKE PCDAAD FAIL WHEN RUNNING SPANISH. SO MAKE SURE YOU SEE A LOT OF N WITH TILDE ABOVE*)
+
 unit ibmpc;
 (* IBM PC specific functions *)
 
@@ -58,9 +66,10 @@ procedure WaitVRetrace;
 
 implementation
 
-uses strings, charset, crt, parser, utils, log, ddb, objects, flags;
+uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global;
 
 var ExternPTR: Pointer;
+    TimeoutPreservedOrder: String;
 
 function getTicks: word; Assembler;
 asm
@@ -221,53 +230,101 @@ var key : word;
     Xlimit : Word;
     historyStr : String;
     PatchedStr : String; (* Contains the String with international characters already patched *)
+    Ticks: word;
+    TimeoutSeconds : TFlagType;
+    TimeoutHappened: Boolean;    
 begin
  Str := '';
  SaveX := windows[ActiveWindow].currentX;
  SaveY := windows[ActiveWindow].currentY;
+ {if timeout last frame, and there is text to recover, and we should recover}
+ {bits 7, 6 and 5 for FTIMEOUT_CONTROL set}
+ if ((getFlag(FTIMEOUT_CONTROL) and $E0) = $E0) then 
+ begin
+  TranscriptPas('RestoringOrder: ' + TimeoutPreservedOrder + #13);
+  Str:= TimeoutPreservedOrder;
+  TimeoutPreservedOrder := '';
+ end;
+ SetFlag(FTIMEOUT_CONTROL, getFlag(FTIMEOUT_CONTROL) and $3F); {Clear bits 7 and 6} 
  Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
- WriteText('_',true);
+ WriteTextPas(Str+'_',true);
+ TimeoutHappened := false;
+ TimeoutSeconds := getFlag(FTIMEOUT);
+ Ticks := getTicks;
  repeat
-   while not Keypressed do;
-   key := ReadKey;
-   keyHI := (key and $FF00) SHR 8;
-   keyLO := key and $FF;
 
-   if (keyLO>=32) and (keyLO<=255) then 
-   begin
-    {Avoid input exceeding the current line} 
-    if (StrLenInPixels(Str) + StrLenInPixels(char(keyLo)+'') + SaveX  + StrLenInPixels('_') < Xlimit) and (length(Str)<255) 
-        then Str := Str + chr(keyLo) {printable characters}
-   end;
+  while not Keypressed do
+    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then
+    begin
+     {Only if player din't type anything or player typed and bit 0 of FTIMEOUT_CONTROL is 0}
+     if (Str='') or ((Str<>'') and ((getFlag(FTIMEOUT_CONTROL) and $01) = 0)) then 
+     begin
+       TimeoutHappened := true;
+       break; {get out the while not Keypressed loop}
+     end;  
+    end;
 
-  if (keyLO = 8) and (Str<>'') then 
-  begin
-    ClearWindow(SaveX + StrLenInPixels(Str) - StrLenInPixels(Str[Length(Str)]), 
-                  SaveY, StrLenInPixels(''+Str[Length(Str)]+'_'), 
-                  8 , windows[ActiveWindow].PAPER);
-    Str := Copy(Str, 1, Length(Str)-1); {backspace}
-  end;
-  (* Pending: make history of order accessible with arrow up/down instead of tab *)
-  if keyLO = 9 then {tab} 
-  begin
-   historyStr := getNextOrderHistory; 
-   if historyStr<> str then 
-   begin
-    ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, windows[ActiveWindow].PAPER);
-    Str := historyStr;
-   end;
-  end; 
+ if not TimeoutHappened then
+ begin
+    key := ReadKey;
+    keyHI := (key and $FF00) SHR 8;
+    keyLO := key and $FF;
 
-  windows[ActiveWindow].currentX := SaveX;
-  windows[ActiveWindow].currentY := SaveY;
-  PatchedStr := PatchStr(Str);
-  WriteTextPas(PatchedStr +'_', true); {true -> avoid transcript}
- until (keyLO = 13) and (Str<>''); {Intro and not empty}
+    if (keyLO>=32) and (keyLO<=255) then 
+    begin
+      {Avoid input exceeding the current line} 
+      if (StrLenInPixels(Str) + StrLenInPixels(char(keyLo)+'') + SaveX  + StrLenInPixels('_') < Xlimit) and (length(Str)<255) 
+          then Str := Str + chr(keyLo) {printable characters}
+    end;
+
+    if (keyLO = 8) and (Str<>'') then 
+    begin
+      ClearWindow(SaveX + StrLenInPixels(Str) - StrLenInPixels(Str[Length(Str)]), 
+                    SaveY, StrLenInPixels(''+Str[Length(Str)]+'_'), 
+                    8 , windows[ActiveWindow].PAPER);
+      Str := Copy(Str, 1, Length(Str)-1); {backspace}
+    end;
+    (* Pending: make history of order accessible with arrow up/down instead of tab *)
+    if keyLO = 9 then {tab} 
+    begin
+    historyStr := getNextOrderHistory; 
+    if historyStr<> str then 
+    begin
+      ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, windows[ActiveWindow].PAPER);
+      Str := historyStr;
+    end;
+    end; 
+
+    windows[ActiveWindow].currentX := SaveX;
+    windows[ActiveWindow].currentY := SaveY;
+    PatchedStr := PatchStr(Str);
+    WriteTextPas(PatchedStr +'_', true); {true -> avoid transcript}
+  end;   { if no timeout}
+ until ((keyLO = 13) and (Str<>'')) or (TimeoutHappened); {Intro and not empty, or timeout}
+ {Remove the cursor}
  ClearWindow(SaveX + StrLenInPixels(Str), 
                   SaveY, StrLenInPixels('_'), 
                   8 , windows[ActiveWindow].PAPER); 
+ 
+ if TimeoutHappened then
+ begin
+  {Check  if the bit to delete the input is active}
+  if ((GetFlag(FTIMEOUT_CONTROL) AND $08) = $08) then 
+  begin
+   Str := '';
+   ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, windows[ActiveWindow].PAPER);
+  end;
+  {Set bit that says timeout happened}
+  SetFlag(FTIMEOUT_CONTROL, getFlag(FTIMEOUT_CONTROL) OR $80); 
+  TimeoutPreservedOrder := Str;
+  {Set or clear bit that says there was text to recover}
+  if Str<>'' then SetFlag(FTIMEOUT_CONTROL, getFlag(FTIMEOUT_CONTROL) OR $40)
+             else SetFlag(FTIMEOUT_CONTROL, getFlag(FTIMEOUT_CONTROL) AND $BF); 
+
+  Str := 't1meout'; {Just a nonsense player order so the parser detects no word}
+ end;             
  CarriageReturn;
- addToOrderHistory(Str);
+ if  not TimeoutHappened then addToOrderHistory(Str);
 end;
 
 function getVGAAddr(X, Y: word): word;
@@ -574,4 +631,5 @@ begin
  ActiveWindow := 0;
  resetWindows;
  ExternPTR := nil;
+ TimeoutPreservedOrder := '';
 end.

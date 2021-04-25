@@ -516,7 +516,10 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _QUIT;
 var YesResponse : char;
+    PreserveTimeout: TFlagType;
 begin
+   PreserveTimeout := getFlag(FTIMEOUT);
+   setFlag(FTIMEOUT, 0);
    Sysmess(SM12); {"Are you sure? "}
    {Get first char of SM30, uppercased}
    YesResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM30)) xor OFUSCATE_VALUE)); 
@@ -527,6 +530,7 @@ begin
     getCommand(false);
     if (inputBuffer<> '') and (Upcase(inputBuffer[1])<>YesResponse) then condactResult := false;
    end; 
+   setFlag(FTIMEOUT, PreserveTimeout);
    windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := '';
    done := true;
@@ -535,13 +539,17 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _END;
 var NoResponse : char;
+    PreserveTimeout: TFlagType;
 begin
+   PreserveTimeout := getFlag(FTIMEOUT);
+   setFlag(FTIMEOUT, 0);
    Sysmess(SM13); {"Are you sure? "}
    {Get first char of SM31, uppercased}
    NoResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM31)) xor OFUSCATE_VALUE)); 
    inputBuffer := '';
    DoallPTR := 0;
    getCommand(false);
+   setFlag(FTIMEOUT, PreserveTimeout);
    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
    windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := ''; {Make sure inputBuffer is emptied so in case of restart there is not a "Y" or "S" in the buffer}
@@ -579,11 +587,15 @@ procedure _SAVE;
 var Savegame : FILE;
     Header: String[32];
     Aux: Word;
+    PreserveTimeout: TFlagType;
 begin
+   PreserveTimeout := getFlag(FTIMEOUT);
+   setFlag(FTIMEOUT, 0);
    condactResult := false;
    Sysmess(SM60); {Type in name of file}
    inputBuffer := '';
    getCommand(true);
+   SetFlag(FTIMEOUT, PreserveTimeout);
    if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
    windows[ActiveWindow].LastPauseLine := 0;
    Assign(SaveGame, inputBuffer);
@@ -615,11 +627,15 @@ procedure _LOAD;
 var Savegame : FILE;
     Header: String[32];
     Aux: Word;
+    PreserveTimeout: TFlagType;
 begin
+   PreserveTimeout := getFlag(FTIMEOUT);
+   setFlag(FTIMEOUT, 0);
    condactResult := false;
    Sysmess(SM60); {Type in name of file}
    inputBuffer := '';
    getCommand(true);
+   SetFlag(FTIMEOUT, PreserveTimeout);
    if (Pos('.',inputBuffer)=0) then inputBuffer := inputBuffer + '.sav';
    windows[ActiveWindow].LastPauseLine := 0;
    Assign(SaveGame, inputBuffer);
