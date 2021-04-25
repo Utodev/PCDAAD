@@ -1455,7 +1455,8 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then
  setObjectLocation(parameter1, parameter2);
  setFlag(FCARRIED, getFlag(FCARRIED) - 1);
  Sysmess(SM44); {The _ is in the }
- WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
+ _SPACE;
+ WriteText(getPcharMessageOTX(parameter2, false), false);
  Sysmess(SM51); {.}
  done := true;
 end;
@@ -1496,7 +1497,8 @@ begin
 if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> parameter2) then 
  begin
   Sysmess(SM52); {There isn't one of those in the}
-  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
+  _SPACE;
+  WriteText(getPcharMessageOTX( parameter2, false), false);
   Sysmess(SM51);{.}
   newtext;
   _DONE;

@@ -11,6 +11,7 @@ const MAX_MESSAGE_LENGTH = 8192;
       ESCAPE_OBJNAME_CAPS = '@';
 
 function getPcharMessage(TableOffset: Word; messageNumber : TFlagType): PChar;
+function getPCharMessageOTX(objno: TFlagType; Caps: boolean): PChar;
 
 
 implementation
@@ -111,6 +112,14 @@ end;
 function getPcharMessage(TableOffset: Word; messageNumber : TFlagType): PChar;
 begin
  getPcharMessage := getPcharMessageInternal(TableOffset, messageNumber, LongMessage);
+end;
+
+function getPCharMessageOTX(objno: TFlagType; Caps: boolean): PChar;
+var EscapeText : PChar;
+begin
+ EscapeText := getPcharMessageInternal(DDBHeader.objectPos, objno, ObjMessage);
+ ReplaceArticles(Caps);
+ getPCharMessageOTX := EscapeText;
 end;
 
 
