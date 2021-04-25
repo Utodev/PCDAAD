@@ -282,18 +282,18 @@ function fixSpanishCharacters(Str:String): string;
 var i : byte;
     EncodeStr : String;
 begin
-  EncodeStr := '§­¨®¯ ‚¡¢£¤¥‡€š';
+  EncodeStr := '§­¨®¯ ‚¡¢£¤¥‡€š';
   for  i:= 1 to Length(Str) do
   begin
     case Str[i] of 
       '¤': Str[i]:='¥';
       '‡': Str[i]:='€';
       '?',' ': Str[i]:='A';
-      '','‚': Str[i]:='E';
+      '','‚': Str[i]:='E';
       '?','¡': Str[i]:='I';
       '?','¢': Str[i]:='O';
       '?','£': Str[i]:='U';
-      '?','': Str[i]:='U';
+      '?','': Str[i]:='U';
     end;
     if (Pos(Str[i], EncodeStr)>0) then 
     begin
@@ -521,7 +521,7 @@ end;
  end;
 
  {Save noun and adject from LS to maybe be used in future orders, unless they are proper names ( < 50 )}
- if (getFlag(FNOUN)>=50) and (getFlag(FNOUN)<>NO_WORD) then
+ if (getFlag(FNOUN)>=LAST_PROPER_NOUN) and (getFlag(FNOUN)<>NO_WORD) then
  begin
   setFlag(FPRONOUN, getFlag(FNOUN));
   setFlag(FPRONOUN_ADJECT, getFlag(FADJECT));
