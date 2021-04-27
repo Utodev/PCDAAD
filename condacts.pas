@@ -1,9 +1,6 @@
 {$I SETTINGS.INC}
 (* All the condacts stuff, including implementation of condacts *)
 
-
-(* PENDING: timeouts in ANYKEY adn More....  *)
-
 unit condacts;
 
 interface

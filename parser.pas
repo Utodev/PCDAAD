@@ -246,6 +246,8 @@ begin
   WriteText('+o to list all object locations' + #13, false);
   WriteText('+f<flagno> to get flag value' + #13, false);
   WriteText('+f<flagno>=<value> to set flag value' + #13, false);
+  WriteText('+o<objno> to get object location' + #13, false);
+  WriteText('+o<objno>=<locno> to set object location' + #13, false);
   WriteText('+ or +h to show this help' + #13, false);
 end;
 
@@ -284,6 +286,34 @@ begin
     end else WriteText('Invalid flag number.'#13, true);
   end;
  end (* if starts by +f *)
+ else if (Copy(DiagStr, 1, 2) = '+o')
+ then 
+ begin 
+  if (Pos('=', DiagStr)>0) then
+  begin (* set objcet location *)
+    Val(Copy(DiagStr, 3, Pos('=', DiagStr) - 3), value, code);
+    if (code=0) and (value>=0) and (value<=MAX_OBJECT) then 
+    begin
+      Val(Copy(DiagStr, Pos('=', DiagStr) + 1, 255), value2, code);
+      if (code=0) and (value2>=0) and (value2<=MAX_LOCATION) then 
+      begin
+        setObjectLocation(value, value2);
+        StrPCopy(valstr, '[Obj ' +IntToStr(value) + '] --> ' + inttostr(value2) + #10);
+        WriteText(valstr, false);
+      end else WriteText('Invalid location.'#10, true);
+    end  else WriteText('Invalid object number.'#10, true);
+  end
+  else 
+  begin (* just get object location *)
+    Val(Copy(DiagStr, 3, 255), value, code);
+    if (code=0) and (value>=0) and (value<=MAX_OBJECT) then 
+    begin
+      value := getObjectLocation(value);
+      StrPCopy(valstr, inttostr(value) + #13);
+      WriteText(valstr, false);
+    end else WriteText('Invalid object number.'#13, true);
+  end;
+ end (* if starts by +o *)
  else WriteText('Invalid diagnostics command.'#13, true);
 
 end;
