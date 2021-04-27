@@ -63,6 +63,9 @@ function ReadKey:Word;
 function Keypressed:Boolean; 
 {Wait for vertical retrace}
 procedure WaitVRetrace;
+{Get timer ticks}
+function getTicks: word; 
+
 
 implementation
 
@@ -234,6 +237,7 @@ var key : word;
     TimeoutSeconds : TFlagType;
     TimeoutHappened: Boolean;   
     PreserveActiveWindow : Byte;
+    PlayerPressedKey : boolean;
 begin
  Str := '';
  PreserveActiveWindow := ActiveWindow;
@@ -254,21 +258,28 @@ begin
  TimeoutHappened := false;
  TimeoutSeconds := getFlag(FTIMEOUT);
  Ticks := getTicks;
+ PlayerPressedKey := false;
  repeat
 
   while not Keypressed do
     if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then
     begin
      {Only if player din't type anything or player typed and bit 0 of FTIMEOUT_CONTROL is 0}
-     if (Str='') or ((Str<>'') and ((getFlag(FTIMEOUT_CONTROL) and $01) = 0)) then 
+     {Empty string y does't matter if keypressed or not}
+      if ((Str='') and ((getFlag(FTIMEOUT_CONTROL) and $01) = $00)) or
+      {No matte if the string is empty o rno, but the timeout can only happen if nothing pressed}
+        (((getFlag(FTIMEOUT_CONTROL) and $01) = $01) and not PlayerPressedKey) then
      begin
        TimeoutHappened := true;
        break; {get out the while not Keypressed loop}
      end;  
     end;
 
+
+ 
  if not TimeoutHappened then
  begin
+    PlayerPressedKey := true;
     key := ReadKey;
     keyHI := (key and $FF00) SHR 8;
     keyLO := key and $FF;
@@ -432,13 +443,23 @@ end;
 
 procedure ScrollCurrentWindow;
 var i, baseAddress, baseaddress2, linesToScroll, windowWidthInPixels : word;
-
+    Ticks: word;
+    TimeoutSeconds : TFlagType;
+    TimeoutHappened: Boolean;   
 begin
-  {0. Check if too much text listed in order to pause if so}
+  {0. Check if too much text listed in order to pause if so (More...)}
   if (windows[ActiveWindow].LastPauseLine >= windows[ActiveWindow].height) then 
   begin
-   while not Keypressed do;
-   i := ReadKey; {Discard key pressed}
+   TimeoutHappened := false;
+   TimeoutSeconds := getFlag(FTIMEOUT);
+   {Chek if timeout can happen in More...}
+   if (getFlag(FTIMEOUT_CONTROL) AND $02 = $02) then TimeoutSeconds := getFlag(FTIMEOUT)
+                                                else TimeoutSeconds := 0;
+   Ticks := getTicks;
+   while not Keypressed and not TimeoutHappened do
+    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then TimeoutHappened := true;
+    
+   if not TimeoutHappened then i := ReadKey; {Discard key pressed}
    windows[ActiveWindow].LastPauseLine := 0;
   end; 
 

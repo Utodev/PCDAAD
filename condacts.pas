@@ -574,9 +574,19 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _ANYKEY;
 var inkey :  word;
+    Ticks: word;
+    TimeoutSeconds : TFlagType;
+    TimeoutHappened: Boolean;   
+    
 begin
- while not Keypressed do;
- inkey := ReadKey;
+ TimeoutHappened := false;
+ {Check if Timeout can happen on ANYKEY}
+ if (getFlag(FTIMEOUT_CONTROL) AND $04 = $04) then TimeoutSeconds := getFlag(FTIMEOUT)
+                                               else TimeoutSeconds := 0;
+ Ticks := getTicks;
+ while not Keypressed and not TimeoutHappened do
+   if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then TimeoutHappened := true;
+ if not TimeoutHappened then inkey := ReadKey;
  Windows[ActiveWindow]. LastPauseLine := 0;
  done := true; 
 end;
