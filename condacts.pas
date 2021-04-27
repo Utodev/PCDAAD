@@ -2,8 +2,7 @@
 (* All the condacts stuff, including implementation of condacts *)
 
 
-(* PENDING: everything about timeouts (input, More..., ANYKEY, flags 48 and 49, etc.*)
-(* PENDING: flag 41 stream for input implementation *)
+(* PENDING: timeouts in ANYKEY adn More....  *)
 
 unit condacts;
 

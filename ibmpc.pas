@@ -232,9 +232,12 @@ var key : word;
     PatchedStr : String; (* Contains the String with international characters already patched *)
     Ticks: word;
     TimeoutSeconds : TFlagType;
-    TimeoutHappened: Boolean;    
+    TimeoutHappened: Boolean;   
+    PreserveActiveWindow : Byte;
 begin
  Str := '';
+ PreserveActiveWindow := ActiveWindow;
+ if (GetFlag(FINPUT)<>0) then ActiveWindow := GetFlag(FINPUT);
  SaveX := windows[ActiveWindow].currentX;
  SaveY := windows[ActiveWindow].currentY;
  {if timeout last frame, and there is text to recover, and we should recover}
@@ -305,9 +308,14 @@ begin
  ClearWindow(SaveX + StrLenInPixels(Str), 
                   SaveY, StrLenInPixels('_'), 
                   8 , windows[ActiveWindow].PAPER); 
- 
+ ActiveWindow := PreserveActiveWindow;
  if TimeoutHappened then
  begin
+  {Check  if the bit to print the input in the active stream}
+  if ((GetFlag(FTIMEOUT_CONTROL) AND $10) = $10) then 
+  begin
+   WriteTextPas('>' + PatchedStr + #13 , true);
+  end;
   {Check  if the bit to delete the input is active}
   if ((GetFlag(FTIMEOUT_CONTROL) AND $08) = $08) then 
   begin

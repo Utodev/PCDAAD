@@ -1,3 +1,13 @@
+
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
+(* PLEASE DON'T REMOVE THIS COMMENT. IT'S MADE SO YOU CAN EASILY SEE IF THE SOURCE CODE HAS BEEN OPENED WITH THE CP437 OR   *)
+(* CP850 ENCODINCG (DOS), BECAUSE IF NOT, AND YOUR TEXT EDITOR USES SOME MODERN ENCODING AS UTF8 OR ISO, THEN YOUR CODE WILL*)
+(* EITHER NOT COMPILE OR COMPILE BUT MAKE PCDAAD FAIL WHEN RUNNING SPANISH. SO MAKE SURE YOU SEE A LOT OF N WITH TILDE ABOVE*)
+
+
 {$I SETTINGS.INC}
 unit parser;
 
