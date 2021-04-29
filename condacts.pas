@@ -1206,18 +1206,18 @@ procedure _EXTERN;
 begin
 if not MaluvaDisabled THEN  (* Maluva Emulation *)
 begin
- TranscriptPas('Trying Maluva emulation'#13);
+ if Verbose then TranscriptPas('Trying Maluva emulation'#13);
  case parameter2 of
  3:  begin _XMES; exit; end;
  4:  begin _XPART;exit; end;
- else TranscriptPas('Not a valid Maluva Condact'#13);
+ else if Verbose then TranscriptPas('Not a valid Maluva Condact'#13);
  end;
 end;
 (*Please notice even with Maluva Enabled additional EXTERN code can be run, it just happens Maluva functions 
   can intervene and don't let execution come to this point, but if not, then standard EXTERN code may run *)
- TranscriptPas('Trying standard extern execution'#13);
+ if Verbose then TranscriptPas('Trying standard extern execution'#13);
  condactResult := Extern(parameter1, parameter2);
- TranscriptPas('Standard execution result: ' +IntToStr(byte(done)) + #13);
+ if Verbose then TranscriptPas('Standard execution result: ' +IntToStr(byte(done)) + #13);
 end;
 
 (*--------------------------------------------------------------------------------------*)

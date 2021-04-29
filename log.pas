@@ -12,6 +12,7 @@ procedure TranscriptPas(LogText: String); {Transcript a classic pascal string}
 procedure CloseTranscript;
 
 var TranscriptDisabled: boolean;
+    Verbose: boolean;
 
 implementation
 
@@ -64,5 +65,6 @@ begin
     (* Check to never do transcript on floppy disk *)
     TranscriptUnit := ParamStr(0);
     TranscriptUnit :=  Upcase(TranscriptUnit[1]);
+    Verbose := false;
     if (TranscriptUnit='A') or (TranscriptUnit='B') then TranscriptDisabled := true;
 end.

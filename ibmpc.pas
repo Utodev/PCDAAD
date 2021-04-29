@@ -599,7 +599,7 @@ begin
  Reset(F,1);
  if IOResult=0 then
  begin
-  TranscriptPas('Loading extern file...'#13);
+  if Verbose then TranscriptPas('Loading extern file...'#13);
    SizeExtern:=system.FileSize(F)+20;
    getmem(ExternPTR,SizeExtern);
    dir:=longint(ExternPTR);
@@ -609,7 +609,7 @@ begin
    ExternPTR:=pointer(seg_dir+(des_dir SHL 16));
    BlockRead(F,ExternPTR^,SizeExtern-20,readBytes);
    Close(F);
- end else TranscriptPas('Failed to load DAAD.EXT'#13);
+ end else if Verbose then TranscriptPas('Failed to load DAAD.EXT'#13);
 end;   
 
 
@@ -619,7 +619,7 @@ begin
  Extern := false;
  if ExternPTR = nil  THEN InitializeExtern;
  if ExternPTR = nil then exit; {No Extern to load}
- TranscriptPas('Extern Execution...'#13);
+ if Verbose then TranscriptPas('Extern Execution...'#13);
  {$F+}   {Force Far calls}
  PObj := @objLocations;
  PFlags := @flagsArray;
@@ -635,7 +635,7 @@ begin
     POP DS
  end;
 {$F-}
- TranscriptPas('Extern Completed...'#13);
+ if Verbose then TranscriptPas('Extern Completed...'#13);
 end;
 
 procedure PreserveStream;

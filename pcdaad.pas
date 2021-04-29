@@ -39,19 +39,19 @@ begin
  {Check if current process has finished}
  if getByte(EntryPTR) = END_OF_PROCESS_MARK then
  begin
-  TranscriptPas('{End Of Process found}'+#13);
+  if Verbose then TranscriptPas('{End Of Process found}'+#13);
   {If DOALL loop in execution}
   if DoallPTR <> 0 then 
   begin
-    TranscriptPas('{In Doall}'+#13)  ;
+    if Verbose then TranscriptPas('{In Doall}'+#13)  ;
     {Try to get next object at the doall location}
-    TranscriptPas('{Last doall object:'+ inttostr(getFlag(FDOALL))+'}'+#13);
+    if Verbose then TranscriptPas('{Last doall object:'+ inttostr(getFlag(FDOALL))+'}'+#13);
     nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
-    TranscriptPas('{Next doall object:'+ inttostr(nextDoallObjno)+'}'+#13);
+    if Verbose then TranscriptPas('{Next doall object:'+ inttostr(nextDoallObjno)+'}'+#13);
     {If a valid object found jump back to DOALL entry/condact}
     if nextDoallObjno <> MAX_OBJECT then
     begin
-      TranscriptPas('{Doall loops}'+#13);
+      if Verbose then TranscriptPas('{Doall loops}'+#13);
       EntryPTR := DoallEntryPTR;
       CondactPTR :=  DoallPTR;
       SetReferencedObject(nextDoallObjno);
@@ -63,7 +63,7 @@ begin
       {If in DOALL but no more objects mark doall inactive and just let }
       {the process continue and finish normally}
       DoallPTR := 0; 
-      TranscriptPas('{Doall finished}'+#13);
+      if Verbose then TranscriptPas('{Doall finished}'+#13);
     end;
   end;
 
@@ -83,8 +83,9 @@ begin
   goto RunEntry;
  end; 
 
- TranscriptPas('{> ' + getVocabulary(VOC_VERB, getByte(EntryPTR)) +' ' + getVocabulary(VOC_NOUN,getByte(EntryPTR+1))); 
- TranscriptPas(' matches ' + getVocabulary(VOC_VERB, getFlag(FVERB)) 
+ if Verbose then TranscriptPas('{> ' + getVocabulary(VOC_VERB, getByte(EntryPTR)) 
+              + ' ' + getVocabulary(VOC_NOUN,getByte(EntryPTR+1))); 
+ if Verbose then TranscriptPas(' matches ' + getVocabulary(VOC_VERB, getFlag(FVERB)) 
               + ' ' + getVocabulary(VOC_NOUN, getFlag(FNOUN)) +' }'#13);
 
  RunCondact:
@@ -132,7 +133,7 @@ begin
  end;
  
  {run condact}
- TranscriptPas('{'+DebugStr+'}'+#13);
+ if Verbose then TranscriptPas('{'+DebugStr+'}'+#13);
  condactResult := true;
  condactTable[opcode].condactRoutine; {Execute the condact}
  {If condact execution failed, go to next entry}
@@ -149,10 +150,11 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-nolog] [-nomaluva] [-i<orders file>] [-d] [-h]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-log] [-vlog] [-nomaluva] [-i<orders file>] [-d] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
-  WriteLn('-log : Transcript game and condacats to PCDAAD.LOG');
+  WriteLn('-log : Transcript game to PCDAAD.LOG');
+  WriteLn('-vlog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log)');
   WriteLn('-nomaluva : turns off Maluva extension emulation');
   WriteLn('-i<orders file> : take player orders from text file until exhausted');
   WriteLn('-d : enable diagnostics');
@@ -167,6 +169,7 @@ begin
  begin
   if StrToUpper(ParamStr(i)) = '-H' then Help
   else if StrToUpper(ParamStr(i)) = '-LOG' then TranscriptDisabled := false
+  else if StrToUpper(ParamStr(i)) = '-VLOG' then begin TranscriptDisabled := false; Verbose := true; end
   else if StrToUpper(ParamStr(i)) = '-D' then DiagnosticsEnabled := true
   else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
@@ -193,14 +196,17 @@ begin
     if (not loadCharset('DAAD.FNT')) then Error(6, 'DAAD.FNT file not found or invalid.');
 
     InitTranscript('pcdaad.log');
-    TranscriptPas('PCDAAD Log ' + VERSION + #13);
-    TranscriptPas('DDB Lang: ');
-    if IsSpanish then TranscriptPas('Spanish'#13)
-                 else TranscriptPas('English'#13);
+    if Verbose then 
+    begin
+      TranscriptPas('PCDAAD Log ' + VERSION + #13);
+      TranscriptPas('DDB Lang: ');
+      if IsSpanish then TranscriptPas('Spanish'#13)
+                  else TranscriptPas('English'#13);
 
-    if DiagnosticsEnabled then TranscriptPas('Diagnostics enabled.'#13);
-    if MaluvaDisabled then TranscriptPas('Maluva emulation disabled.'#13);
-    if useOrderInputFile then TranscriptPas('Order Input file: '+orderInputFileName+#13);
+      if DiagnosticsEnabled then TranscriptPas('Diagnostics enabled.'#13);
+      if MaluvaDisabled then TranscriptPas('Maluva emulation disabled.'#13);
+      if useOrderInputFile then TranscriptPas('Order Input file: '+orderInputFileName+#13);
+    end;  
                      
     
     InitOrderFile;
