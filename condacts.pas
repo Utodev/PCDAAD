@@ -515,6 +515,7 @@ var YesResponse : char;
     PreserveTimeout: TFlagType;
 begin
    PreserveTimeout := getFlag(FTIMEOUT);
+   PreserveStream;
    setFlag(FTIMEOUT, 0);
    Sysmess(SM12); {"Are you sure? "}
    {Get first char of SM30, uppercased}
@@ -530,7 +531,9 @@ begin
    windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := '';
    done := true;
+   RestoreStream;
 end;
+
 
 (*--------------------------------------------------------------------------------------*)
 procedure _END;
@@ -538,6 +541,7 @@ var NoResponse : char;
     PreserveTimeout: TFlagType;
 begin
    PreserveTimeout := getFlag(FTIMEOUT);
+   PreserveStream;
    setFlag(FTIMEOUT, 0);
    Sysmess(SM13); {"Are you sure? "}
    {Get first char of SM31, uppercased}
@@ -549,6 +553,7 @@ begin
    if (inputBuffer<> '') and (Upcase(inputBuffer[1])=NoResponse) then parameter1:=0 else parameter1:=1;
    windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := ''; {Make sure inputBuffer is emptied so in case of restart there is not a "Y" or "S" in the buffer}
+   RestoreStream;
    _EXIT;
 end;
 
@@ -596,6 +601,7 @@ var Savegame : FILE;
     PreserveTimeout: TFlagType;
 begin
    PreserveTimeout := getFlag(FTIMEOUT);
+   PreserveStream;
    setFlag(FTIMEOUT, 0);
    condactResult := false;
    Sysmess(SM60); {Type in name of file}
@@ -626,6 +632,7 @@ begin
     condactResult := true;
     done := true;
    end;
+   RestoreStream;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -636,6 +643,7 @@ var Savegame : FILE;
     PreserveTimeout: TFlagType;
 begin
    PreserveTimeout := getFlag(FTIMEOUT);
+   PreserveStream;
    setFlag(FTIMEOUT, 0);
    condactResult := false;
    Sysmess(SM60); {Type in name of file}
@@ -668,6 +676,7 @@ begin
         condactResult := true;
     end;
    end; 
+   RestoreStream;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1595,13 +1604,16 @@ end;
 procedure _INPUT;
 var flag49: TFlagType;
 begin
-  SetFlag(FINPUT, parameter1);
-   
-   parameter2 := parameter2 SHL 3; { Move the three bits to their position in flag 49}
-   parameter2 := parameter2 AND $38; {Isolate them: 00111000} 
- 
-   flag49 := getFlag(FINPUT) AND $C7; {Get flag 49 and clear the three bits affected by INPUT}
-   SetFlag(FINPUT, flag49 OR parameter2);  {Combine bits}
+  if (parameter1<NUM_WINDOWS) then
+  begin
+    SetFlag(FINPUT, parameter1);
+    
+    parameter2 := parameter2 SHL 3; { Move the three bits to their position in flag 49}
+    parameter2 := parameter2 AND $38; {Isolate them: 00111000} 
+    
+    flag49 := getFlag(FTIMEOUT_CONTROL) AND $C7; {Get flag 49 and clear the three bits affected by INPUT}
+    SetFlag(FTIMEOUT_CONTROL, flag49 OR parameter2);  {Combine bits}
+   end; 
 
    done := true;
 end;

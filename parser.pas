@@ -34,6 +34,7 @@ type TWordRecord = record
 {but when read, conjunctions are replaced with a dot to ease order}
 {split later.}
 var inputBuffer: String;
+    PatchedStr : String; (* Contains the String with international characters already patched *)
 var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     inputHistoryCount, inputHistoryPointer : Byte;
     useOrderInputFile: Boolean;
@@ -344,6 +345,7 @@ begin
 end;
 
 procedure getCommand(usePrompt: boolean);
+var i : integer;
 begin
  inputBuffer := '';
  if (useOrderInputFile) then
@@ -355,11 +357,17 @@ begin
  begin
   if UsePrompt then Sysmess(SM33); {the prompt}
   ReadText(inputBuffer);
-  Windows[ActiveWindow]. LastPauseLine := 0;
+  {When the prompt appears the last pause line of all windows is resetted}
+  for i := 0 to NUM_WINDOWS -1 do  Windows[i]. LastPauseLine := 0;
   {The inputBuffer may come with Spanish characters that we need to convert to where DAAD stores them in the ASCII Table}
    if IsSpanish then inputBuffer := fixSpanishCharacters(inputBuffer);
  end
- else WriteTextPas(#13'>' + inputBuffer + #13, false);
+ else 
+  begin
+    WriteTextPas(''#13, false);
+    Sysmess(SM33);
+    WriteTextPas(inputBuffer + #13, false);
+  end;
 end;
 
 procedure getPlayerOrders;
@@ -393,6 +401,7 @@ var orderWords : array[0..High(Byte)] of TCompleteWord;
     PronounInSentence : Boolean;
     playerOrder : string;
     InputTakenFromPlayer: boolean;
+
 begin
 
 if (Option = 0) then (* parse 0, get order from the player or from orders buffer *)
@@ -401,9 +410,15 @@ begin
  InputTakenFromPlayer := false;
  if (inputBuffer='') then
  begin
-  i := random(4);
-  Sysmess(SM2 + i);
+  PreserveStream;
+  if getFlag(FPROMPT) = 0 then 
+  begin
+    i := random(4);
+    Sysmess(SM2 + i);
+  end
+  else if getFlag(FPROMPT) < DDBHeader.numSys then Sysmess(getFlag(FPROMPT));
   getPlayerOrders;
+  RestoreStream;
   InputTakenFromPlayer := true;
  end; 
  {Extract an order}

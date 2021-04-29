@@ -30,6 +30,7 @@ VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     ActiveWindow : Byte;
     LastPrintedIsCR : boolean;
     CharsetShift : Byte;
+    BackupStream: Byte;
     
 
 function Extern(A, B: Byte): boolean;
@@ -65,11 +66,12 @@ function Keypressed:Boolean;
 procedure WaitVRetrace;
 {Get timer ticks}
 function getTicks: word; 
-
+procedure PreserveStream;
+procedure RestoreStream;
 
 implementation
 
-uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global;
+uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global, condacts;
 
 var ExternPTR: Pointer;
     TimeoutPreservedOrder: String;
@@ -232,23 +234,18 @@ var key : word;
     SaveX, SaveY : Word;
     Xlimit : Word;
     historyStr : String;
-    PatchedStr : String; (* Contains the String with international characters already patched *)
     Ticks: word;
     TimeoutSeconds : TFlagType;
     TimeoutHappened: Boolean;   
-    PreserveActiveWindow : Byte;
     PlayerPressedKey : boolean;
 begin
  Str := '';
- PreserveActiveWindow := ActiveWindow;
- if (GetFlag(FINPUT)<>0) then ActiveWindow := GetFlag(FINPUT);
  SaveX := windows[ActiveWindow].currentX;
  SaveY := windows[ActiveWindow].currentY;
  {if timeout last frame, and there is text to recover, and we should recover}
  {bits 7, 6 and 5 for FTIMEOUT_CONTROL set}
  if ((getFlag(FTIMEOUT_CONTROL) and $E0) = $E0) then 
  begin
-  TranscriptPas('RestoringOrder: ' + TimeoutPreservedOrder + #13);
   Str:= TimeoutPreservedOrder;
   TimeoutPreservedOrder := '';
  end;
@@ -319,20 +316,8 @@ begin
  ClearWindow(SaveX + StrLenInPixels(Str), 
                   SaveY, StrLenInPixels('_'), 
                   8 , windows[ActiveWindow].PAPER); 
- ActiveWindow := PreserveActiveWindow;
  if TimeoutHappened then
  begin
-  {Check  if the bit to print the input in the active stream}
-  if ((GetFlag(FTIMEOUT_CONTROL) AND $10) = $10) then 
-  begin
-   WriteTextPas('>' + PatchedStr + #13 , true);
-  end;
-  {Check  if the bit to delete the input is active}
-  if ((GetFlag(FTIMEOUT_CONTROL) AND $08) = $08) then 
-  begin
-   Str := '';
-   ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, windows[ActiveWindow].PAPER);
-  end;
   {Set bit that says timeout happened}
   SetFlag(FTIMEOUT_CONTROL, getFlag(FTIMEOUT_CONTROL) OR $80); 
   TimeoutPreservedOrder := Str;
@@ -652,6 +637,29 @@ begin
 {$F-}
  TranscriptPas('Extern Completed...'#13);
 end;
+
+procedure PreserveStream;
+begin
+ BackupStream := ActiveWindow;
+ if (getFlag(FINPUT)<>0) and (getFlag(FINPUT)<NUM_WINDOWS) then ActiveWindow := getFlag(FINPUT);
+end; 
+
+procedure RestoreStream;
+begin
+  {Check  if the bit to delete the input stream after input is active }
+  {Despite this bit is in the tiemout flags flag, it's applied wether }
+  {there has been a timeout or not, hence it's here}
+  if ((GetFlag(FTIMEOUT_CONTROL) AND $08) = $08) then ClearCurrentWindow;
+  ActiveWindow := BackupStream;
+  {Check  if the bit to print the input in the active stream}
+  {THis one also happens, no matter if timeout happened, despite being in the timeout flag }
+  if ((GetFlag(FTIMEOUT_CONTROL) AND $10) = $10) then 
+  begin (*Pending: replace this > with the sysmess*)
+   Sysmess(SM33); {The prompt}
+   WriteTextPas( PatchedStr + #13, true);
+  end;
+end; 
+
 
 
 begin
