@@ -1842,7 +1842,7 @@ var inkey : word;
 begin
   if Keypressed then inkey := ReadKey else inkey := 0;
   setflag(FKEY1, inkey and $FF);
-  setflag(FKEY1, (inkey and $FF00) SHR 8);
+  setflag(FKEY2, (inkey and $FF00) SHR 8);
   done := true;
 end;
 
