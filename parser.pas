@@ -371,7 +371,7 @@ begin
 end;
 
 procedure getPlayerOrders;
-var i : word;
+var i : integer;
 begin
  repeat
   getCommand(true);;
