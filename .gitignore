@@ -9,7 +9,6 @@ release/*
 *.png
 *.jpg
 *.bmp
-*.txt
 .DS_Store
 dosbox/*
 *.TPU
