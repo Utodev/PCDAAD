@@ -1,18 +1,13 @@
-
-PCDAAD General notes for Beta 2 - April 21, 2021
-------------------------------------------------
+PCDAAD General notes
+--------------------
 
 PCDAAD is a DOS interpreter for DAAD games which uses the VGA 320x20, 
 256 colours mode, unlike the original one, that was using VGA 320x200,
 16 colours mode.
 
-Download at:
-
-http://www.ngpaws.com/downloads/DAAD/PCDAAD/
-
 PCDAAD does not pretend to support everything that was supported in the 
 original interpreters. Even the original interpreters didn't support
-all of them same features. 
+the same features. 
 
 Some of the features not supported so far may become supported in future
 releases, or not.
@@ -20,14 +15,7 @@ releases, or not.
 Please closely read this notes to understand the differences between this
 DAAD interpreter and other DAAD interpreters :
 
-- PCDAAD does not support "timeout" feature at the moment.
-
 - PCDAAD does not support CALL, GFX, SFX and MOUSE condacts.
-
-- When the game prints a lot of text, the game pauses until player presses a
-  key to let the player read, but the "More..." message is not shown.
-
-- Flag 41 feature is not supported.  
 
 - PCDAAD supports EXTERN calls made by MALUVA condacts XPART, XMES and 
   XMESSAGE, but in order to make them work you will need to use DRC compiler 
@@ -35,22 +23,22 @@ DAAD interpreter and other DAAD interpreters :
   would have a message saying this target does not support that feature. 
   PCDAAD does also support normal EXTERN calls.
   
-- PCDAAD requires DAAD.FNT file  to be in the same folder. It is a FNT file
+- PCDAAD requires DAAD.FNT file to be in the same folder. It is a FNT file
   made with GCS, which can be found in DAAD Ready Package, and was once part
   of SINTAC adventure engine. From that FONT, only the 8 pixels high font is
-  used, the 16 pixels high font is ignored. If you want to change the game
-  font please use GCS.
+  used, the 16 pixels high font is ignored.
 
 - PCDAAD will run DAAD.DDB file found in same folder, created with DRC compiler.
-  You can thouhg specify a different DDB file to be loaded by providing file
-  name as first parameter.
-  
+  You can thouhg specify a different DDB file to be loaded by placing it as 
+  parameter:
+
   PCDAAD MYGAME.DDB
 
 - If a file named DAAD.PCX or DAAD.VGA is found in the same folder, it will be 
   loaded as loading screen, then wait for a key to be pressed and screen cleared.
-  When cleared, colour 0 of the PCX palette will be used to clear, so make sure
-  colour 0 is black (or the color you want for background) in that picture.
+  When cleared, color 0 of the PCX palette will be used to clear, so make sure
+  it is black or the color you want for background. It should be a 320x200 PCX
+  file with a 256 color indexed palette.
 
 - This interpreter uses a mode with same resolution as the CPC and C64 interpreters,
   so the structure of columns and rows is the same (40 columns, 25 rows) unlike
@@ -63,9 +51,9 @@ DAAD interpreter and other DAAD interpreters :
 
 - "PICTURE n" condact will look for a file named n.PCX or n.VGA in the same folder,
   padded with zeroes in the left in the Maluva style (i.e. PICTURE 7 will look for
-  007.VGA or 007.PCX). Images should be 256 colours indexed PCX files, with a 
+  007.VGA or 007.PCX). Images should be 256 colours indexed PCX files, width a 
   maximum size of 320x200 pixels, although making them be exactly the same size 
-  the pictures window is it's a good idea (otherwise they will use more disk space,
+  the pictures window it's a good idea (otherwise they will use more disk space,
   take longer to load, and be cut anyway).
 
 - The VGA 256 mode is a 320x200 x 256 colours mode, that uses palette. That means
@@ -86,28 +74,38 @@ DAAD interpreter and other DAAD interpreters :
   If the origin file is too complicated or uses too many colors pcxfixer
   may give up and be unable to create a "fixed" PCX file. PCXfixer also allows
   you to choose other colors if you don't want white on black but other 
-  combination. Run PCXfixer without parameters for more information.
+  combination. Run PCXfixer without parameters from the command line for more
+  information.
 
 - You can force PCDAAD to create a log of everything that happens behind the 
   scenes. The log will contain all player orders, responses, and even condacts
   being executed. It is meant for debug purposes and it will be dumped in the
   file PCDAAD.LOG, which will be overwritten in each PCDAAD execution. To
-  enable log add "-log" parameter to PCDAAD call:
+  enable verbose log add "-vlog" parameter to PCDAAD call:
 
-  PCDAAD -log
-  PCDAAD MYGAME.DDB -log
+  PCDAAD -vlog
+  PCDAAD MYGAME.DDB -vlog
+
+  If you just want playe input and game output, use -log instead of -vlog
+
+  Please notice dumping every condact to the log file with the -vlog option 
+  is slow, and normal games initialization can take several seconds to 
+  happen. That is absolutely normal. Use -vlog only if you really need it.
+
 
 - You can have diagnostics in-game, just like with Professional Adventure 
   Writer.  To enable them add "-d" parameter 
 
   PCDAAD -d
 
-  With diagnostics enabled, type plus sign (+) and press enter for help.
+  Type "+" [intro] at the game prompt to know how to use them.
 
-- Parameter -nomaluva disables Maluva emulation in EXTERN calls. 
+- Parameter -nomaluva disables Maluva emulation in EXTERN calls. May be 
+  of use in the future if EXTERN becomes supported and you want to disable  
+  Maluva emulation in order to have your own routines. 
 
-- Automatic input: you can have PCDAAD go get orders from a text file, 
-  instead of the player. This is very useful for testing purposes, like 
+- Automatic input: you can have PCDAAD go get order from a text file, 
+  instead of player. This is very useful for testing purposes, like 
   checking if game still can be finished after making changes. If the
   file becomes exhausted when reading from it, PCDAAD will them ask 
   the player again. You can use -i parameter for that:
@@ -116,13 +114,9 @@ DAAD interpreter and other DAAD interpreters :
 
   Please notice there is no space between -i and the file name.
 
-
-Issues
-------
-
 If you find any issues you can:
 
-1) If you think it's a bug you can add an issue at Guthub:
+1) If you think it's a bug you can add an issue at Github:
 
 https://github.com/Utodev/PCDAAD/issues
 
@@ -137,22 +131,6 @@ https://t.me/Advent8bit
 You can also find me on Twitter, but I tend to enter twitter only
 now and then: @uto_dev
 
-What's new in Beta 2
---------------------
-
-- EXTERN condact implemented. Please read about how to use EXTERN at the 
-  bottom of this document (quite technical stuff).
-
-- PCDAAD now supports both English and Spanish parser, and applies
-  one or another depending on the DDB language setting.
-
-- Fixed a bug that was making compound orders using the conjugations fail
-
-- Modified TAB so it works like in the ZX Spectrum interpreter, which is
-  what the manual says plus "and if the col is far beyond the window limits,
-  then move to col #0.
-
-
 How to use EXTERN
 -----------------
  
@@ -163,9 +141,11 @@ that call as a Maluva Condact. That means that in case value2 is 3 (XMES)
 or 4 (XPART), PCDAAD will emulate XMES or XPART Maluva condacts, and 
 exit.
 
+Please notice from here a basic knowledge of x86 assembly code is 
+expected.
+
 If Maluva emulation is disabled, or value2 is neither 2 nor 3, then the
-real EXTERN will be executed. Please notice from now on, a basic 
-knowledge of PC Hardware and x86 processor is needed.
+real EXTERN will be executed.
     
 When real EXTERN is run, it will look for a file named DAAD.EXT in the 
 hard disk, and if found, it will load it to RAM. DAAD.EXT should be a 
@@ -175,15 +155,15 @@ file, not like a .EXE file which has a header.
 When called, PCDAAD will first put the following information in registers,
 then call your external code:
 
-  AL = value1
-  AH = value2
+  AL = EXTERN first parameter 
+  AH = EXTERN second parameter 
   DS:BX = pointer to the flags table (256 values)
   DS:CX = pointer to the object locations table (256 values too, some may be 
           unused)
 
 Make sure your code preserves DS, CS and SS values.
 
-This would be a minimal EXTERN code, that just sets flag 100 to "value1":
+This would be a minimal EXTERN code, that just sets flag 100 to "value1" (EXTERN first parameter):
   
   PUSH BP
   MOV BP,SP ; header
@@ -199,14 +179,12 @@ execution, which means EXTERN calls will be fast if your code is fast,
 except the first one. It also means that in case you have variables in
 your code, they will keep values between code execution.
 
-If you want some value to be saved with the savegames, you can use the objects not 
+If you want some value to be saved with the savegames, you can use the are not 
 used by your specific game in the objects locations table (DS:CX), as the 
-whole table - 256 bytes - is saved with the savegames, no matter if there game
-has 1 object or 200. 
-
-If you are making a EXTERN to be used by others, and you don't know how many objects
-the games will have, the best way to do it is writing your data at the end of object
-locations table (where object 255, 254, 253, etc.), and let the author know if 
-your extension is used, there should be no more than X objects.
+whole table, 256 bytes, is saved with the savegames, no matter if there game
+has 1 object or 200. If you are making a EXTERN to be used by others, and you 
+don't know how many objects the games will have, the best way to do it is 
+writing your data at the end of object locations table (where object 255, 254,
+253, etc.)
 
 
