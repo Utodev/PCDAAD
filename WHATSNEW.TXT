@@ -1,0 +1,3 @@
+PCDAAD 1.2 "Mislata"
+====================
+Now PCDAAD does not crash with games without any conjugation in the vocabulary (i.e Adventuron exported ones)
