@@ -871,7 +871,7 @@ end;
 procedure _SYNONYM;
 begin
  if (parameter1<>NO_WORD) then setFlag(FVERB, parameter1);
- if (parameter2<>NO_WORD) then setFlag(FNOUN, parameter1);
+ if (parameter2<>NO_WORD) then setFlag(FNOUN, parameter2);
  done := true;
 end;
 
