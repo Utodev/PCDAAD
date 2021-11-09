@@ -203,7 +203,7 @@ begin
      begin
       objectNoun := getByte(DDBHeader.objNamePos + i * 2);
       objectAdject := getByte(DDBHeader.objNamePos + i * 2 + 1);
-      if ((objectNoun = NO_WORD) OR (objectNoun = aNoun)) AND
+      if ((objectNoun <> NO_WORD) AND (objectNoun = aNoun)) AND
          ((objectAdject = NO_WORD) OR (objectAdject = anAdjective)) 
          then 
          begin
