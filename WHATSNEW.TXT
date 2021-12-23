@@ -1,3 +1,10 @@
+PCDAAD 1.3 "Colossal Cave"
+==========================
+- DOALL implementation has been updated to be more compatible by default. New -NDOALL parameter will now allow nested DOALLs if they are in different processes.
+- Fixed bug in SYNONYM
+- When looking for an object reference when provided with a noun and adjective, PCDAAD was allowing matches with objects whose noun was NO_WORD/255. Provided that that is theoretically correct (a match is a match), original interpreters were not allowing such matches, so the logic has been changed to ressemble that of the original ones.
+
+
 PCDAAD 1.2 "Mislata"
 ====================
-Now PCDAAD does not crash with games without any conjugation in the vocabulary (i.e Adventuron exported ones)
+- Now PCDAAD does not crash with games without any conjugation in the vocabulary (i.e Adventuron exported ones)
