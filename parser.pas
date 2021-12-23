@@ -41,6 +41,7 @@ var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     orderInputFile: text;
     orderInputFileName: string;
     DiagnosticsEnabled: boolean;
+    NestedDoallEnabled: boolean;
 
 {Returns the code for a specific word of a specific type, or any}
 {type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
@@ -628,4 +629,5 @@ begin
  for i := 0 to 255 do KnownVocabulary[i]:='';
  useOrderInputFile := false;
  DiagnosticsEnabled := false;
+ NestedDoallEnabled := false;
 end.

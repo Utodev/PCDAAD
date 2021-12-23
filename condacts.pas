@@ -1324,8 +1324,11 @@ procedure _PROCESS;
 begin
     if (Parameter1 >= DDBHeader.numPro) then Error(3, 'Process ' + inttostr(parameter1) + 'does not exist');
     StackPush;
-    DoallPTR := 0;
-    DoallEntryPTR := 0; {Not really necessary}
+    if (NestedDoallEnabled) then
+    begin
+        DoallPTR := 0;
+        DoallEntryPTR := 0; {Not really necessary}
+    end;
     CondactPTR := 0;
     ProcessPTR :=  DDBHeader.processPos + 2 * parameter1;
     {As I really want to force a jump to first entry of this new   }
@@ -1413,6 +1416,13 @@ end;
 procedure _DOALL;
 var objno: TFlagType;
 begin
+ IF DoallPTR<>0 THEN
+ begin
+  WriteTextPas('Runtime error 4 - Invalid nested DOALL', false);
+  _ANYKEY;
+  parameter1 := 0;
+  _EXIT;
+ end;
  objno := getNextObjectAt(-1, parameter1);
  if (objno<>MAX_OBJECT) then
  begin
@@ -1421,8 +1431,14 @@ begin
     DoallLocation := parameter1;
     SetFlag(FDOALL,objno);
     SetReferencedObject(objno);
- end;
- done := true;
+    done := true;
+ end
+ else 
+ begin
+  Sysmess(SM8);
+  newtext;
+  _DONE;
+ end; 
 end;
 
 (*--------------------------------------------------------------------------------------*)
