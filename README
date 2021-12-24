@@ -34,6 +34,8 @@ DAAD interpreter and other DAAD interpreters :
 
   PCDAAD MYGAME.DDB
 
+- PCDAAD properly supports English and Spanish languages, but there are not separated interpreters, the interpreter will detect the language in the DDB header.
+
 - If a file named DAAD.PCX or DAAD.VGA is found in the same folder, it will be 
   loaded as loading screen, then wait for a key to be pressed and screen cleared.
   When cleared, color 0 of the PCX palette will be used to clear, so make sure
@@ -113,6 +115,8 @@ DAAD interpreter and other DAAD interpreters :
   PCDAAD -iSOLUTION.TXT
 
   Please notice there is no space between -i and the file name.
+
+- PCDAAD can support nested DOALLs if they are nested in different processes, but to make it support that feature you have to call interpreter with the -ndoall parameter. If that parameter is absent, any DOALL call found during a DOALL loop will generate a runtime error #4. That runtime error will also happen if, despite having used the -ndoall parameter, a scond DOALL call is found in the same process where the first DOALL call is.
 
 If you find any issues you can:
 
