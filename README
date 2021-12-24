@@ -5,6 +5,8 @@ PCDAAD is a DOS interpreter for DAAD games which uses the VGA 320x20,
 256 colours mode, unlike the original one, that was using VGA 320x200,
 16 colours mode.
 
+Get PCDAAD at https://www.ngpaws.com/pcdaad.
+
 PCDAAD does not pretend to support everything that was supported in the 
 original interpreters. Even the original interpreters didn't support
 the same features. 
