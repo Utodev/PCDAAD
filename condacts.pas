@@ -1298,8 +1298,8 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _SUB;
 begin
- if getFlag(Parameter2) +  getFlag(Parameter1) <> 0 then setFlag(Parameter2, 0)
-                                                    else setFlag(Parameter2, getFlag(Parameter2) + getFlag(Parameter1));
+ if getFlag(Parameter2) -  getFlag(Parameter1) < 0 then setFlag(Parameter2, 0)
+                                                   else setFlag(Parameter2, getFlag(Parameter2) + getFlag(Parameter1));
 done := true;
 end;
 
