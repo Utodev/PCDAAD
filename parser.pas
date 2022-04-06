@@ -324,18 +324,18 @@ function fixSpanishCharacters(Str:String): string;
 var i : byte;
     EncodeStr : String;
 begin
-  EncodeStr := '§­¨®¯ ‚¡¢£¤¥‡€š';
+  EncodeStr := '§­¨®¯ ‚¡¢£¤¥‡€š';
   for  i:= 1 to Length(Str) do
   begin
     case Str[i] of 
       '¤': Str[i]:='¥';
       '‡': Str[i]:='€';
       '?',' ': Str[i]:='A';
-      '','‚': Str[i]:='E';
+      '','‚': Str[i]:='E';
       '?','¡': Str[i]:='I';
       '?','¢': Str[i]:='O';
       '?','£': Str[i]:='U';
-      '?','': Str[i]:='U';
+      'š','': Str[i]:='U';
     end;
     if (Pos(Str[i], EncodeStr)>0) then 
     begin
