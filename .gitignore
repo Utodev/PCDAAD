@@ -5,6 +5,7 @@ release/*
 *.OLD
 *.EXT
 *.SYM
+*.TXT
 *.XMB
 *.png
 *.jpg
