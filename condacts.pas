@@ -319,8 +319,10 @@ following has to be fullfilled according manual:
 procedure listObjects(locno: TFlagType; isLISTAT: boolean);
 var count, listed : TFlagType;
     i : integer;
+    continuousListing :boolean;
 begin
  count := getObjectCountAt(locno);
+ continuousListing := (getFlag(FOBJECT_PRINT_FLAGS) AND 64) <> 0;
  listed := 0;
  
  if (count> 0) then
@@ -330,16 +332,16 @@ begin
     if (not isLISTAT) then 
     begin
      Sysmess(SM1); {I can also see:} {Only for LISTOBJ}
-     if ((getFlag(FOBJECT_PRINT_FLAGS) AND 64) = 0) then _NEWLINE;
+     if (not continuousListing) then _NEWLINE;
     end;
 
     for  i := 0 to DDBHeader.numObj - 1 do
     begin
         if (getObjectLocation(i) = locno) then
         begin
-            WriteText(getPcharMessage(DDBHeader.objectPos, i), false);
+            WriteText(getPcharMessageOTX(i, false, false, continuousListing), false);
             listed := listed + 1;
-            if ((getFlag(FOBJECT_PRINT_FLAGS) AND 64) <> 0) then
+            if (continuousListing) then
             begin {continuous listing}
                 if (listed = count) then Sysmess(SM48)  {.\n}
                 else if (listed = count - 1) then Sysmess(SM47) {"and"}
@@ -581,6 +583,7 @@ var inkey :  word;
     TimeoutHappened: Boolean;   
     
 begin
+ Sysmess(SM16); {Press any key to continue}
  TimeoutHappened := false;
  {Check if Timeout can happen on ANYKEY}
  if (getFlag(FTIMEOUT_CONTROL) AND $04 = $04) then TimeoutSeconds := getFlag(FTIMEOUT)
@@ -1503,7 +1506,7 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then
  setFlag(FCARRIED, getFlag(FCARRIED) - 1);
  Sysmess(SM44); {The _ is in the }
  _SPACE;
- WriteText(getPcharMessageOTX(parameter2, false), false);
+ WriteText(getPcharMessageOTX(parameter2, false, true, true), false);
  Sysmess(SM51); {.}
  done := true;
 end;
@@ -1545,7 +1548,7 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> parameter2) then
  begin
   Sysmess(SM52); {There isn't one of those in the}
   _SPACE;
-  WriteText(getPcharMessageOTX( parameter2, false), false);
+  WriteText(getPcharMessageOTX(parameter2, true, false, true), false);
   Sysmess(SM51);{.}
   newtext;
   _DONE;
