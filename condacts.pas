@@ -1506,7 +1506,7 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then
  setFlag(FCARRIED, getFlag(FCARRIED) - 1);
  Sysmess(SM44); {The _ is in the }
  _SPACE;
- WriteText(getPcharMessageOTX(parameter2, false, true, true), false);
+ WriteText(getPcharMessageOTX(parameter2, true, false, true), false);
  Sysmess(SM51); {.}
  done := true;
 end;
