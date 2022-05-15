@@ -1,3 +1,8 @@
+PCDAAD 1.4 "Rochdale Balrog"
+============================
+- Fixed the way DAAD lists objects in LISTAT (continuous and normal mode)
+- Fixed article/pronoun removal in english games
+
 PCDAAD 1.3 "Colossal Cave"
 ==========================
 - DOALL implementation has been updated to be more compatible by default. New -NDOALL parameter will now allow nested DOALLs if they are in different processes.
