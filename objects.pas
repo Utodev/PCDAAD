@@ -196,13 +196,18 @@ function getObjectByVocabularyAtLocation(aNoun, anAdjective, location :TFlagType
 var  i: integer;
      objectNoun : TFlagtype;
      objectAdject : TFlagtype;
+     PartialMatch : boolean;
 begin
+    PartialMatch := false;
+    getObjectByVocabularyAtLocation := MAX_OBJECT;
+
     for i := 0 to DDBHeader.numObj -1 do
      { if location = MAX_LOCATION, any location is valid} 
-     if (location=MAX_LOCATION) or (getObjectLocation(i)=location) then
+     if (location = MAX_LOCATION) or (getObjectLocation(i) = location) then
      begin
       objectNoun := getByte(DDBHeader.objNamePos + i * 2);
       objectAdject := getByte(DDBHeader.objNamePos + i * 2 + 1);
+      { Exact Match }
       if ((objectNoun <> NO_WORD) AND (objectNoun = aNoun)) AND
          ((objectAdject = NO_WORD) OR (objectAdject = anAdjective)) 
          then 
@@ -210,8 +215,23 @@ begin
           getObjectByVocabularyAtLocation := i;
           exit;
          end;
+      { Partial Match.  }
+      { A partial match happens when the player types just a noun, but the object definition has
+        and adjective. In this case there is a match, and the first object that matches is the one that reamains
+        as referenced object, unless a total match happens later. That is why once there is partial match we
+        don't let this part be run again, but we continue the loop in search of a total match, unlike when a total
+        match happens where we immediatly exit}
+      if (not PartialMatch) then
+        if ((objectNoun =  aNoun) AND (anAdjective = NO_WORD)) then
+        begin
+            getObjectByVocabularyAtLocation := i;
+            PartialMatch := true;
+        end; 
+
      end;
-     getObjectByVocabularyAtLocation := MAX_OBJECT;
+
+
+     
 end;
 
 function getNextObjectAt(objno: integer; locno: TFlagType): TFlagType;
