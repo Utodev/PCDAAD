@@ -562,8 +562,8 @@ end;
   i := i + 1;
  end; {while}
  
- {Convertible nouns}
- if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then
+ {Convertible nouns, original interpreters only convert nouns for PARSE 0, not PARSE 1}
+ if  (Option=0) and (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then
  begin
   setFlag(FVERB, getFlag(FNOUN));
   setflag(FNOUN, NO_WORD);
