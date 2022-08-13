@@ -1893,7 +1893,7 @@ end;
 procedure _SKIP;
 var OriginalSkip: integer;
 begin
- OriginalSkip := parameter1 - 256; {Bring back the -128 to 127 value}
+ if (parameter1>=128) THEN  OriginalSkip := parameter1 - 256 ELSE OriginalSkip:= parameter1; {Bring back the -128 to 127 value}
  EntryPTR := EntryPtr + 4 * OriginalSkip; 
  condactResult := false;
 end;
