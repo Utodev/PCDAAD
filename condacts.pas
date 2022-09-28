@@ -1537,7 +1537,7 @@ begin
  if (ObjectLocation = getFlag(FPLAYER)) then 
  begin
   Sysmess(SM49); {The _ isn't in the}
-  WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
+  WriteText(getPcharMessageOTX(parameter2, true, false, true), false);
   Sysmess(SM51);{.}
   newtext;
   _DONE;
@@ -1788,7 +1788,7 @@ begin
  Parameter1 := getObjectByVocabularyAtLocation(Noun, Adject, MAX_LOCATION); {Any Location}
  if (Parameter1 <> MAX_OBJECT) then begin
                                      Sysmess(SM52); {There isn't one of those in the}
-                                     WriteText(getPcharMessage(DDBHeader.objectPos, parameter2), false);
+                                     WriteText(getPcharMessageOTX(parameter2, true, false, true), false);
                                      Sysmess(SM51); {. }
                                     end
                                else Sysmess(SM8); {I can't do that.}
