@@ -1862,7 +1862,7 @@ begin
   if Keypressed then inkey := ReadKey else inkey := 0;
   setflag(FKEY1, inkey and $FF);
   setflag(FKEY2, (inkey and $FF00) SHR 8);
-  done := true;
+  condactResult := inkey<>0;
 end;
 
 (*--------------------------------------------------------------------------------------*)
