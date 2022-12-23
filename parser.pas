@@ -565,8 +565,9 @@ end;
  {Convertible nouns, original interpreters only convert nouns for PARSE 0, not PARSE 1}
  if  (Option=0) and (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then
  begin
-  setFlag(FVERB, getFlag(FNOUN));
-  setflag(FNOUN, NO_WORD);
+  setFlag(FVERB, getFlag(FNOUN)); 
+  {Note: flag fNoun is not altered, when converting noun to verb original DAAD just copies noun to verb,
+   so both verb and noun has same code}
  end;
 
  {Missing verb but present noun, replace with previous verb}
