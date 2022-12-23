@@ -75,6 +75,16 @@ begin
 
  ValidEntry := ((getByte(EntryPTR) = getFlag(FVERB)) OR (getByte(EntryPTR) = NO_WORD))
                  and ((getByte(EntryPTR+1) = getFlag(FNOUN)) OR (getByte(EntryPTR+1) = NO_WORD));
+
+{Convertible nouns, original interpreters only convert nouns for PARSE 0, not PARSE 1}
+ 
+if ((not ValidEntry) and (globalParseMode=0) and (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN)) then
+begin
+ if (getByte(EntryPTR) = getFlag(FNOUN)) then ValidEntry := true;
+ if (ValidEntry) then TranscriptPas('Converted noun "' + getVocabulary(VOC_NOUN, getFlag(FNOUN)) 
+    + '" to verb ==> ');
+end;
+
  CondactPTR := getWord(EntryPTR + 2);
 
  if not ValidEntry then

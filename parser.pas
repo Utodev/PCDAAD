@@ -46,6 +46,7 @@ var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     orderInputFileName: string;
     DiagnosticsEnabled: boolean;
     NestedDoallEnabled: boolean;
+    globalParseMode: TFlagType;
 
 {Returns the code for a specific word of a specific type, or any}
 {type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
@@ -121,6 +122,8 @@ var i, ptr : Word;
 begin
  {Clears the input buffer}
  inputBuffer := '';
+ {Set the parsing mode to 0, player, as in PARSE 0}
+ globalParseMode:=0;
  { Creates the Conjunctions array}
  Ptr := DDBHeader.vocabularyPos;
   while (GetByte(Ptr)<> 0) do
@@ -409,6 +412,8 @@ var orderWords : array[0..High(Byte)] of TCompleteWord;
 
 begin
 
+globalParseMode := Option;
+
 if (Option = 0) then (* parse 0, get order from the player or from orders buffer *)
 begin
  Result := false;
@@ -562,13 +567,7 @@ end;
   i := i + 1;
  end; {while}
  
- {Convertible nouns, original interpreters only convert nouns for PARSE 0, not PARSE 1}
- if  (Option=0) and (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<=LAST_CONVERTIBLE_NOUN) then
- begin
-  setFlag(FVERB, getFlag(FNOUN));
-  setflag(FNOUN, NO_WORD);
- end;
-
+ 
  {Missing verb but present noun, replace with previous verb}
  if not InputTakenFromPlayer then {If the current sentece came from buffer}
    if (getFlag(FVERB)=NO_WORD) and (getFlag(FNOUN)<>NO_WORD) AND (PreviousVerb<>NO_WORD) then setFlag(FVERB, PreviousVerb);
