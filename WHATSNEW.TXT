@@ -1,3 +1,14 @@
+PCDAAD 1.6 - "The Roebuck"
+==========================
+
+- Included a new type of EXTERNs
+
+
+PCDAAD 1.5 - "A round green door"
+=================================
+
+- Fixed a bug with  convertible nouns, that were not working like in original interpreters.
+
 PCDAAD 1.4 "Rochdale Balrog"
 ============================
 - Fixed the way DAAD lists objects in LISTAT (continuous and normal mode)
