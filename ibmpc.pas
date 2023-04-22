@@ -31,6 +31,7 @@ VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     LastPrintedIsCR : boolean;
     CharsetShift : Byte;
     BackupStream: Byte;
+    ExecExterns : Boolean;
     
 
 function Extern(A, B: Byte): boolean;
@@ -71,7 +72,7 @@ procedure RestoreStream;
 
 implementation
 
-uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global, condacts;
+uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global, condacts, dos;
 
 var ExternPTR: Pointer;
     TimeoutPreservedOrder: String;
@@ -615,27 +616,43 @@ end;
 
 function Extern(A, B: Byte): boolean;
 var PObj, Pflags: Pointer;
+    ParameterString : String;
+    ExitCode: Word;
 begin
- Extern := false;
- if ExternPTR = nil  THEN InitializeExtern;
- if ExternPTR = nil then exit; {No Extern to load}
- if Verbose then TranscriptPas('Extern Execution...'#13);
- {$F+}   {Force Far calls}
- PObj := @objLocations;
- PFlags := @flagsArray;
- Extern := true;
- asm
-    PUSH DS
-    MOV AL,A  {Tengo dudas des i al hacer los LDS de tres cosas al 
-    final DS apunta a a vete a saber donde porque no están los tres en el mismo segmento}
-    MOV AH, B   {además, podriamos prescindir del DDBRAM porque si quiren lo pueden cargar desde el extern}
-    LDS BX, [PFlags] {Pointer to the flags}
-    LDS CX, [PObj]   {Pointer to object locations}
-    CALL ExternPTR
-    POP DS
- end;
-{$F-}
- if Verbose then TranscriptPas('Extern Completed...'#13);
+  PObj := @objLocations;
+  PFlags := @flagsArray;
+  Extern := false;
+  ParameterString := inttostr(B) + ' ' + inttostr(longint(PFlags)) + ' ' + inttostr(longint(PObj));
+  if (ExecExterns) then {Externs are run as external executables, in the NMP style}
+  begin
+    if fileExists(inttostr(A) + '.EXE') then exec(inttostr(A) + '.EXE', ParameterString) 
+    else if fileExists(inttostr(A) + '.COM') then exec(inttostr(A) + '.COM', ParameterString) 
+    else if fileExists(inttostr(A) + '.BAT') then exec(GetEnv('COMSPEC'),'/c ' + inttostr(A) + '.bat ' + ParameterString)
+    else exit;
+    if DosExitCode = 0 then Extern := true;
+  end
+  else
+  begin
+    if ExternPTR = nil  THEN InitializeExtern;
+    if ExternPTR = nil then exit; {No Extern to load}
+    if Verbose then TranscriptPas('Extern Execution...'#13);
+    {$F+}   {Force Far calls}
+    PObj := @objLocations;
+    PFlags := @flagsArray;
+    Extern := true;
+    asm
+        PUSH DS
+        MOV AL,A  {Tengo dudas des i al hacer los LDS de tres cosas al 
+        final DS apunta a a vete a saber donde porque no est n los tres en el mismo segmento}
+        MOV AH, B   {adem s, podriamos prescindir del DDBRAM porque si quiren lo pueden cargar desde el extern}
+        LDS BX, [PFlags] {Pointer to the flags}
+        LDS CX, [PObj]   {Pointer to object locations}
+        CALL ExternPTR
+        POP DS
+    end;
+    {$F-}
+    if Verbose then TranscriptPas('Extern Completed...'#13);
+  end;
 end;
 
 procedure PreserveStream;
@@ -669,4 +686,5 @@ begin
  resetWindows;
  ExternPTR := nil;
  TimeoutPreservedOrder := '';
+ ExecExterns := false;
 end.

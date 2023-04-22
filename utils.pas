@@ -18,6 +18,7 @@ function trim(Str: String) : String;
 function StringReplace(Str:String; Origin, Dest: String): String;
 function StrToUpper(Str: String) :String;
 procedure Debug(Str: string);
+function fileExists(Filename: string):boolean;
 
 implementation
 
@@ -80,6 +81,19 @@ begin
  while (Str<>'') and (Str[1]=' ') do Str := Copy(Str, 2, 255);
  while (Str<>'') and (Str[Length(Str)]=' ') do Str := Copy(Str, 1, Length(Str)-1);
  trim := Str;
+end;
+
+function fileExists(Filename: string):boolean;
+var f: file;
+begin
+    fileExists := false;
+    Assign(F, Filename);
+    Reset(F);
+    if (IOResult = 0) then 
+    begin
+     Close(F);
+     fileExists := true;
+    end
 end;
 
 
