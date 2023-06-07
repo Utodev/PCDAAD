@@ -1,4 +1,4 @@
-PCDAAD General notes
+fPCDAAD General notes
 --------------------
 
 PCDAAD is a DOS interpreter for DAAD games which uses the VGA 320x200, 
@@ -28,7 +28,15 @@ DAAD interpreter and other DAAD interpreters :
 - PCDAAD requires DAAD.FNT file to be in the same folder. It is a FNT file
   made with GCS, which can be found in DAAD Ready Package, and was once part
   of SINTAC adventure engine. From that FONT, only the 8 pixels high font is
-  used, the 16 pixels high font is ignored.
+  used, the 16 pixels high font is ignored. Since version 1.6, PCDAAD also can
+  load a file named DAAD.CHR, in the usual CHR format. If DAAD.FNT is not 
+  found, DAAD.CHR will be loaded (if present). DAAD.FNT, as all SINTAC fonts,
+  is proportional. DAAD.CHR is not, and PCDAAD defaults to understand it as a 
+  6x8 charset, so you should use a font like those used in DAAD for targets
+  other than C64 and CPC. You can find a valid DAAD.CHR in DAAD-Ready, at the
+  ASSETS/CHARSET folder. The one named AD8x6.CHR would be the one. You can also
+  find a sample of a valid DAAD.FNT file in that same folder, under the name 
+  MSDOS.FNT.
 
 - PCDAAD will run DAAD.DDB file found in same folder, created with DRC compiler.
   You can thouhg specify a different DDB file to be loaded by placing it as 

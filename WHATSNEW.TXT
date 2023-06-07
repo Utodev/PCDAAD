@@ -2,6 +2,7 @@ PCDAAD 1.6 - "The Roebuck"
 ==========================
 
 - Included a new type of EXTERNs
+- PCDAAD can also load a DAAD classic 8x6 font, by adding DAAD.CHR to the release folder, and removing DAAD.FNT.
 
 
 PCDAAD 1.5 - "A round green door"
