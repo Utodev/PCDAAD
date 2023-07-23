@@ -61,6 +61,10 @@ begin
     end
     else
     begin
+
+    {In English, we have to remove the first word, whatever it is (if there are at least two words)}
+    if (pos(' ', ObjMessage) > 0) then ObjMessage := copy(ObjMessage, pos(' ', ObjMessage) + 1, 255);
+
       {a -> empty string}
       if (Upcase(ObjMessage[0]) = 'A') and (ObjMessage[1] = ' ') then
       begin
