@@ -26,7 +26,7 @@ var LongMessage : array [0..MAX_MESSAGE_LENGTH-1] of char;
    StopAtDot: Whether to stop message text at first dot or not
 *)
 procedure ReplaceArticles(Replace: Boolean; Caps: Boolean; StopAtDot:boolean); 
-var i : word;
+var i,j : word;
 begin
 
  if (Replace or StopAtDot) then { when any of these options is ON, we also have to remove leading spaces}
@@ -61,35 +61,13 @@ begin
     end
     else
     begin
-
-    {In English, we have to remove the first word, whatever it is (if there are at least two words)}
-    if (pos(' ', ObjMessage) > 0) then ObjMessage := copy(ObjMessage, pos(' ', ObjMessage) + 1, 255);
-
-      {a -> empty string}
-      if (Upcase(ObjMessage[0]) = 'A') and (ObjMessage[1] = ' ') then
+      {In English, we have to remove the first word, whatever it is (if there are at least two words)}
+      i := 0;
+      while (ObjMessage[i] <> ' ') and (ObjMessage[i] <> #0) do i := i + 1;
+      if (ObjMessage[i] = ' ') then
       begin
-        for i := 0 to StrLen(ObjMessage)-2 do ObjMessage[i] := ObjMessage[i+2];
-        exit;
+        for j := 0 to StrLen(ObjMessage)-i do ObjMessage[j] := ObjMessage[j+i];
       end;
-      
-
-      {some -> empty string}
-      if (Upcase(ObjMessage[0]) = 'S') and (Upcase(ObjMessage[1]) = 'O') and (Upcase(ObjMessage[2]) = 'M') 
-          and (Upcase(ObjMessage[3]) = 'E') and (ObjMessage[4] = ' ') then
-      begin
-        for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
-        exit;
-      end;
-
-      {some -> empty string}
-      if (Upcase(ObjMessage[0]) = 'Y') and (Upcase(ObjMessage[1]) = 'O') and (Upcase(ObjMessage[2]) = 'U') 
-          and (Upcase(ObjMessage[3]) = 'R') and (ObjMessage[4] = ' ') then
-      begin
-        for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
-        exit;
-      end;
-      
-
     end;
  end; 
 end;
