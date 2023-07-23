@@ -76,6 +76,16 @@ begin
         for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
         exit;
       end;
+
+      {some -> empty string}
+      if (Upcase(ObjMessage[0]) = 'Y') and (Upcase(ObjMessage[1]) = 'O') and (Upcase(ObjMessage[2]) = 'U') 
+          and (Upcase(ObjMessage[3]) = 'R') and (ObjMessage[4] = ' ') then
+      begin
+        for i := 0 to StrLen(ObjMessage)-4 do ObjMessage[i] := ObjMessage[i+5];
+        exit;
+      end;
+      
+
     end;
  end; 
 end;
