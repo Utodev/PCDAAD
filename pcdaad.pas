@@ -46,25 +46,41 @@ begin
     if Verbose then TranscriptPas('{In Doall}'+#13)  ;
     {Try to get next object at the doall location}
     if Verbose then TranscriptPas('{Last doall object:'+ inttostr(getFlag(FDOALL))+'}'+#13);
-    nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
-    if Verbose then TranscriptPas('{Next doall object:'+ inttostr(nextDoallObjno)+'}'+#13);
-    {If a valid object found jump back to DOALL entry/condact}
-    if nextDoallObjno <> MAX_OBJECT then
-    begin
-      if Verbose then TranscriptPas('{Doall loops}'+#13);
-      EntryPTR := DoallEntryPTR;
-      CondactPTR :=  DoallPTR;
-      SetReferencedObject(nextDoallObjno);
-      SetFlag(FDOALL, nextDoallObjno);
-      goto RunCondact;
-    end
-    else  
-    begin
-      {If in DOALL but no more objects mark doall inactive and just let }
-      {the process continue and finish normally}
-      DoallPTR := 0; 
-      if Verbose then TranscriptPas('{Doall finished}'+#13);
-    end;
+    repeat
+      nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
+      if Verbose then TranscriptPas('{Next doall object:'+ inttostr(nextDoallObjno)+'}'+#13);
+      {If a valid object found jump back to DOALL entry/condact}
+      if nextDoallObjno <> MAX_OBJECT then
+      begin
+        if Verbose then TranscriptPas('{Doall loops}'+#13);
+        SetReferencedObject(nextDoallObjno);
+        SetFlag(FDOALL, nextDoallObjno);
+       
+        {Checking if OBJ2 is the same as OBJ1, to support EXCEPT and also to avoid what Issue#4 in Github details}
+        if (getFlag(FNOUN) = getFlag(FNOUN2)) and  
+        ( (getFlag(FADJECT) = getFlag(FADJECT2))
+          or (getFlag(FADJECT) = NO_WORD)
+          or (getFlag(FADJECT2) = NO_WORD) ) then
+          begin
+            if Verbose then TranscriptPas('{"Except" applied to Doall, skipping object}'+#13);
+            continue;
+          end;
+      
+        EntryPTR := DoallEntryPTR;
+          CondactPTR :=  DoallPTR;
+        goto RunCondact;
+      end
+      else  
+      begin
+        {If in DOALL but no more objects mark doall inactive and just let }
+        {the process continue and finish normally}
+        DoallPTR := 0; 
+        if Verbose then TranscriptPas('{Doall finished}'+#13);
+        break;
+      end;
+    until false;
+
+
   end;
 
   {process finishes normally}
