@@ -1418,6 +1418,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DOALL;
 var objno: TFlagType;
+    i : integer;
 begin
  IF DoallPTR<>0 THEN
  begin
@@ -1426,22 +1427,39 @@ begin
   parameter1 := 0;
   _EXIT;
  end;
- objno := getNextObjectAt(-1, parameter1);
- if (objno<>MAX_OBJECT) then
- begin
-    DoallPTR := CondactPTR + 1; {Point to next Condact after DOALL}
-    DoallEntryPTR := EntryPTR;
-    DoallLocation := parameter1;
-    SetFlag(FDOALL,objno);
-    SetReferencedObject(objno);
-    done := true;
- end
- else 
- begin
-  Sysmess(SM8);
-  newtext;
-  _DONE;
- end; 
+
+ i := -1;
+ repeat
+    objno := getNextObjectAt(i, parameter1); 
+    if (objno<>MAX_OBJECT) then
+    begin
+        SetFlag(FDOALL,objno);
+        SetReferencedObject(objno);
+        {Checking if OBJ2 is the same as OBJ1, to support EXCEPT and also to avoid what Issue#4 in Github details}
+        if (getFlag(FNOUN) = getFlag(FNOUN2)) and  
+        ( (getFlag(FADJECT) = getFlag(FADJECT2))
+          or (getFlag(FADJECT) = NO_WORD)
+          or (getFlag(FADJECT2) = NO_WORD) ) then
+          begin
+            if Verbose then TranscriptPas('{"Except" applied to Doall, skipping object}'+#13);
+            i := i + 1;
+            continue;
+          end;
+        DoallPTR := CondactPTR + 1; {Point to next Condact after DOALL}
+        DoallEntryPTR := EntryPTR;
+        DoallLocation := parameter1;
+        done := true;
+        exit;
+    end
+    else 
+    begin
+        Sysmess(SM8);
+        newtext;
+        _DONE;
+        exit;  
+    end; 
+ until false;
+
 end;
 
 (*--------------------------------------------------------------------------------------*)
