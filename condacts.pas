@@ -713,7 +713,7 @@ var nextObject : integer;
     locno : TFlagType;
 begin
    here := getFlag(FPLAYER);
-   for locno := LOC_CARRIED to LOC_WORN do
+   for locno :=  LOC_WORN to LOC_CARRIED do
    begin
         nextObject := - 1;
         repeat
