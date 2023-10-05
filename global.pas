@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.7 - The Yiepp';
+const VERSION='1.8 - Necromancer';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;
@@ -113,7 +113,7 @@ implementation
 
 procedure CopyRight;
 begin
-  Writeln('PC DAAD Interpreter ',version,' (C) Uto 2022');
+  Writeln('PC DAAD Interpreter ',version,' (C) Uto 2023');
 end;
 
 end.
