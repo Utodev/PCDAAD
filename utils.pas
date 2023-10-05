@@ -17,7 +17,6 @@ function trim(Str: String) : String;
 {Just as freepascal StringReplace, only if will enter and endless lookp if Origin is a substring of Dest}
 function StringReplace(Str:String; Origin, Dest: String): String;
 function StrToUpper(Str: String) :String;
-procedure Debug(Str: string);
 function fileExists(Filename: string):boolean;
 
 implementation
@@ -67,13 +66,6 @@ var i : integer;
 begin
  for i := 1 to Length(Str) do Str[i] := UpCase(Str[i]);
  StrToUpper := Str;
-end;
-
-procedure Debug(Str: String);
-begin
-{$ifdef DEBUG}
-    WriteLn(Str);
-{$endif}
 end;
 
 function trim(Str: String) : String;

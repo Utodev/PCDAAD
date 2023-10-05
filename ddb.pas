@@ -82,27 +82,6 @@ begin
             loadDDB := true;
         end;
     end;
-    (*
-	Debug('====================================================');
-    Debug('NumObj    :' + inttostr(DDBHeader.NumObj));
-    Debug('numLoc    :' + inttostr(DDBHeader.numLoc));
-    Debug('numMsg    :' + inttostr(DDBHeader.numMsg));
-    Debug('numSys    :' + inttostr(DDBHeader.numSys));
-    Debug('numPro    :' + inttostr(DDBHeader.numPro));
-    Debug('tokensPos  :' + inttohex(DDBHeader.tokenPos));
-    Debug('processPos :' + inttohex(DDBHeader.processPos));
-    Debug('objectPos :' + inttohex(DDBHeader.objectPos));
-    Debug('locationPos :' + inttohex(DDBHeader.locationPos));
-    Debug('messagePos :' + inttohex(DDBHeader.messagePos));
-    Debug('sysmessPos :' + inttohex(DDBHeader.sysmessPos));
-    Debug('connectionPos :' + inttohex(DDBHeader.connectionPos));
-    Debug('vocabularyPos :' + inttohex(DDBHeader.vocabularyPos));
-    Debug('objInitiallyAtPos :' + inttohex(DDBHeader.objInitiallyAtPos));
-    Debug('objNamePos :' + inttohex(DDBHeader.objNamePos));
-    Debug('objWeightContWearPos :' + inttohex(DDBHeader.objWeightContWearPos));
-    Debug('objAttributesPos :' + inttohex(DDBHeader.objAttributesPos));
-    Debug('====================================================');
-    *)
 end;
 
 procedure resetProcesses;
