@@ -32,6 +32,8 @@ VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
     CharsetShift : Byte;
     BackupStream: Byte;
     ExecExterns : Boolean;
+    SVGAMode : Boolean;
+    SVGAcharset : Boolean;
     
 
 function Extern(A, B: Byte): boolean;
@@ -39,7 +41,7 @@ procedure Delay(seconds: real);
 procedure resetWindows;
 procedure startVideoMode;
 procedure terminateVideoMode;
-procedure ClearWindow(X, Y, Width, Height: Word; Paper: byte);
+procedure ClearWindow(X, Y, Width, Height: Word; Color: byte);
 procedure Printat(line, col : word);
 procedure Tab(col:word);
 procedure SaveAt;
@@ -72,10 +74,30 @@ procedure RestoreStream;
 
 implementation
 
-uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global, condacts, dos;
+uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global, condacts, dos, vesa, errors;
 
 var ExternPTR: Pointer;
     TimeoutPreservedOrder: String;
+
+
+function getVGAAddr(X, Y: word): word;
+begin
+ getVGAAddr := X + Y * 320;
+end;
+
+
+procedure plot(x, y: Word; Color: byte);
+var VGAAddr : word;
+begin
+  if (SVGAMode) then
+  begin
+   VESARectangle(x*2, y*2, 2, 2, Color); (* Rather tha a pixel, a 2x2 big pixel *)
+  end
+  else
+  begin
+    mem[$a000:getVGAAddr(X, Y)] := Color;
+  end;  
+end;
 
 function getTicks: word; Assembler;
 asm
@@ -332,16 +354,18 @@ begin
  if  not TimeoutHappened then addToOrderHistory(Str);
 end;
 
-function getVGAAddr(X, Y: word): word;
-begin
- getVGAAddr := X + Y * 320;
-end;
 
-procedure ClearWindow(X, Y, Width, Height: Word; Paper: byte);
+procedure ClearWindow(X, Y, Width, Height: Word; Color: byte);
 var i : word;
 begin
- for i := 0 to Height - 1 do 
-  FillChar(mem[$a000:320*(y+i)+X], Width, Paper);
+  if (SVGAMode) then
+  begin 
+    VESARectangle(X*2, Y*2, Width*2, Height*2, Color);
+  end
+  else
+  begin
+    for i := 0 to Height - 1 do FillChar(mem[$a000:320*(y+i)+X], Width, Color);
+  end
 end;
 
 procedure ClearCurrentWindow;
@@ -354,11 +378,20 @@ begin
    windows[ActiveWindow].LastPauseLine := 0;
 end;
 
-PROCEDURE startVideoMode; Assembler;
-ASM
- MOV AX, $13
- INT $10
-END;
+PROCEDURE startVideoMode; 
+begin
+  if (SVGAMode) then (* 640x400*)
+  begin
+   if (not VESAEnabled) then Error(13,'VESA SVGA card not found.');
+   if (not VESAValidMode($100)) then Error(14,'VESA SVGA mode 0x100 not supported by your SVGA card.');
+   VESASetMode($100, 640); 
+  end
+  else  (* 320x200 *)
+  asm
+    MOV AX, $13   
+    INT $10
+  end;
+end;  
 
 
 PROCEDURE terminateVideoMode; Assembler;
@@ -427,28 +460,9 @@ end;
 
 
 
-procedure ScrollCurrentWindow;
+procedure ScrollCurrentWindowVGA;
 var i, baseAddress, baseaddress2, linesToScroll, windowWidthInPixels : word;
-    Ticks: word;
-    TimeoutSeconds : TFlagType;
-    TimeoutHappened: Boolean;   
 begin
-  {0. Check if too much text listed in order to pause if so (More...)}
-  if (windows[ActiveWindow].LastPauseLine >= windows[ActiveWindow].height) then 
-  begin
-   TimeoutHappened := false;
-   TimeoutSeconds := getFlag(FTIMEOUT);
-   {Chek if timeout can happen in More...}
-   if (getFlag(FTIMEOUT_CONTROL) AND $02 = $02) then TimeoutSeconds := getFlag(FTIMEOUT)
-                                                else TimeoutSeconds := 0;
-   Ticks := getTicks;
-   while not Keypressed and not TimeoutHappened do
-    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then TimeoutHappened := true;
-    
-   if not TimeoutHappened then i := ReadKey; {Discard key pressed}
-   windows[ActiveWindow].LastPauseLine := 0;
-  end; 
-
   {1. Move window up}
    baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 , (windows[ActiveWindow].line + 1) * 8); 
    linesToScroll := (windows[ActiveWindow].height -1) * 8; 
@@ -465,6 +479,60 @@ begin
    baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 ,  
           (windows[ActiveWindow].line + windows[ActiveWindow].height -1) * 8); 
    for i := 0 to 7 do FillChar(Mem[$a000: baseAddress + i *320], windowWidthInPixels, chr(windows[ActiveWindow].PAPER));  
+end;
+
+procedure ScrollCurrentWindowSVGA;
+var freeMemory:  Word;
+    width, height: Word;
+    Buffer: Pointer;
+    FitLines, WinLines : word;
+    X0, Y0 : word;
+begin
+  {1. Move window up}
+  width := windows[ActiveWindow].width * 16;
+  height := windows[ActiveWindow].height * 16;
+  X0 := windows[ActiveWindow].col * 16;
+  Y0 := windows[ActiveWindow].line * 16;
+  if (MaxAvail > 65000) then freeMemory:=65000 ELSE freeMemory:=MaxAvail;
+  Getmem(Buffer, freeMemory);
+  Winlines := height - 16 ; (* Number of pixel lines/rows in the window, minus one character row *)
+  Fitlines := freeMemory DIV width; (* number of lines fitting in the buffer *) 
+  repeat
+    if (FitLines>WinLines) then FitLines := Winlines; 
+    VESAGetImage(X0, Y0 + 16, width, FitLines, Buffer^);
+    VESAPutImage(X0, Y0, width, Fitlines, Buffer^, 0);
+    Winlines := WinLines - FitLines;
+    Y0 := Y0 + FitLines;
+  until  WinLines=0;
+  freemem(Buffer, freeMemory);
+  {2. Fill new empty space at the bottom with paper colour}
+  VESARectangle(X0, windows[ActiveWindow].line * 16 + height - 16, width, 16, windows[ActiveWindow].PAPER);
+end;
+
+procedure ScrollCurrentWindow;
+var Ticks: word;
+    TimeoutSeconds : TFlagType;
+    TimeoutHappened: Boolean;   
+    key : word;
+begin
+  {0. Check if too much text listed in order to pause if so (More...)}
+  if (windows[ActiveWindow].LastPauseLine >= windows[ActiveWindow].height) then 
+  begin
+   TimeoutHappened := false;
+   TimeoutSeconds := getFlag(FTIMEOUT);
+   {Chek if timeout can happen in More...}
+   if (getFlag(FTIMEOUT_CONTROL) AND $02 = $02) then TimeoutSeconds := getFlag(FTIMEOUT)
+                                                else TimeoutSeconds := 0;
+   Ticks := getTicks;
+   while not Keypressed and not TimeoutHappened do
+    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then TimeoutHappened := true;
+    
+   if not TimeoutHappened then key := ReadKey; {Discard key pressed}
+   windows[ActiveWindow].LastPauseLine := 0;
+  end; 
+
+  if (SVGAMode) then ScrollCurrentWindowSVGA else ScrollCurrentWindowVGA;
+
    {3. Update cursor}
    windows[ActiveWindow].currentY := windows[ActiveWindow].currentY - 8; 
    windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8; 
@@ -489,7 +557,6 @@ end;
 
 procedure WriteChar(c: char);
 var i, j : word;
-    baseAddress : word;
     scan: byte;
     width :  byte;
 begin
@@ -500,7 +567,6 @@ begin
   $0C : begin while not keypressed do; i := Readkey; end; {#k}
   else
   begin
-    baseAddress := getVGAAddr(windows[ActiveWindow].currentX , windows[ActiveWindow].currentY);
     width := charsetWidth[(byte(c) + CharsetShift) MOD 256];
     if (windows[ActiveWindow].currentX + width >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then 
     begin
@@ -511,15 +577,16 @@ begin
     begin
         for i := 0 to 7 do
         begin
-        scan := charsetData[(ord(c) + CharsetShift) MOD 256 * 8 + i];  {Get definition for this scanline}
-        scan := scan shr (8-width);
-        for j := 0 to width-1 do
-        begin
-          if (scan and (1 shl (width - j)) <> 0) then mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].INK
-                                                else mem[$a000:baseAddress + i * 320 + j] := windows[ActiveWindow].PAPER;
+          scan := charsetData[(ord(c) + CharsetShift) MOD 256 * 8 + i];  {Get definition for this scanline}
+          scan := scan shr (8-width);
+          for j := 0 to width-1 do
+          begin
+            if (scan and (1 shl (width - j)) <> 0) 
+              then plot(windows[ActiveWindow].currentX + j, windows[ActiveWindow].currentY + i, windows[ActiveWindow].INK)
+                else plot(windows[ActiveWindow].currentX + j, windows[ActiveWindow].currentY + i, windows[ActiveWindow].PAPER);
+          end;
         end;
-        end;
-    NextChar(width); {Move pointer to next printing position}
+        NextChar(width); {Move pointer to next printing position}
     end;
    end
  end; {case of}
@@ -687,4 +754,6 @@ begin
  ExternPTR := nil;
  TimeoutPreservedOrder := '';
  ExecExterns := false;
+ SVGAcharset := false;
+ SVGAMode := false;
 end.

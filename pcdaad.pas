@@ -166,9 +166,11 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-log] [-vlog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-s] [-sc] [-log] [-vlog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
+  WriteLn('-s : SVGA mode');
+  WriteLn('-sc : SVGA charset');
   WriteLn('-log : Transcript game to PCDAAD.LOG');
   WriteLn('-vlog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log)');
   WriteLn('-nomaluva : turns off Maluva extension emulation');
@@ -191,7 +193,9 @@ begin
   else if StrToUpper(ParamStr(i)) = '-D' then DiagnosticsEnabled := true
   else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if StrToUpper(ParamStr(i)) = '-NDOALL' then NestedDoallEnabled := true
-  else if StrToUpper(ParamStr(i)) = '-EXECEXTERNS' then ExecExterns := true
+  else if StrToUpper(ParamStr(i)) = '-S' then SVGAMode := true
+  else if StrToUpper(ParamStr(i)) = '-SC' then SVGACharset := true
+  else if StrToUpper(ParamStr(i)) = '-EXEC' then ExecExterns := true
   else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
   begin
    useOrderInputFile := true;
@@ -203,7 +207,12 @@ begin
   end
   else Error(10,'Invalid or unknown parameter: ' + ParamStr(i));
  end;
+
+ if (SVGACharset) and (not SVGAMode) then Error(12,'SVGA charset requires SVGA mode.');
+
 end; 
+
+
 
 (************************************************************************************************)
 (**************************************** MAIN **************************************************)
@@ -241,12 +250,12 @@ begin
     resetWindows;     {clears all windows setup}
     resetStack;
     resetProcesses;
-    if loadPCX(0,0,LINE_WIDTH,200, 65535) then  {Load intro screen if present}
+    if loadPCX(0,0,0,0,65535, SVGAMode) then  {Load intro screen if present}
     begin
-      DisplayPCX(0); {Paint the picture}
-      while not Keypressed do;
+      DisplayPCX(0, SVGAMode); {Paint the picture}
       ReadKey;
-      DisplayPCX(1); {Clear the PCX Window}
+      DisplayPCX(1, SVGAMode); {Clear the PCX Window}
     end; 
+    
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.

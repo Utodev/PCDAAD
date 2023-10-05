@@ -4,4 +4,4 @@
 {$define VGA}
 {$G-} {8086 compatibility}
 {$R+} {Range checking}
-{$M 65000,0,196608} {Limit heap to 192K and stack to ~64K, to allow big EXTERNs to run}
+{$M 49152,0,262144} {Limit heap to 256K and stack to 48K, to allow big EXTERNs to run}

@@ -9,20 +9,19 @@ interface
 
 CONST LINE_WIDTH = 320;
 
-{Loads PCX file into double buffer}
-function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
+{Loads PCX file into buffer}
+function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word; SVGAMode: boolean): boolean;
 {This function really copies the buffer into the screen if option = 0, and clears the are otherwise}
-procedure DisplayPCX(option: Byte);
+procedure DisplayPCX(option: Byte; SVGAMode: boolean);
 
 implementation
 
-uses utils, log, ibmpc; 
+uses utils, log,readbuff, ibmpc, vesa; 
 
-type TFileBuffer = array[0..65534] of Byte;
-     TScreenBuffer = array[0..63999] of Byte;
+type TScreenBuffer = array[0..63999] of Byte;
 
-var ScreenBuffer: ^TScreenBuffer;
-    LatestPCXFileSize : Word;
+var ScreenBuffer:  ^TScreenBuffer;
+    LatestPCXFileSize : Longint;
     LatestPCXX, LatestPCXY : Word;
     LatestPCXHeight, LatestPCXWidth :Word;
     PaletteBuffer :  array[0..767] of Byte;
@@ -39,11 +38,9 @@ asm
 end; 
 
 
-function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word): boolean;
-var FPCXFile : file;
-    Aux : Byte;
+function LoadPCX(X, Y, WIDTH, HEIGHT: Word; ImageNumber: Word; SVGAMode: boolean): boolean;
+var Aux : Byte;
     AuxWord : Word;
-    PCXFileSize : Longint;
     ImgWidth, ImgHeight : Word;
     CurrentPtr : Word;
     Color, Reps : Byte;
@@ -51,26 +48,32 @@ var FPCXFile : file;
     LastX, LastY : Word;
     ImageFileName : String;
     i, j: word;
-    Buffer : ^TFileBuffer;
+    Success : boolean;
     
 begin
-
  
- if (ImageNumber = 65535) then ImageFileName := 'DAAD'
+ if (ImageNumber = 65535) then 
+ begin
+  ImageFileName := 'DAAD';
+  width := 320;
+  height := 200;
+  if (SVGAMode) then
+  begin
+    width := 640;
+    height := 400;
+  end;
+ end
  else
  begin
   ImageFileName := IntToStr(ImageNumber);
   while (length(ImageFileName)<3) do ImageFileName := '0' + ImageFileName;
  end; 
  
- 
- Assign(FPCXFile, ImageFileName + '.vga');
- Reset(FPCXFile, 1);
- if (ioresult <> 0) then
+ Success := readbuff.fileopen(ImageFileName + '.vga');
+ if (not Success) then
  begin
-  Assign(FPCXFile, ImageFileName + '.pcx');
-  Reset(FPCXFile, 1);
-  if (ioresult <> 0) then
+  Success := readbuff.fileopen(ImageFileName + '.pcx');
+  if (not Success) then
   begin
    LatestPCXFileSize := 0;
    LoadPCX := false;
@@ -78,22 +81,12 @@ begin
   end; 
  end; 
 
- PCXFileSize := FileSize(FPCXFile);
- if (PCXFileSize>65535) then 
- begin
-  LatestPCXFileSize := 0;
-  LoadPCX := false;
-  exit;
- end; 
 
-
- GetMem(Buffer,PCXFileSize);
- BlockRead(FPCXFile, Buffer^, PCXFileSize);
-
- Aux := Buffer^[PCXFileSize - 769];
+ Aux := readbuff.fileGetByte(readbuff.bufferFileSize - 769);
+ 
  if (Aux <> $0C) then  {Mark of 256 color palette}
  begin
-  FreeMem(Buffer,PCXFileSize);
+  readbuff.fileclose;
   LatestPCXFileSize := 0;
   LoadPCX := false;
   exit;
@@ -102,17 +95,21 @@ begin
  {Clear the image buffer}
  FillChar(ScreenBuffer^, Sizeof(TScreenBuffer), 0);
 
+  
+ { Get the real dimension of the file}{Keep this strange order in this calculation, it's made to read file faster}
+ ImgWidth := - (readbuff.fileGetByte(4) + 256 * readbuff.fileGetByte(5))  
+                + readbuff.fileGetByte(8) + 256 * readbuff.fileGetByte(9) 
+                + 1;
+ ImgHeight := readbuff.fileGetByte(10) + 256 * readbuff.fileGetByte(11) 
+               - (readbuff.fileGetByte(6) + 256 * readbuff.fileGetByte(7)+ 1);
 
- { Get the real dimension of the file}
- ImgWidth := Buffer^[8] + 256 * Buffer^[9]  - (Buffer^[4] + 256 *Buffer^[5]) + 1;
- ImgHeight := Buffer^[10] + 256 * Buffer^[11] - (Buffer^[6] + 256 * Buffer^[7]+ 1);
  LastX := X + ImgWidth - 1;
  LastY := Y + ImgHeight - 1;
  if  Y + Height - 1 < LastY then LastY := Y + Height - 1; {Not higher than window}
  
  { Fix VGA Palette. It' a 18 bit DAC, 6+6+6 and PCX format saves each 6 bits in 
    a byte, but aligned to the most significative bit}
- for AuxWord := 0 to 767 do Buffer^[PCXFileSize-768+AuxWord] := Buffer^[PCXFileSize-768+AuxWord] SHR 2;
+ for AuxWord := 0 to 767 do PaletteBuffer[AuxWord] := readbuff.fileGetByte(readbuff.bufferFileSize - 768 + AuxWord) SHR 2;
 
 
  { Load the pixels}
@@ -121,12 +118,12 @@ begin
  CurrentPtr := 128;
  repeat
   
-  Color := Buffer^[CurrentPtr];
+  Color := readbuff.fileGetByte(CurrentPtr);
   if (Color AND $C0) = $C0 then       { If color > 192 it's not a color but a rep count }
   begin
    Reps := Color AND $3F;
    Inc(CurrentPtr); {CurrentPtr := CurrentPtr + 1;}
-   Color := Buffer^[CurrentPtr];
+   Color := readbuff.fileGetByte(CurrentPtr);
   end
   else Reps := 1;
   Inc(CurrentPtr); {CurrentPtr := CurrentPtr + 1;}
@@ -144,11 +141,8 @@ begin
    end;
   end;  
  until (CurrentY  > LastY);
- Close(FPCXFile);
- FreeMem(Buffer,PCXFileSize);
- Move(Buffer^[PCXFileSize-768], PaletteBuffer, 768);
 
- LatestPCXFileSize := PCXFileSize;
+ LatestPCXFileSize := readbuff.bufferFileSize;
  LatestPCXX := X;
  LatestPCXY := Y;
  LatestPCXHeight := Height;
@@ -157,32 +151,42 @@ begin
 end;
 
 
-procedure DisplayPCX(option: Byte);
+procedure DisplayPCX(option: Byte; SVGAMode: boolean);
 var i, offset : Word;
 begin
  if (option=0) then
  begin
 
-
   if (LatestPCXFileSize <> 0) then
   begin
     {Now we really paint the picture}
     WaitVRetrace;
-    { The palette is located at the last 768 bytes in the file}
+    {Set palette}
     SetVGAPalette(PaletteBuffer);
     { Copy from doble buffer}
-    offset := LINE_WIDTH * LatestPCXY + LatestPCXX;
-    for i:= 0 to LatestPCXHeight - 1 do
+    if (SVGAMode) then
     begin
-        Move(ScreenBuffer^[offset], Mem[$A000:offset], LatestPCXWidth);
-        Inc(offset,LINE_WIDTH);
-    end;
+      for i:= 0 to LatestPCXHeight - 1 do
+      begin
+          VESAPutImage(LatestPCXX, LatestPCXY + i, LatestPCXWidth, 1, ScreenBuffer^[i*LatestPCXWidth],0)
+      end;
+    end
+    else
+    begin
+      offset := LINE_WIDTH * LatestPCXY + LatestPCXX;
+      for i:= 0 to LatestPCXHeight - 1 do
+      begin
+          Move(ScreenBuffer^[offset], Mem[$A000:offset], LatestPCXWidth);
+          Inc(offset,LINE_WIDTH);
+      end;
+    end; 
    end 
  end
  else (* option <> 0 *)
  begin
     ClearWindow(LatestPCXX, LatestPCXY, LatestPCXWidth, LatestPCXHeight, Windows[ActiveWindow].PAPER);
  end;
+ 
 end;
 
 begin

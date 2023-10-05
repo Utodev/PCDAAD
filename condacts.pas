@@ -696,7 +696,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DISPLAY;
 begin
- DisplayPCX(parameter1);
+ DisplayPCX(parameter1, SVGAMode);
  done := true;
 end;
 
@@ -1408,10 +1408,12 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _PICTURE;
+var multiplier : word;
 begin
- condactResult := LoadPCX(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
-                  Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8,
-                  parameter1);
+ if (SVGAMode) then multiplier := 2 else multiplier := 1;
+ condactResult := LoadPCX(Windows[ActiveWindow].col * 8 * multiplier, Windows[ActiveWindow].line * 8 * multiplier,
+                  Windows[ActiveWindow].width * 8 * multiplier, Windows[ActiveWindow].height * 8 * multiplier,
+                  parameter1, SVGAMode);
  done := true;
 end;
 
