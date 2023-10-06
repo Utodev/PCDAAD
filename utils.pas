@@ -18,6 +18,8 @@ function trim(Str: String) : String;
 function StringReplace(Str:String; Origin, Dest: String): String;
 function StrToUpper(Str: String) :String;
 function fileExists(Filename: string):boolean;
+function min(a,b:longint):longint;
+
 
 implementation
 
@@ -86,6 +88,11 @@ begin
      Close(F);
      fileExists := true;
     end
+end;
+
+function min(a,b:longint):longint;
+begin
+ if (a<b) then min := a else min := b;
 end;
 
 

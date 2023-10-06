@@ -250,11 +250,12 @@ begin
     resetWindows;     {clears all windows setup}
     resetStack;
     resetProcesses;
-    if loadPCX(0,0,0,0,65535, SVGAMode) then  {Load intro screen if present}
+    InitializePCX(SVGAMode); {Initializes pictures buffer}
+    if loadPCX(65535, SVGAMode) then  {Load intro screen if present}
     begin
-      DisplayPCX(0, SVGAMode); {Paint the picture}
+      DisplayPCX(0,0,320,200,0, SVGAMode); {Paint the picture}
       ReadKey;
-      DisplayPCX(1, SVGAMode); {Clear the PCX Window}
+      DisplayPCX(0,0,0,0,1, SVGAMode); {Clear the PCX Window}
     end; 
     
     run; {there is no way back from this procedure, so cleaning isn't here}

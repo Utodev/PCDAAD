@@ -1,6 +1,11 @@
 {$I SETTINGS.INC}
 unit READBUFF;
 
+(* This units implements a buffer able to read a file in blocks, which avoids
+a slower reading byte by byte. It has been created to read the larger SVGA
+PCX files, but it can be used for any other purpose. *)
+
+
 interface
 
 
