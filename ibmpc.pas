@@ -380,6 +380,7 @@ end;
 
 PROCEDURE startVideoMode; 
 begin
+  terminateVideoMode; (* Just to clear the screen *)
   if (SVGAMode) then (* 640x400*)
   begin
    if (not VESAEnabled) then Error(13,'VESA SVGA card not found.');
