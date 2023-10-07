@@ -5,7 +5,7 @@ program PCXFixer;
 {$MODE OBJFPC}
 {$I-}
 
- uses sysutils;
+uses sysutils;
 
 type FileBuffer = array[0..65534] of Byte;
 
@@ -15,7 +15,7 @@ var InFileName, OutFileName : String;
     IR, IG, IB: Byte;
     Buffer : ^FileBuffer;
     BufferSize : Longint;
-    UsedColors: array[byte] of word;
+    UsedColors: array[byte] of longint;
     i : integer;
     CurrentPtr :  Word;
     Color, Reps: Byte;
@@ -126,10 +126,10 @@ begin
     CurrentPtr := CurrentPtr + 1; 
   end;
 
-  WriteLn('Determining best colors to be replaced');
   { Now I have a list of colors and how many times they were used,
     let's look for not used colors in the 0-191 range, to avoid
     modifying the compression}
+  WriteLn('Determining best colors to be replaced');
   ColorPaper := 256;
   ColorInk := 256;
   i := 0 ;
