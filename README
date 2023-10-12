@@ -3,7 +3,9 @@ fPCDAAD General notes
 
 PCDAAD is a DOS interpreter for DAAD games which uses the VGA 320x200, 
 256 colours mode, unlike the original one, that was using VGA 320x200,
-16 colours mode.
+16 colours mode. It's also capable of usin VESA BIOS Extension(VBE) to
+run in 640x400 mode (SVGA) although that would increase CPU requirements
+from 8086 to 80386.
 
 Get PCDAAD at https://www.ngpaws.com/pcdaad.
 
@@ -201,4 +203,32 @@ don't know how many objects the games will have, the best way to do it is
 writing your data at the end of object locations table (where object 255, 254,
 253, etc.)
 
+Executables as EXTERNS
+----------------------
+If you run PCDAAD with -exec parameter, PCDAAD wil try to run executable files
+to perform extern code. Basically, first parameter of EXTERN will be used as
+filename, and if a matching EXE, COM or BAT file is found (in that specific 
+order) then it's run.
 
+Second parameter of EXTERN will be passed as first parameter to that executable,
+and two parameters more will follow with the address of the flags in RAM, and
+the address of the object locations.
+
+Have in mind the executable will be loaded into lower RAM, so it cannot be too big 
+in order for PCDAAD and the exec fit simultaneously.
+
+Example: "EXTERN 12 89" will try to find 12.EXE, then 12.COM then 12.BAT and if
+for instance it founds 12.COM, it will run the command:
+
+12.COM 89 <flags address> <object locations address>
+
+
+SVGA
+----
+
+If PCDAAD is run with -s parameter, it will try to run in SVGA mode. The computer
+would need to support VESA mode 100 (640x400) and have a 386sx CPU or better. Please
+notice characters still will look like in VGA, it's the graphics that double resolution.
+
+Unlike in SVGA mode, running in pure VGA 320x200 mode resolution will requiere less CPU 
+power, so a 8086 should be enough, at least while it has a VGA card installed.
