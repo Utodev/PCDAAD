@@ -26,4 +26,6 @@ drc/*
 *.ppu
 *.SAV
 *.sav
+*.VGA
+VESATEST.PAS
 tool/pcxfixer
