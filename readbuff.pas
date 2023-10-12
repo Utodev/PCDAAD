@@ -20,12 +20,12 @@ implementation
 
 uses log, utils;
 
-const BUFFER_SIZE = 1024;
+const BUFFER_SIZE = 32768;
 
 type TReadBuffer = array[0..BUFFER_SIZE-1] of byte;
 
 var f: file;
-    buffer: TReadBuffer;
+    buffer: ^TReadBuffer;
     bufferCurrentoffset: longint;
 
 function fileopen(Filename: string):boolean;
@@ -38,7 +38,8 @@ begin
     if not aux then bufferFileSize := 0 else
     begin
      bufferFileSize := FileSize(f);   
-     BlockRead(f, buffer, BUFFER_SIZE, BytesRead);
+     getmem(buffer, BUFFER_SIZE);
+     BlockRead(f, buffer^, BUFFER_SIZE, BytesRead);
      bufferCurrentoffset := 0;
     end; 
     fileopen := aux;
@@ -51,14 +52,15 @@ begin
     if (offset < bufferCurrentoffset) or (offset >= bufferCurrentoffset + BUFFER_SIZE) then 
     begin
         Seek(f, offset);
-        BlockRead(f, buffer, BUFFER_SIZE, BytesRead);
+        BlockRead(f, buffer^, BUFFER_SIZE, BytesRead);
         bufferCurrentoffset := offset;
     end;
-    fileGetByte := buffer[offset - bufferCurrentoffset];
+    fileGetByte := buffer^[offset - bufferCurrentoffset];
 end;
 
 procedure fileclose;
 begin
+ FreeMem(buffer, BUFFER_SIZE);
  Close(f);
 end;
 
