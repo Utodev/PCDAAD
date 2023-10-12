@@ -7,7 +7,7 @@ program PCXFixer;
 
 uses sysutils;
 
-type FileBuffer = array[0..65534] of Byte;
+type FileBuffer = array[0..256*1024-1] of Byte;
 
 var InFileName, OutFileName : String;
     InFile, OutFile : File;
@@ -17,7 +17,7 @@ var InFileName, OutFileName : String;
     BufferSize : Longint;
     UsedColors: array[byte] of longint;
     i : integer;
-    CurrentPtr :  Word;
+    CurrentPtr :  Longint;
     Color, Reps: Byte;
     ColorPaper, ColorInk: Word;
 
@@ -42,7 +42,7 @@ begin
  Halt(1);
 end; 
 
-function getCloserColor(var Buffer: FileBuffer; BufferSize:word; Index: byte; forbidden: TForbidden): byte;
+function getCloserColor(var Buffer: FileBuffer; BufferSize:Longint; Index: byte; forbidden: TForbidden): byte;
 var closerColor: byte;
     Distance, closerCOlorDistance: real;
     i, r, g, b, br, bg, bb: byte;
@@ -103,7 +103,7 @@ begin
   Assign(InFile, InFileName);
   Reset(InFile, 1);
   BufferSize := filesize(InFile);
-  if BufferSize>65535 then Error('File too big, maximum is 65535 bytes.');
+  if BufferSize>256*1024 then Error('File too big to handle.');
   GetMem(Buffer, BufferSize);
   BlockRead(InFile, Buffer^, BufferSize);
   Close(InFile);
