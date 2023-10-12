@@ -166,11 +166,10 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-s] [-sc] [-log] [-vlog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
+  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-s] [-log] [-vlog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
   WriteLn('-s : SVGA mode');
-  WriteLn('-sc : SVGA charset');
   WriteLn('-log : Transcript game to PCDAAD.LOG');
   WriteLn('-vlog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log)');
   WriteLn('-nomaluva : turns off Maluva extension emulation');
@@ -194,7 +193,6 @@ begin
   else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if StrToUpper(ParamStr(i)) = '-NDOALL' then NestedDoallEnabled := true
   else if StrToUpper(ParamStr(i)) = '-S' then SVGAMode := true
-  else if StrToUpper(ParamStr(i)) = '-SC' then SVGACharset := true
   else if StrToUpper(ParamStr(i)) = '-EXEC' then ExecExterns := true
   else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
   begin
@@ -208,8 +206,7 @@ begin
   else Error(10,'Invalid or unknown parameter: ' + ParamStr(i));
  end;
 
- if (SVGACharset) and (not SVGAMode) then Error(12,'SVGA charset requires SVGA mode.');
-
+ 
 end; 
 
 

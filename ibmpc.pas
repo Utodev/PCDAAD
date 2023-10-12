@@ -26,14 +26,13 @@ type TWindow = packed record
                 LastPauseLine: Word; (* Line where the text stopped for the user to read last *)
                end; 
 
-VAR Windows :  array [0..NUM_WINDOWS-1] of TWindow;
+VAR Windows :  array [0..NUM_WINDOWS - 1] of TWindow;
     ActiveWindow : Byte;
     LastPrintedIsCR : boolean;
     CharsetShift : Byte;
     BackupStream: Byte;
     ExecExterns : Boolean;
     SVGAMode : Boolean;
-    SVGAcharset : Boolean;
     
 
 function Extern(A, B: Byte): boolean;
@@ -755,6 +754,5 @@ begin
  ExternPTR := nil;
  TimeoutPreservedOrder := '';
  ExecExterns := false;
- SVGAcharset := false;
  SVGAMode := false;
 end.
