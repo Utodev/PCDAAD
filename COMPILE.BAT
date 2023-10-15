@@ -1,5 +1,5 @@
 del *.tpu
-BPC -B -EC:\BP7\UNITS PCDAAD.PAS
+BPC -B -ED:\UNITS PCDAAD.PAS
 del *.tpu
-copy C:\BP7\UNITS\PCDAAD.EXE
+copy D:\UNITS\PCDAAD.EXE
 
