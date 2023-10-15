@@ -1,3 +1,19 @@
+PCDAAD 1.8  - "Necromancer"
+===========================
+
+- SVGA VBE Mode
+- DROPALL fixed
+- Fixed bug with the EXCEPT feature of DOALL
+- Fixed English articles replacement
+
+
+
+PCDAAD 1.7 - "Yiepp"
+====================
+- INKEY fixed
+- PUTIN/TAKEOU fixed
+
+
 PCDAAD 1.6 - "The Roebuck"
 ==========================
 
