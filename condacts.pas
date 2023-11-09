@@ -1388,6 +1388,7 @@ end;
 procedure _MODE;
 begin
  Windows[ActiveWindow].OperationMode := parameter1;
+ CharsetShift := (parameter1 AND 1)*128;
  done := true;
 end;
 
