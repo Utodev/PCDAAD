@@ -1097,6 +1097,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _PLACE;
 begin
+ if (parameter2 = LOC_HERE) then parameter2 := getFlag(FPLAYER);
  if (getObjectLocation(parameter1) = LOC_CARRIED) then setFlag(FCARRIED, getFlag(FCARRIED) - 1);
  setObjectLocation(parameter1, parameter2);
  if (getObjectLocation(parameter1) = LOC_CARRIED) then setFlag(FCARRIED, getFlag(FCARRIED) +1);
@@ -1168,6 +1169,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _ISAT;
 begin
+    if (parameter2 = LOC_HERE) then parameter2 := getFlag(FPLAYER);
     condactResult := getObjectLocation(Parameter1) = parameter2;
 end;
 
@@ -1322,6 +1324,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _LISTAT;
 begin
+ if (parameter1 = LOC_HERE) then parameter1 := getFlag(FPLAYER);
  listObjects(Parameter1, true);
  done := true;
 end;
@@ -1482,6 +1485,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _ISNOTAT;
 begin
+    if (parameter2 = LOC_HERE) then parameter2 := getFlag(FPLAYER);
     condactResult := getObjectLocation(Parameter1) <> parameter2;
 end;
 

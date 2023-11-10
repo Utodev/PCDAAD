@@ -14,6 +14,7 @@ const   NUM_OBJECTS = 256;
         LOC_NOT_CREATED = 252;
         LOC_CARRIED = 254;
         LOC_WORN = 253;
+        LOC_HERE = 255;
 
 {Public so LOAD/SAVE can access}
 var objLocations: array [0..NUM_OBJECTS-1] of byte;
