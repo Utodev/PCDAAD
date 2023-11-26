@@ -102,7 +102,7 @@ begin
       else 
       begin
         WorkStr[i] := chr(AByte xor OFUSCATE_VALUE);
-        if (WorkStr[i] = ESCAPE_OBJNAME) OR (WorkStr[i] = ESCAPE_OBJNAME_CAPS) then 
+        if (WorkStr[i] = ESCAPE_OBJNAME) OR ((WorkStr[i] = ESCAPE_OBJNAME_CAPS) and IsSpanish) then 
         begin
          EscapeText := getPcharMessageOTX(getFlag(FREFOBJ), true, WorkStr[i] = ESCAPE_OBJNAME_CAPS, true);
          for j:=0 to StrLen(EscapeText) - 1 do WorkStr[i+j] := EscapeText[j];
