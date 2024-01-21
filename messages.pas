@@ -66,7 +66,7 @@ begin
       while (ObjMessage[i] <> ' ') and (ObjMessage[i] <> #0) do i := i + 1;
       if (ObjMessage[i] = ' ') then
       begin
-        for j := 0 to StrLen(ObjMessage)-i do ObjMessage[j] := ObjMessage[j+i];
+        for j := 0 to StrLen(ObjMessage)-i-1 do ObjMessage[j] := ObjMessage[j+i+1];
       end;
     end;
  end; 
