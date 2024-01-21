@@ -181,9 +181,6 @@ var i, offset : Longint;
     
 begin
 
-height:= 96;
-width := 320;
-
 if (SVGAmode) then
 begin
    width := width SHL 1;
@@ -207,7 +204,7 @@ end;
     { Copy from doble buffer}
     if (SVGAMode) then
     begin
-      VESARectangle(X, Y, width, height, windows[ActiveWindow].PAPER);
+      VESARectangle(X, Y, ApplyableWidth, ApplyableHeight, windows[ActiveWindow].PAPER);
       for i:= 0 to ApplyableHeight - 1 do
       begin
           DIVV := (i*640) DIV Sizeof(TScreenBuffer); {calculate wich buffer}
