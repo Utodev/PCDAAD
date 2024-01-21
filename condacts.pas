@@ -545,7 +545,7 @@ begin
    PreserveTimeout := getFlag(FTIMEOUT);
    PreserveStream;
    setFlag(FTIMEOUT, 0);
-   Sysmess(SM13); {"Are you sure? "}
+   Sysmess(SM13); {"Play again? "}
    {Get first char of SM31, uppercased}
    NoResponse := upcase(char(getByte(getWord(DDBHeader.sysmessPos + 2 * SM31)) xor OFUSCATE_VALUE)); 
    inputBuffer := '';
@@ -556,7 +556,7 @@ begin
    windows[ActiveWindow].LastPauseLine := 0;
    inputBuffer := ''; {Make sure inputBuffer is emptied so in case of restart there is not a "Y" or "S" in the buffer}
    RestoreStream;
-   Parameter1 := 0;
+(*   Parameter1 := 0; *)
    _EXIT;
 end;
 
