@@ -507,6 +507,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DESC;
 begin
+  if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
   WriteText(getPcharMessage(DDBHeader.locationPos, parameter1), false);
   done := true;
 end;
@@ -1417,6 +1418,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _PICTURE;
 begin
+ if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  condactResult := LoadPCX(parameter1, SVGAMode);
  done := true;
 end;
@@ -1433,7 +1435,7 @@ begin
   parameter1 := 0;
   _EXIT;
  end;
-
+ if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  i := -1;
  repeat
     objno := getNextObjectAt(i, parameter1); 
@@ -1501,6 +1503,7 @@ procedure _PUTIN;
 var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
+ if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = LOC_WORN) then 
@@ -1549,6 +1552,7 @@ procedure _TAKEOUT;
 var ObjectLocation : TFlagType;
     WeightCarried, WeightWorn :  Word;
 begin
+ if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  SetReferencedObject(parameter1);
  ObjectLocation :=getObjectLocation(parameter1);
  if (ObjectLocation = LOC_WORN) or (ObjectLocation=LOC_CARRIED) then 
@@ -1742,6 +1746,7 @@ end;
 procedure _AUTOP;
 var Noun, Adject : TFlagType;
 begin
+ if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  Parameter2 := Parameter1; {To use it with PUTIN}
  Noun := getFlag(FNOUN);
  Adject := getFlag(FADJECT);
@@ -1777,6 +1782,7 @@ end;
 procedure _AUTOT;
 var Noun, Adject : TFlagType;
 begin
+ if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  Parameter2 := Parameter1; {To use it with PUTIN}
  Noun := getFlag(FNOUN);
  Adject := getFlag(FADJECT);
