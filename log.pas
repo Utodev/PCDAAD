@@ -29,7 +29,6 @@ begin
         Assign(TranscriptFile, Filename);
         Rewrite(TranscriptFile);
         if (ioresult<>0) then Error(7, 'Unable to create transcript file');
-        Close(TranscriptFile);
     end;
 end;
 
@@ -37,10 +36,8 @@ procedure Transcript(LogText: Pchar);
 begin
     if not TranscriptDisabled then
     begin
-        Append(TranscriptFile);
         Write(TranscriptFile, LogText);
         if (ioresult<>0) then Error(8, 'Unable to write transcript file');
-        Close(TranscriptFile);
     end;
 end;
 
@@ -48,10 +45,8 @@ procedure TranscriptPas(LogText: String);
 begin
     if not TranscriptDisabled then
     begin
-        Append(TranscriptFile);
         Write(TranscriptFile, LogText);
         if (ioresult<>0) then Error(8, 'Unable to write transcript file');
-        Close(TranscriptFile);
     end;
 end;
 
