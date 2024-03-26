@@ -13,7 +13,7 @@ const VERSION='1.8 - Necromancer';
       END_OF_CONNECTIONS_MARK = $FF;
       NUM_LOCATIONS = 256;
       MAX_LOCATION = NUM_LOCATIONS -1;
-      LAST_CONVERTIBLE_NOUN=49; {Nouns convertible to verb in absence of verb. i.e "NORTH"}
+      LAST_CONVERTIBLE_NOUN=39; {Nouns convertible to verb in absence of verb. i.e "NORTH"}
       LAST_PROPER_NOUN=50;
 
       FREQ_TABLE : array [0.. 9 * 12 -1] of Word = (
