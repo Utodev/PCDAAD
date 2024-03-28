@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.8 - Necromancer';
+const VERSION='1.9 - The Last Crusade';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;
@@ -15,6 +15,7 @@ const VERSION='1.8 - Necromancer';
       MAX_LOCATION = NUM_LOCATIONS -1;
       LAST_CONVERTIBLE_NOUN=39; {Nouns convertible to verb in absence of verb. i.e "NORTH"}
       LAST_PROPER_NOUN=50;
+      
 
       FREQ_TABLE : array [0.. 9 * 12 -1] of Word = (
       16,17,18,19,21,22,23,24,26,28,29,31, {Octave 0: 24-46} 

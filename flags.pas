@@ -8,6 +8,9 @@ uses global;
 
 const   FDARK=0;
         FCARRIED= 1;
+        FMALUVA_FLAG = 20; {Not really used in PCDAAD}
+        FSOUND=21; {For sound control}
+        FDARKF =28; {Used by the start DSF, not by PCDAAD}
         FMOUSE=29;
         FSCORE=30;
         FTURNS_LO=31;

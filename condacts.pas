@@ -289,7 +289,8 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, stack, messages, strings, errors, utils, parser, pcx, log, maluva;
+uses flags, ddb, objects, ibmpc, stack, messages, strings, 
+     errors, utils, parser, pcx, log, maluva, sfx;
 
 
 (*****************************************************************************************)
@@ -500,6 +501,33 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _SFX;
 begin
+  case (parameter1) of
+    {Plays sample with default sample rate and no repeat}
+    0: PlaySFX(parameter2, false, 0); 
+
+    {Plays sample with default sample rate and loop}
+    1: PlaySFX(parameter2, true, 0); 
+
+    {Plays sample with specific sample rate and no repeat}
+    2: begin
+        CondactPtr := CondactPTR + 1;
+        PlaySFX(parameter2, false, getByte(CondactPTR)); 
+       end; 
+
+    {Plays sample with specific sample rate and loop}
+    {specific sample rate is in the next byte in the DDB,
+    created with #defb XX, where the frequency is higher
+    the higher is XX}
+    3: begin 
+        CondactPtr := CondactPTR + 1;
+        PlaySFX(parameter2, true, getByte(CondactPTR)); 
+       end;
+
+    {Stops loop if enabled, parameter2 is irrelevant}
+    4: StopSFXLoop;
+  end;
+  done := true;
+
  (* PENDING: SFX CONDACT *)
  done := true;
 end;
@@ -1877,6 +1905,7 @@ begin
   CopyRight;
   {Cleaning}
   ClearPCX;
+  TerminateSFX;
   CloseOrderFile;
   CloseTranscript;
   halt(0);
