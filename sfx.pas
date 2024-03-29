@@ -47,7 +47,7 @@ procedure StopSFXLoop;
 
 implementation
 
-uses dos, flags, ibmpc, utils, log;
+uses dos, flags, ibmpc, utils;
 
 const BUFFER_SIZE = 2048;
 
@@ -123,17 +123,13 @@ end;
 procedure IRQHandler; interrupt;
 var Value: Byte;
 begin
-    TranscriptPas('IRQHandler'#13);
     if ActiveSample then
     begin
-      TranscriptPas('ActiveSample'#13);
       {Check if the current block is the last one}
       if BufferOffset + BUFFER_SIZE >  SFXTotalSize  then
       begin
-        TranscriptPas('Last Block'#13);
         if (getFlag(FSOUND) AND $04) = $04 then {If threre's a loop active...}
         begin
-            TranscriptPas('Loop'#13);
             {put the remaining data in the buffer}
             move(pointer(longint(sfxPtr) + bufferoffset)^,Buffer^[BufferOrder],SFXTotalSize - BufferOffset); 
             {fill the rest of the buffer with the beginning of the sample}
@@ -143,7 +139,6 @@ begin
         end
         else
         begin
-            TranscriptPas('Not Loop'#13);
             {put the remaining data in the buffer}
             move(pointer(longint(sfxPtr) + bufferoffset)^,Buffer^[BufferOrder], SFXTotalSize - BufferOffset);
             {fill the rest of the buffer with zeroes (silence)}
@@ -155,7 +150,6 @@ begin
       end
       else {If it's not the last sample data}
       begin
-        TranscriptPas('Not last'#13);
         {Move a whole buffer}
         move(pointer(longint(sfxPtr)+bufferoffset)^,Buffer^[BufferOrder],BUFFER_SIZE);
         {Move the offset}
@@ -164,7 +158,6 @@ begin
      end
      else {If there's no sample being played} 
      begin
-        TranscriptPas('Completed'#13);
         {Fill both buffers with silence}
         FillChar(Buffer^,SizeOf(Buffers),0);
         {Mark as finished}
@@ -259,6 +252,7 @@ var  SampleFile: file;
      PageRegister: Byte;
 begin
     if not SoundBlasterFound then Exit;
+    if ActiveSample then Exit; {If there's a sample being played, ignore this request}
 
     (* Read the SFX file and initialize CurrentSampleRate*)
     SampleFileName := IntToStr(SampleNumber);
@@ -277,9 +271,6 @@ begin
     BlockRead(SampleFile,SFXPtr^,SFXTotalSize);
     Close(SampleFile);
 
-    TranscriptPas('Playing SFX with a size of ' + IntToStr(SFXTotalSize) + ' bytes'#13);
-
-
     {Prepare both buffers first}
     BufferOrder := 0;
     Fillchar(Buffer^,BUFFER_SIZE*2,0);
@@ -295,10 +286,6 @@ begin
         BufferOffset := BUFFER_SIZE * 2;
     end;
     
-    TranscriptPas('DMA Setup. DMA channel: ' + IntToStr(SBDMA) + ' IRQ: ' +
-     IntToStr(SBIRQ) + 'BasePort' + IntToStr(SBBasePort) +     
-      ' Offset: ' + IntToStr(Offset) + ' Page: ' + IntToStr(Page) +
-      ' Buffer Size: ' + IntToStr(BUFFER_SIZE) + ' CurrentSampleRate: ' + IntToStr(CurrentSampleRate) + #13);
     (* Prepare DMA *)
     Port[$0A] := 4 + SBDMA; 
     Port[$0C] := 0;
@@ -316,7 +303,6 @@ begin
     Port[$01 + 2 * SBDMA] := Hi(2 * BUFFER_SIZE - 1);
     Port[$0A] := SBDMA; {Select DMA channel}
 
-    TranscriptPas('Start Playing'#13);
     WriteDSP($40);  {playback frequency}
     WriteDSP(CurrentSampleRate);
     WriteDSP($48); {Set DMA Block Size}
