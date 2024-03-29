@@ -22,7 +22,7 @@ procedure resetStack;
 
 implementation
 
-uses errors, ddb, graph, flags;
+uses errors, ddb, ibmpc, flags;
 
 procedure resetStack;   
 begin

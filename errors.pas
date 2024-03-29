@@ -8,7 +8,7 @@ procedure error(level: word; message: string );
 
 implementation
 
-uses graph;
+uses ibmpc;
 
 procedure error(level: word; message: string );
 begin
