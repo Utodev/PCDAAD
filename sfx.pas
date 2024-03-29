@@ -1,6 +1,8 @@
 {$I SETTINGS.INC}
 {$F+}
 {All the DSP SFX stuff. Brought from old NMP}
+{Please notice the 8-bit auto-init DMA mode is used, which is only available in the SoundBlaster 2.0
+ and above. SoundBlaster 1.0 won't sound, and FSOUND flag value may be inaccurate.}
 unit SFX;
 
 {
@@ -47,17 +49,28 @@ implementation
 
 uses dos, flags, ibmpc, utils, log;
 
+const BUFFER_SIZE = 2048;
+
+type Buffers =array[0..1] OF array[0..BUFFER_SIZE-1] of byte;      
+
 var SFXPtr : Pointer; { Pointer to the sample data in RAM }
     CurrentSampleRate: Byte; {Rate to play the SFX}
 
-    RemainingSize, SizeToPlay: Word; {Remaining size of the SFX to play by the IRQ
-                                      handler, and size to play in the next DMA transfer}
-    TotalSize: Word; {Total size of the SFX sample data currently in RAM}
+    SFXTotalSize: Word; {Total size of the SFX sample data currently in RAM}
 
-    RemainingPTR: Pointer; {Pointer to the next data to play within the sample data}
     
     OldIRQVector: Pointer; {Old IRQ vector, to be restored on termination}
     OldPort21: Byte; {Same for port 21h}
+
+    BufferOrder : Byte; {Which of the two buffers is currently being played}
+    BufferOffset : Word; {current offset in the current sample data}
+    Buffer:^Buffers; {The buffers}
+    ActiveSample : boolean; {whether a sample is currently being played or not}  
+                            {Please notice I could use the FSOUND flag to check this
+                            but I prefer to have a separate variable because the 
+                            author may modify the flag and mess up the SFX engine}
+    Offset, Page : Word; {Offset and page of the double buffer}
+
     
  
 
@@ -71,18 +84,18 @@ end;
 
 (* Reads value from the DSP *)
 function ReadDSP : byte;
-BEGIN
+begin
   WHILE Port[SBBasePort + $0E] and $80 = 0 do;
   ReadDSP := Port[SBBasePort + $0A];
-END;
+end;
 
 (* Reads the DSP version *)
 function DSPVersion: String;
 var minor : byte;
-BEGIN
+begin
  WriteDSP($E1);
  DSPVersion := IntToStr(ReadDSP) + '.' + inttostr(ReadDSP);
-END;
+end;
 
 (* Resets the DSP at specific port and returns true if successful*)
 function ResetDSP(BasePort : word) : boolean;
@@ -104,71 +117,71 @@ end;
 
 
 
-
-(* Prepares the DMA to play a sample *)
-procedure PrepareDMA(SamplePTR: Pointer; SampleSize: Word);
-var Page: Byte;
-    Offset: Word;
-begin
-    Offset := Seg(SamplePTR^) SHL 4 + Ofs(SamplePTR^);
-    Page := (Seg(SamplePTR^) + Ofs(SamplePTR^) shr 4) SHR 12;
-    Port[$0A] := 5;
-    Port[$0C] := 0;
-    Port[$0B] := $49;
-    Port[$02] := Lo(Offset);
-    Port[$02] := Hi(Offset);
-    Port[$83] := page;
-    Port[$03] := Lo(SampleSize);
-    Port[$03] := Hi(SampleSize);
-    Port[$0A] := 1;
-  
-end;
-
 { Called when a sample has been player by the DMA chip. It will check if there's more data to play, and if so, it 
- will prepare the DMA chip to play it. Also, if loop is active, it will "rewind" the sample and play it again}
+ will prepare more data in the buffer for the DMA chip to send. Also, if loop is active, it will "rewind" the sample 
+ and play it again}
 procedure IRQHandler; interrupt;
-var value: Byte;
-    Offset: Word;
-    Page: Byte;
+var Value: Byte;
 begin
- dec(RemainingSize, SizeToPlay);
- inc(longint(RemainingPTR),SizeToPlay);
- value:= Port[SBBasePort + $E];  
+    TranscriptPas('IRQHandler'#13);
+    if ActiveSample then
+    begin
+      TranscriptPas('ActiveSample'#13);
+      {Check if the current block is the last one}
+      if BufferOffset + BUFFER_SIZE >  SFXTotalSize  then
+      begin
+        TranscriptPas('Last Block'#13);
+        if (getFlag(FSOUND) AND $04) = $04 then {If threre's a loop active...}
+        begin
+            TranscriptPas('Loop'#13);
+            {put the remaining data in the buffer}
+            move(pointer(longint(sfxPtr) + bufferoffset)^,Buffer^[BufferOrder],SFXTotalSize - BufferOffset); 
+            {fill the rest of the buffer with the beginning of the sample}
+            move(sfxPtr^,Buffer^[BufferOrder][SFXTotalSize-BufferOffset],BUFFER_SIZE - SFXTotalSize + BufferOffset);
+            {Set new buffer offset}
+            BufferOffset:=BUFFER_SIZE - SFXTotalSize + BufferOffset;
+        end
+        else
+        begin
+            TranscriptPas('Not Loop'#13);
+            {put the remaining data in the buffer}
+            move(pointer(longint(sfxPtr) + bufferoffset)^,Buffer^[BufferOrder], SFXTotalSize - BufferOffset);
+            {fill the rest of the buffer with zeroes (silence)}
+            FillChar(Buffer^[BufferOrder][SFXTotalSize - BufferOffset],BUFFER_SIZE - SFXTotalSize + BufferOffset, 0);
+            {Mark the sample as played}
+            ActiveSample:=False;
+        end;
 
- { If there's RemainingSize data, play it, also if there's no RemainingSize data but the loop flag is set, play it as well }
- IF (RemainingSize <> 0) OR  ((getFlag(FSOUND) AND $04) = $04) then 
-  begin
-   if RemainingSize = 0  then 
-   begin { Rewind }
-    RemainingPTR:= SFXPtr;
-    RemainingSize:= TotalSize
-   end;
+      end
+      else {If it's not the last sample data}
+      begin
+        TranscriptPas('Not last'#13);
+        {Move a whole buffer}
+        move(pointer(longint(sfxPtr)+bufferoffset)^,Buffer^[BufferOrder],BUFFER_SIZE);
+        {Move the offset}
+        BufferOffset := BufferOffset + BUFFER_SIZE;
+      end;
+     end
+     else {If there's no sample being played} 
+     begin
+        TranscriptPas('Completed'#13);
+        {Fill both buffers with silence}
+        FillChar(Buffer^,SizeOf(Buffers),0);
+        {Mark as finished}
+        setFlag(FSOUND, getFlag(FSOUND) AND $EB); (* clear SFX playing flag  and loop flag*)
+     end;
+  
+    
+    {ACK interrupt to DSP}
+    value:= Port[SBBasePort + $E];  
 
-   if RemainingSize > 16384 then SizeToPlay:=16384
-                            else SizeToPlay:=RemainingSize;
-                        
-    (* DMA chip setup *)
-{    PrepareDMA(RemainingPTR, SizeToPlay);}
-    Offset := Seg(RemainingPTR^) SHL 4 + Ofs(RemainingPTR^);
-    Page := (Seg(RemainingPTR^) + Ofs(RemainingPTR^) SHR 4) SHR 12;
-    Port[$0A] := 5;
-    Port[$0C] := 0;
-    Port[$0B] := $49;
-    Port[$02] := Lo(offset);
-    Port[$02] := Hi(offset);
-    Port[$83] := page;
-    Port[$03] := Lo(RemainingSize);
-    Port[$03] := Hi(RemainingSize);
-    Port[$0A] := 1;
-    WriteDSP($40);
-    WriteDSP(CurrentSampleRate);
-    (* Set the playback type (8-bit) *)
-    WriteDSP($14);
-    WriteDSP(Lo(RemainingSize));
-    WriteDSP(Hi(RemainingSize));
-  end
-  else setFlag(FSOUND, getFlag(FSOUND) AND $EB); (* clear SFX playing flag  and loop flag*)
-  Port[$20]:=$20; {PIC_EOI = 0x20, End-of-interrupt command code}
+    {Switch buffers}
+    BufferOrder:=BufferOrder XOR 1;
+    {Mark interrupt as handled}
+    Port[$20]:=$20;
+
+
+
 end;
 
 
@@ -192,6 +205,11 @@ begin
  GetBlaster:=True;
 end;
 
+procedure Speaker(OnOff: Boolean);
+begin
+ if OnOff then WriteDSP($D1) else WriteDSP($D3);
+end;
+
 procedure InitializeDSP;
 begin
  ASM
@@ -206,7 +224,8 @@ begin
  GetIntVec(8 + SBIRQ, OldIRQVector);
  SetIntVec(8 + SBIRQ, @IRQHandler);
  ResetDSP(SBBasePort);
- WriteDSP($D1); {Speaker ON}
+ Speaker(true); {Speaker ON}
+ 
 end;
 
 {Tries to find a soundBlaster in ports $210 to $240}
@@ -214,19 +233,19 @@ function FindSoundBlaster: boolean;
 var Aux: boolean;
 begin
  SBBasePort := $210;
- WHILE (SBBasePort <= $240) DO
-  BEGIN
+ WHILE (SBBasePort <= $260) DO
+  begin
    Aux := ResetDSP(SBBasePort);
    IF Aux THEN
     begin
      FindSoundBlaster := true;
      exit;
-    END;
+    end;
    SBBasePort := SBBasePort + $10;
-  END;
+  end;
   SBBasePort := 0;
   FindSoundBlaster := false;
-END;
+end;
 
 
 
@@ -235,56 +254,84 @@ END;
 (***************************************************************** PUBLIC FUNCTIONS ***********************************)
 
 procedure PlaySFX(SampleNumber: Byte; Loop: Boolean; MySampleRate: Word);
-var  Page, Offset : word;
-     SampleFile: file;
+var  SampleFile: file;
      SampleFileName: string;
-     SizeToPlay: Word;
-     ID:String[23];
+     PageRegister: Byte;
 begin
-  if not SoundBlasterFound then Exit;
- 
-  (* Read the SFX file and initialize CurrentSampleRate*)
-  SampleFileName := IntToStr(SampleNumber);
-  while (length(SampleFileName)<3) do SampleFileName := '0' + SampleFileName;
-  Assign(SampleFile, SampleFileName + '.SFX');
-  Reset(SampleFile, 1);
-  if (ioresult<>0) then Exit; {Silently fail if file not found}
-  IF SFXPtr<>NIL THEN FreeMem(SFXPtr, TotalSize); {Free previous SFX data if any}
+    if not SoundBlasterFound then Exit;
 
-  BlockRead(SampleFile, ID, 24); (* Evitar ID *)
-  BlockRead(SampleFile, TotalSize, 2);
-  BlockRead(SampleFile, CurrentSampleRate, 1); 
-  if (MySampleRate <> 0) then CurrentSampleRate := MySampleRate; 
-  
-  GetMem(SFXPtr,TotalSize);
-  BlockRead(SampleFile,SFXPtr^,TotalSize);
-  Close(SampleFile);
- 
-  (* Initiliaze global vars used later by the IRQ handler *)
-  RemainingPTR := SFXPtr;
-  RemainingSize := TotalSize;
+    (* Read the SFX file and initialize CurrentSampleRate*)
+    SampleFileName := IntToStr(SampleNumber);
+    while (length(SampleFileName)<3) do SampleFileName := '0' + SampleFileName;
+    Assign(SampleFile, SampleFileName + '.SFX');
+    Reset(SampleFile, 1);
+    if (ioresult<>0) then Exit; {Silently fail if file not found}
+    IF SFXPtr<>NIL THEN FreeMem(SFXPtr, SFXTotalSize); {Free previous SFX data if any}
 
-  (* Set FSOUND flag values*)
-  setFlag(FSOUND, getFlag(FSOUND) OR $10); (* Set SFX playing flag *)
-  if Loop then setFlag(FSOUND, getFlag(FSOUND) OR $04)  (* Set SFX loop flag *)
-          else setFlag(FSOUND, getFlag(FSOUND) AND $FB); (* Clear SFX loop flag *)
+    Seek(SampleFile,24); (* Avoid ID in the header *)
+    BlockRead(SampleFile, SFXTotalSize, 2);
+    BlockRead(SampleFile, CurrentSampleRate, 1); 
+    if (MySampleRate <> 0) then CurrentSampleRate := MySampleRate; 
+
+    GetMem(SFXPtr,SFXTotalSize);
+    BlockRead(SampleFile,SFXPtr^,SFXTotalSize);
+    Close(SampleFile);
+
+    TranscriptPas('Playing SFX with a size of ' + IntToStr(SFXTotalSize) + ' bytes'#13);
 
 
-  (* Maximum size to play in one go via DMA is 16K *)
-  IF RemainingSize > 16384 then SizeToPlay:=16384
-                           else SizeToPlay := RemainingSize;
-                             
-  
-  (* Prepare DMA *)
-  PrepareDMA(SFXPtr, SizeToPlay);
-  
-  (* Set the playback frequency *)
-  WriteDSP($40);
-  WriteDSP(CurrentSampleRate);
-  (* Set the playback type (8-bit) *)
-  WriteDSP($14);
-  WriteDSP(Lo(SizeToPlay));
-  WriteDSP(Hi(SizeToPlay));
+    {Prepare both buffers first}
+    BufferOrder := 0;
+    Fillchar(Buffer^,BUFFER_SIZE*2,0);
+    
+    if (SFXTotalSize < BUFFER_SIZE * 2) then 
+    begin
+        Move(SFXPtr^, Buffer^, SFXTotalSize); (* Fill up as much as possible *)
+        BufferOffset := SFXTotalSize;
+    end
+    else
+    begin
+        Move(SFXPtr^, Buffer^, BUFFER_SIZE * 2); (* Fill up both buffers *)
+        BufferOffset := BUFFER_SIZE * 2;
+    end;
+    
+    TranscriptPas('DMA Setup. DMA channel: ' + IntToStr(SBDMA) + ' IRQ: ' +
+     IntToStr(SBIRQ) + 'BasePort' + IntToStr(SBBasePort) +     
+      ' Offset: ' + IntToStr(Offset) + ' Page: ' + IntToStr(Page) +
+      ' Buffer Size: ' + IntToStr(BUFFER_SIZE) + ' CurrentSampleRate: ' + IntToStr(CurrentSampleRate) + #13);
+    (* Prepare DMA *)
+    Port[$0A] := 4 + SBDMA; 
+    Port[$0C] := 0;
+    Port[$0B] := $58 + SBDMA; {0101=>single, enable initialization  | 10xx write - , xx = DMA channel}
+    Port[$01 + SBDMA] := Lo(Offset);
+    Port[$01 + SBDMA] := Hi(Offset);
+    case SBDMA of
+        0: PageRegister := $87;
+        1: PageRegister := $83;
+        2: PageRegister := $81;
+        3: PageRegister := $82;
+    end;
+    Port[PageRegister] := Page;
+    Port[$01 + 2 * SBDMA] := Lo(2 * BUFFER_SIZE - 1); {Size of the two buffers -1 (according DMA specs) }
+    Port[$01 + 2 * SBDMA] := Hi(2 * BUFFER_SIZE - 1);
+    Port[$0A] := SBDMA; {Select DMA channel}
+
+    TranscriptPas('Start Playing'#13);
+    WriteDSP($40);  {playback frequency}
+    WriteDSP(CurrentSampleRate);
+    WriteDSP($48); {Set DMA Block Size}
+    WriteDSP(Lo(BUFFER_SIZE - 1));
+    WriteDSP(Hi(BUFFER_SIZE - 1));
+    WriteDSP($1C); {playback type 8-bit auto-init DMA mode }
+    WriteDSP(Lo(BUFFER_SIZE)); {DSP command 1C expects number of bytes to play - 1}
+    WriteDSP(Hi(BUFFER_SIZE));
+        
+    (* Set FSOUND flag values*)
+    setFlag(FSOUND, getFlag(FSOUND) OR $10); (* Set SFX playing flag *)
+    if Loop then setFlag(FSOUND, getFlag(FSOUND) OR $04)  (* Set SFX loop flag *)
+            else setFlag(FSOUND, getFlag(FSOUND) AND $FB); (* Clear SFX loop flag *)
+    ActiveSample := true;
+
 end;
 
 
@@ -318,15 +365,35 @@ end;
 procedure TerminateSFX;
 begin
  if not SoundBlasterFound then Exit;
- SetIntVec(8+SBIRQ,OldIRQVector);
+ Speaker(false); {Speaker Off};
+ SetIntVec(8 + SBIRQ, OldIRQVector);
+ if (SFXPtr<>NIL) then FreeMem(SFXPtr,SFXTotalSize);
  ASM
   MOV AL,OldPort21
   OUT 021h,AL
  end;
- WriteDSP($D3); {Speaker Off};
+end;
+
+
+procedure GetPageMem(VAR P:Pointer;Size:Word);
+(* Obtains a memory area that is within the same page *)
+var Offset : Word;
+    Aux : Pointer;
+begin
+ GetMem(P,Size);
+ Offset := Seg(P^) SHL 4 + Ofs(Buffer);
+ if Offset + Size > 65535 then begin
+                                GetMem(Aux,Size);
+                                FreeMem(P,Size);
+                                P:=Aux
+                               end;
 end;
 
 
 begin
  SoundBlasterFound := false;
+ ActiveSample := false;
+ GetPageMem(pointer(Buffer),SizeOf(Buffers));
+ Offset := Seg(Buffer^) SHL 4 + Ofs(Buffer^);
+ Page := (Seg(Buffer^) + Ofs(Buffer^) SHR 4) SHR 12;
 end.
