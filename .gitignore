@@ -29,3 +29,5 @@ drc/*
 *.VGA
 VESATEST.PAS
 tool/pcxfixer
+tool/Linux
+tool/MacOs
