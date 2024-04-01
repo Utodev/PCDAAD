@@ -290,7 +290,7 @@ implementation
 
 
 uses flags, ddb, objects, ibmpc, stack, messages, strings, 
-     errors, utils, parser, pcx, log, maluva, sfx;
+     errors, utils, parser, pcx, log, maluva, sfx, timer, adlib;
 
 
 (*****************************************************************************************)
@@ -501,17 +501,17 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _SFX;
 begin
-  case (parameter1) of
+  case (parameter2) of
     {Plays sample with default sample rate and no repeat}
-    0: PlaySFX(parameter2, false, 0); 
+    0: PlaySFX(parameter1, false, 0); 
 
     {Plays sample with default sample rate and loop}
-    1: PlaySFX(parameter2, true, 0); 
+    1: PlaySFX(parameter1, true, 0); 
 
     {Plays sample with specific sample rate and no repeat}
     2: begin
         CondactPtr := CondactPTR + 1;
-        PlaySFX(parameter2, false, getByte(CondactPTR)); 
+        PlaySFX(parameter1, false, getByte(CondactPTR)); 
        end; 
 
     {Plays sample with specific sample rate and loop}
@@ -520,11 +520,21 @@ begin
     the higher is XX}
     3: begin 
         CondactPtr := CondactPTR + 1;
-        PlaySFX(parameter2, true, getByte(CondactPTR)); 
+        PlaySFX(parameter1, true, getByte(CondactPTR)); 
        end;
 
     {Stops loop if enabled, parameter2 is irrelevant}
     4: StopSFXLoop;
+
+    {Plays DRO file, no repeat}
+    5: PlayDRO(parameter1, false);
+
+    {Plays DRO file, loop}
+    6: PlayDRO(parameter1, true);
+
+    {Stops DRO playing}
+    7: StopDRO;
+    
   end;
   done := true;
 
@@ -1906,6 +1916,8 @@ begin
   {Cleaning}
   ClearPCX;
   TerminateSFX;
+  TerminateAdlib;
+  CleanUpTimer;
   CloseOrderFile;
   CloseTranscript;
   halt(0);
@@ -1913,6 +1925,8 @@ begin
  resetWindows;
  resetFlags;
  resetObjects;
+ if AdlibFound then StopDRO;
+ if SoundBlasterFound then StopSFXLoop;
  _RESTART;
 end;
 

@@ -47,7 +47,7 @@ procedure StopSFXLoop;
 
 implementation
 
-uses dos, flags, ibmpc, utils;
+uses dos, flags, ibmpc, utils, log;
 
 const BUFFER_SIZE = 2048;
 
@@ -223,18 +223,24 @@ end;
 
 {Tries to find a soundBlaster in ports $210 to $240}
 function FindSoundBlaster: boolean;
+const BasePorts: array[0..5] of word = ($220, $240, $210, $230, $250, $260);
 var Aux: boolean;
+    i :integer;
 begin
- SBBasePort := $210;
- WHILE (SBBasePort <= $260) DO
+ {The reason to have the disordered array of ports is each check requires time
+  so testing from 210 to 260 in order is not reasonable as the most common
+  ports are 220 and 240, so we test those first so in most cases the interpreter
+  starts faster as it find the SB faster.}  
+ for i:= 0 to 5 do
   begin
+   SBBasePort := BasePorts[i];
    Aux := ResetDSP(SBBasePort);
    IF Aux THEN
     begin
+     TranscriptPas('SoundBlaster DSP found at ' + IntToHex(SBBasePort) + 'h.'#13#10);
      FindSoundBlaster := true;
      exit;
     end;
-   SBBasePort := SBBasePort + $10;
   end;
   SBBasePort := 0;
   FindSoundBlaster := false;
@@ -262,7 +268,6 @@ begin
     if (ioresult<>0) then Exit; {Silently fail if file not found}
     IF SFXPtr<>NIL THEN FreeMem(SFXPtr, SFXTotalSize); {Free previous SFX data if any}
 
-    Seek(SampleFile,24); (* Avoid ID in the header *)
     BlockRead(SampleFile, SFXTotalSize, 2);
     BlockRead(SampleFile, CurrentSampleRate, 1); 
     if (MySampleRate <> 0) then CurrentSampleRate := MySampleRate; 
@@ -325,20 +330,19 @@ end;
 procedure InitializeSFX;
 begin
     SoundBlasterFound := FindSoundBlaster;
+    setFlag(FSOUND, getFlag(FSOUND) AND $EA); (* Clear bits all bit for SFX *)
 
     SFXPtr := nil;
     if not SoundBlasterFound then Exit;
+
     if (not GetBlaster(SBIRQ, SBDMA)) then
     begin
         SBIRQ := 5; {Most common configuration}
         SBDMA := 1;
     end;
     InitializeDSP;
-
-    (* Set the SFX bits in the FSOUND flag *)
-    setFlag(FSOUND, getFlag(FSOUND) AND $EB); (* Clear bits for SFX is playing and loop mode *)
-    if SoundBlasterFound then setFlag(FSOUND, getFlag(FSOUND) OR $01) (* Set SFX engine enabled flag *)
-                            else setFlag(FSOUND, getFlag(FSOUND) AND $FE); (* Clear SFX engine enabled flag *)
+    setFlag(FSOUND, getFlag(FSOUND) OR $01) (* Set SFX engine enabled flag *)
+    
 
 end;
 

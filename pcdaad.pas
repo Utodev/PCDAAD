@@ -15,8 +15,8 @@
 (* Pending: no funciona concatenar ordenes *)
 program PCDAAD;
 
-uses strings, global, ddb, errors, stack, condacts, flags, objects, 
-     graph, utils, parser, ibmpc, charset, log, pcx, maluva, sfx;
+uses strings, global, ddb, errors, stack, condacts, flags, objects, timer,
+     graph, utils, parser, ibmpc, charset, log, pcx, maluva, sfx, adlib;
 
 var ddbFilename : String;
 
@@ -241,13 +241,6 @@ begin
     InitOrderFile;
     
     Randomize;        {Initialize the random generator}
-    InitializeSFX;    {Initializes the sound effects}
-    if Verbose then 
-    begin
-     if (SoundBlasterFound) then TranscriptPas('Sound Blaster detected (A'+intToHex(SBBasePort)+
-                                 ' I'+intToStr(SBIRQ)+' D'+inttostr(SBDMA)+').'#13)
-                            else TranscriptPas('No Sound Blaster detected.'#13);
-    end;
     startVideoMode;   {Set the proper video mode}
     InitializeParser; {Initializes the parser}
     resetFlags;       {Restores flags initial value}
@@ -255,6 +248,9 @@ begin
     resetWindows;     {clears all windows setup}
     resetStack;
     resetProcesses;
+    InitializeSFX;    {Initializes the sound effects}
+    InitializeAdlib;  {Initializes the OPL sound card}
+    SetTimer(1081);   {Set the timer to tick once every millisecond} 
     InitializePCX(SVGAMode); {Initializes pictures buffer}
     if loadPCX(65535, SVGAMode) then  {Load intro screen if present}
     begin
