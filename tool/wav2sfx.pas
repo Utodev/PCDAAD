@@ -7,7 +7,6 @@ program wav2sfx;
 
 uses sysutils;
 
-CONST ID:String[24]='SFX File - NM Soft.'+#13+#10+#$1A;
 
 type FileBuffer = array[0..65534] of Byte;    
 
@@ -88,7 +87,6 @@ begin
     Assign(OutFile, OutFileName);
     Rewrite(OutFile,1);
     if (ioresult<>0) then Error('Invalid output file');
-    BlockWrite(OutFile,ID,24);
     BlockWrite(OutFile,SampleLengthW,2);
     BlockWrite(OutFile,SampleRateFinal,1);
     BlockWrite(OutFile,Buffer^[44],SampleLengthW);
