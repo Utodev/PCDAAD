@@ -13,6 +13,7 @@ procedure CloseTranscript;
 
 var TranscriptDisabled: boolean;
     Verbose: boolean;
+    ImmediateLogFLush: boolean;
 
 implementation
 
@@ -29,6 +30,7 @@ begin
         Assign(TranscriptFile, Filename);
         Rewrite(TranscriptFile);
         if (ioresult<>0) then Error(7, 'Unable to create transcript file');
+        if (ImmediateLogFLush) then Close(TranscriptFile);
     end;
 end;
 
@@ -36,8 +38,10 @@ procedure Transcript(LogText: Pchar);
 begin
     if not TranscriptDisabled then
     begin
+        if (ImmediateLogFLush) then Append(TranscriptFile);
         Write(TranscriptFile, LogText);
         if (ioresult<>0) then Error(8, 'Unable to write transcript file');
+        if (ImmediateLogFLush) then  Close(TranscriptFile);
     end;
 end;
 
@@ -45,14 +49,16 @@ procedure TranscriptPas(LogText: String);
 begin
     if not TranscriptDisabled then
     begin
+        if (ImmediateLogFLush) then Append(TranscriptFile);
         Write(TranscriptFile, LogText);
         if (ioresult<>0) then Error(8, 'Unable to write transcript file');
+        if (ImmediateLogFLush) then Close(TranscriptFile);
     end;
 end;
 
 procedure CloseTranscript;
 begin
- if not TranscriptDisabled then Close(TranscriptFile);
+ if not TranscriptDisabled and not ImmediateLogFLush then Close(TranscriptFile);
 end;
 
 begin
@@ -62,4 +68,5 @@ begin
     TranscriptUnit :=  Upcase(TranscriptUnit[1]);
     Verbose := false;
     if (TranscriptUnit='A') or (TranscriptUnit='B') then TranscriptDisabled := true;
+    ImmediateLogFLush := false;
 end.

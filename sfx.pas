@@ -99,17 +99,14 @@ end;
 
 (* Resets the DSP at specific port and returns true if successful*)
 function ResetDSP(BasePort : word) : boolean;
-var InitialTicks, CurrentTicks: Word;
+var InitialTicks, CurrentTicks: longint;
 begin
  Port[BasePort + $6] := 1;
  Delay(0.10);
  Port[BasePort + $6] := 0;
  Delay(0.10);
  InitialTicks := getTicks;
- repeat
-  currentTicks := getTicks;
-  if (currentTicks<getTicks) then currentTicks := currentTicks and $10000;
- until ((currentTicks - initialTicks) / 18.2 >= 0.5) OR (Port[BasePort + $E] AND $80 = $80);
+ repeat until ((getTicks - initialTicks) / 1000 >= 0.5) OR (Port[BasePort + $E] AND $80 = $80);
  if (Port[BasePort + $E] AND $80 <> $80) then ResetDSP := false
  else if (Port[BasePort + $A] = $AA) then ResetDSP := true
  else ResetDSP := false;

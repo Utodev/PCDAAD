@@ -289,8 +289,10 @@ implementation
 
 
 
-uses flags, ddb, objects, ibmpc, stack, messages, strings, 
-     errors, utils, parser, pcx, log, maluva, sfx, timer, adlib;
+uses flags, ddb, objects, ibmpc, stack, 
+     messages, strings, errors, utils, 
+     parser, pcx, log, maluva, sfx, 
+     timer, adlib, fli;
 
 
 (*****************************************************************************************)
@@ -502,14 +504,18 @@ end;
 procedure _SFX;
 begin
   case (parameter2) of
+
+    {Note: we skip "0" because 0 is used by the old AtariST SFX support, this way
+    0 does nothing in PCDAAD}
+
     {Plays sample with default sample rate and no repeat}
-    0: PlaySFX(parameter1, false, 0); 
+    1: PlaySFX(parameter1, false, 0); 
 
     {Plays sample with default sample rate and loop}
-    1: PlaySFX(parameter1, true, 0); 
+    2: PlaySFX(parameter1, true, 0); 
 
     {Plays sample with specific sample rate and no repeat}
-    2: begin
+    3: begin
         CondactPtr := CondactPTR + 1;
         PlaySFX(parameter1, false, getByte(CondactPTR)); 
        end; 
@@ -518,22 +524,28 @@ begin
     {specific sample rate is in the next byte in the DDB,
     created with #defb XX, where the frequency is higher
     the higher is XX}
-    3: begin 
+    4: begin 
         CondactPtr := CondactPTR + 1;
         PlaySFX(parameter1, true, getByte(CondactPTR)); 
        end;
 
     {Stops loop if enabled, parameter2 is irrelevant}
-    4: StopSFXLoop;
+    5: StopSFXLoop;
 
     {Plays DRO file, no repeat}
-    5: PlayDRO(parameter1, false);
+    6: PlayDRO(parameter1, false);
 
     {Plays DRO file, loop}
-    6: PlayDRO(parameter1, true);
+    7: PlayDRO(parameter1, true);
 
     {Stops DRO playing}
-    7: StopDRO;
+    8: StopDRO;
+
+    {PlaysFLI file, no repeat}
+    9: PlayFLI(parameter1,false);
+
+    {PlaysFLI file, loop}
+    10: PlayFLI(parameter1,true);
     
   end;
   done := true;
@@ -618,7 +630,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _ANYKEY;
 var inkey :  word;
-    Ticks: word;
+    Ticks: longint;
     TimeoutSeconds : TFlagType;
     TimeoutHappened: Boolean;   
     
@@ -630,7 +642,7 @@ begin
                                                else TimeoutSeconds := 0;
  Ticks := getTicks;
  while not Keypressed and not TimeoutHappened do
-   if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then TimeoutHappened := true;
+   if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/MILLISECONDS_DIVIDER > TimeoutSeconds) then TimeoutHappened := true;
  if not TimeoutHappened then inkey := ReadKey;
  Windows[ActiveWindow]. LastPauseLine := 0;
  done := true; 
@@ -908,8 +920,8 @@ begin
 (*--------------------------------------------------------------------------------------*)
 procedure _PAUSE;
 begin
- if (parameter1 = 0) then Delay(5.12)
-                     else Delay(parameter1/50);
+ if (parameter1 = 0) then Delay(5.12) {256/50}
+                     else Delay(parameter1 / 50);
  done := true; 
 end;
 
@@ -1290,7 +1302,7 @@ begin
  if (Parameter2>=24) and (Parameter2<=238) and (Parameter2 mod 2 = 0) then
  begin
    Sound(FREQ_TABLE[(Parameter2-24) SHR 1]);
-   Delay(Parameter1 / 100);
+   Delay(Parameter1 / 50);
    Nosound;
  end;
  done := true;

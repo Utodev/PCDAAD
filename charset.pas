@@ -4,8 +4,12 @@ unit charset;
 
 interface
 
+type TCharsetData = array [0..2047] of byte;
+
 var charsetWidth : array [0..255] of byte;
-    charsetData: array [0..2047] of byte;
+
+
+    charsetData: ^TCharsetData;
 
 function loadCharset(filename : String): boolean;
 function loadLegacyCharset(filename: String): boolean;
@@ -24,7 +28,7 @@ begin
     begin
         Seek(charsetFile, filesize(charsetFile) - 256*9);
         BlockRead(charsetFile, charsetWidth, sizeof(charsetWidth));
-        BlockRead(charsetFile, charsetData, sizeof(charsetData));
+        BlockRead(charsetFile, charsetData^, sizeof(TCharsetData));
         Close(charsetFile);
         loadCharset := true;
     end;
@@ -40,7 +44,7 @@ begin
     Reset(charsetFile, 1);
     if (ioresult = 0) then
     begin
-        BlockRead(charsetFile, charsetData, sizeof(charsetData));
+        BlockRead(charsetFile, charsetData^, sizeof(TcharsetData));
         Close(charsetFile);
         for i:= 0 to 255 do charsetWidth[i] := 6;
         loadLegacyCharset := true;
@@ -48,5 +52,6 @@ begin
 end;
 
 
-
+begin
+    new(charsetData);
 end.

@@ -181,10 +181,8 @@ begin
 
     end;          
 end;
-{
-COSAS:
-    - Cuando termina se quedan las últimas notas sonando, habrá que silenciar o hacer un fade OUT
-}
+
+
 procedure PlayDRO(MelodyNumber : byte; Loop:boolean); 
 var MusicFile: file;
     MusicFileName: string;
@@ -223,7 +221,7 @@ begin
     interrupt call. Just being paranoid, to be honest.}
     DelayInMilliseconds := 1;
     CurrentCommand := 0;
-    ActiveMusic := true; {Don't move this over the ProcesDRO above or there may be overlapping}
+    ActiveMusic := true; 
 end;
 
 procedure StopDRO;

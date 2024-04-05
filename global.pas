@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.9 - The Last Crusade';
+const VERSION='1.9 - A red herring';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;
@@ -15,6 +15,13 @@ const VERSION='1.9 - The Last Crusade';
       MAX_LOCATION = NUM_LOCATIONS -1;
       LAST_CONVERTIBLE_NOUN=39; {Nouns convertible to verb in absence of verb. i.e "NORTH"}
       LAST_PROPER_NOUN=50;
+
+      {For some reason, setting the timer to run every 1 ms, makes the OPL music run at 
+      the proper speed, but apaprently that doesn't make the Delay function work
+      properly. Somehow delays were larger than it should be. So despite the divider 
+      for DELAY should be 1000, it's set to a different value to properly do the 
+      count. This is also used in places where the time should be counted, like timeouts}
+      MILLISECONDS_DIVIDER = 875;
       
 
       FREQ_TABLE : array [0.. 9 * 12 -1] of Word = (

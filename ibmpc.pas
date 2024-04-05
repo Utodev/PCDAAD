@@ -67,13 +67,15 @@ function Keypressed:Boolean;
 {Wait for vertical retrace}
 procedure WaitVRetrace;
 {Get timer ticks}
-function getTicks: word; 
+function getTicks: longint; 
 procedure PreserveStream;
 procedure RestoreStream;
 
 implementation
 
-uses strings, charset, crt, parser, utils, log, ddb, objects, flags, global, condacts, dos, vesa, errors;
+uses strings, charset, crt, parser, utils, 
+    log, ddb, objects, flags, global, condacts, dos,
+     vesa, errors, timer;
 
 var ExternPTR: Pointer;
     TimeoutPreservedOrder: String;
@@ -98,28 +100,21 @@ begin
   end;  
 end;
 
-function getTicks: word; Assembler;
-asm
- SUB AH,AH
- INT $1A
- MOV AX, DX
+function getTicks: longint; 
+begin
+  getTicks := SystemTimeMilliseconds; 
 end;
 
 procedure Delay(seconds: real);
-{ The getTicks funcion returns just the lower value of BIOS timer ticks.
-  A tick happens 18.2 times per second, so the tick counter overflows 
-  every hour. To avoid misscalculation when the system notices the 
-  current tick count is smaller than the original one, it considers an
-  overflow happened, and adds $10000 to proparly check. Despite that is
-  very unlikely to happen (only happens once an hour and the delay has
-  to happen just before the overflow)}
-var initialTicks, currentTicks : longint;
+{ The getTicks funcion returns logint value of milliseconds since the
+ program started. There's no need to check for overflow, as the maximum
+ number of milliseconds is 49.7 days. Previous versions of this function
+ was paranoid in excess}
+
+var initialTicks : longint;
 begin
  initialTicks := getTicks;
- repeat
-  currentTicks := getTicks;
-  if (currentTicks<getTicks) then currentTicks := currentTicks and $10000;
- until (currentTicks - initialTicks) / 18.2 >= seconds;
+ repeat until (getTicks - initialTicks) / MILLISECONDS_DIVIDER >= seconds;
 end;
 
 function Keypressed:Boolean;  Assembler;
@@ -256,7 +251,7 @@ var key : word;
     SaveX, SaveY : Word;
     Xlimit : Word;
     historyStr : String;
-    Ticks: word;
+    Ticks: longint;
     TimeoutSeconds : TFlagType;
     TimeoutHappened: Boolean;   
     PlayerPressedKey : boolean;
@@ -281,7 +276,7 @@ begin
  repeat
 
   while not Keypressed do
-    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then
+    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/MILLISECONDS_DIVIDER > TimeoutSeconds) then
     begin
      {Only if player din't type anything or player typed and bit 0 of FTIMEOUT_CONTROL is 0}
      {Empty string y does't matter if keypressed or not}
@@ -510,7 +505,7 @@ begin
 end;
 
 procedure ScrollCurrentWindow;
-var Ticks: word;
+var Ticks: longint;
     TimeoutSeconds : TFlagType;
     TimeoutHappened: Boolean;   
     key : word;
@@ -525,7 +520,7 @@ begin
                                                 else TimeoutSeconds := 0;
    Ticks := getTicks;
    while not Keypressed and not TimeoutHappened do
-    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/18.2 > TimeoutSeconds) then TimeoutHappened := true;
+    if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/MILLISECONDS_DIVIDER > TimeoutSeconds) then TimeoutHappened := true;
     
    if not TimeoutHappened then key := ReadKey; {Discard key pressed}
    windows[ActiveWindow].LastPauseLine := 0;
@@ -577,7 +572,7 @@ begin
     begin
         for i := 0 to 7 do
         begin
-          scan := charsetData[(ord(c) + CharsetShift) MOD 256 * 8 + i];  {Get definition for this scanline}
+          scan := charsetData^[(ord(c) + CharsetShift) MOD 256 * 8 + i];  {Get definition for this scanline}
           scan := scan shr (8-width);
           for j := 0 to width-1 do
           begin

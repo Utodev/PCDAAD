@@ -36,7 +36,7 @@ begin
 
  {Where a new entry is considered and evaluated}
  RunEntry:
-
+ TranscriptPas('MaxAvailableMemory: '+IntToStr(MaxAvail)+'; '+#13);
  {Check if current process has finished}
  if getByte(EntryPTR) = END_OF_PROCESS_MARK then
  begin
@@ -167,18 +167,21 @@ end;
 procedure help;
 begin
   WriteLn;
-  WriteLn('Usage: ' + ParamStr(0) + ' [DDB file] [-s] [-log] [-vlog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
+  WriteLn('Usage: ' + ParamStr(0) + 
+  ' [DDB file] [-s] [-log] [-vlog] [-vilog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
   WriteLn('-s : SVGA mode');
-  WriteLn('-log : Transcript game to PCDAAD.LOG');
-  WriteLn('-vlog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log)');
   WriteLn('-nomaluva : turns off Maluva extension emulation');
   WriteLn('-exec : use executables as EXTERN code');
   WriteLn('-ndoall: turns on limited nested DOALL support');
   WriteLn('-i<orders file> : take player orders from text file until exhausted');
   WriteLn('-d : enable diagnostics');
   WriteLn('-h : shows this help');
+  WriteLn('-log : Transcript game to PCDAAD.LOG');
+  WriteLn('-vlog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log)');
+  WriteLn('-vilog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log). '+
+           'Immediate log flush, slow, use only for debugging.');
   Halt(0);
 end;
 
@@ -189,7 +192,15 @@ begin
  begin
   if StrToUpper(ParamStr(i)) = '-H' then Help
   else if StrToUpper(ParamStr(i)) = '-LOG' then TranscriptDisabled := false
-  else if StrToUpper(ParamStr(i)) = '-VLOG' then begin TranscriptDisabled := false; Verbose := true; end
+  else if StrToUpper(ParamStr(i)) = '-VLOG' then begin
+                                                   TranscriptDisabled := false;
+                                                   Verbose := true; 
+                                                 end
+  else if StrToUpper(ParamStr(i)) = '-VILOG' then begin 
+                                                    TranscriptDisabled := false;
+                                                    Verbose := true;
+                                                    ImmediateLogFLush := true;
+                                                  end
   else if StrToUpper(ParamStr(i)) = '-D' then DiagnosticsEnabled := true
   else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if StrToUpper(ParamStr(i)) = '-NDOALL' then NestedDoallEnabled := true
@@ -248,9 +259,9 @@ begin
     resetWindows;     {clears all windows setup}
     resetStack;
     resetProcesses;
+    SetTimer;   {Set the timer to tick once every millisecond} 
     InitializeSFX;    {Initializes the sound effects}
     InitializeAdlib;  {Initializes the OPL sound card}
-    SetTimer(1081);   {Set the timer to tick once every millisecond} 
     InitializePCX(SVGAMode); {Initializes pictures buffer}
     if loadPCX(65535, SVGAMode) then  {Load intro screen if present}
     begin

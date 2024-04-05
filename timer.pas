@@ -3,7 +3,9 @@ unit timer;
 
 interface
 
-procedure SetTimer(frequency : word);
+var SystemTimeMilliseconds: longint;
+
+procedure SetTimer;
 procedure CleanUpTimer;
 
 implementation
@@ -12,15 +14,16 @@ uses dos, adlib;
 
 const TIMERINTR = 8;
       PIT_FREQ = $1234DD;
-      TIMERFreq : Word = 19;
 
 VAR BIOSTimerHandler : procedure;
     clock_ticks, counter : longint;
-    SYSTIME: longint;
+    
+    
 
 {$F+}
 procedure TimerHandler; interrupt;
 begin
+   Inc(SystemTimeMilliseconds);
    {Take care of OPL music}
    if ActiveMusic then ProcessDRO;
 
@@ -28,7 +31,6 @@ begin
   clock_ticks := clock_ticks + counter;
   if clock_ticks >= $10000 then
     begin
-      Inc(SysTime);
       clock_ticks := clock_ticks - $10000;
       asm pushf end;
       BIOSTimerHandler;
@@ -39,10 +41,12 @@ END;
 {$F-}
 
 
-procedure SetTimer(frequency : word);
+procedure SetTimer;
 begin
   clock_ticks := 0;
-  counter := PIT_FREQ div frequency;
+
+  counter := PIT_FREQ div 1000;
+  SystemTimeMilliseconds := 0;
 
   GetIntVec(TIMERINTR, @BIOSTimerHandler);
   SetIntVec(TIMERINTR, @TimerHandler);
@@ -50,7 +54,6 @@ begin
   Port[$43] := $34;
   Port[$40] := counter mod 256;
   Port[$40] := counter div 256;
-  TimerFreq:=Frequency;
 end;
 
 procedure CleanUpTimer;

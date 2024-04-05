@@ -21,7 +21,7 @@ procedure ClearPCX;
 
 implementation
 
-uses utils, log,readbuff, ibmpc, vesa; 
+uses utils, log,readbuff, ibmpc, vesa, palette; 
 
 type TScreenBuffer = array[0..63999] of Byte;
 
@@ -35,27 +35,21 @@ var ScreenBuffer: array [0..3] of ^TScreenBuffer;
 procedure InitializePCX(SVGAMode: boolean);
 var i : byte;
 begin
+{$ifndef lowmem} {if defined lowmem, we don't use pictures, to save the RAM required
+                for the buffers, and being able to debug under Turbo Pascal IDE}
  if (SVGAMode) then NumBuffers := 4 else NumBuffers := 1;
  if (SVGAMode) then lineWidth := 640 else lineWidth := 320;
  for i:=0 to NumBuffers-1 do GetMem(ScreenBuffer[i], Sizeof(TScreenBuffer))
+ {$endif}
 end;      
 
 procedure ClearPCX;
 var i : byte;
 begin
+{$ifndef lowmem}
  for i:=0 to NumBuffers-1 do FreeMem(ScreenBuffer[i], Sizeof(TScreenBuffer))
+ {$endif}
 end;
-
-procedure SetVGAPalette(var Palette); assembler;
-asm
- LES DX, [Palette]
- XOR BX, BX
- MOV CX, 256
- MOV AX, 1012h
- INT 10h
-end; 
-
-
 
 
 function LoadPCX(ImageNumber: Word; SVGAMode: boolean): boolean;
@@ -71,7 +65,7 @@ var Aux : Byte;
     DIVV, MODD : Longint;
 begin
 
-
+{$ifndef lowmem}
  if (ImageNumber = 65535) then 
  begin
   ImageFileName := 'DAAD';
@@ -168,6 +162,7 @@ begin
  LatestPCXFileSize := readbuff.bufferFileSize;
  LatestPCXHeight := ImgHeight;
  LatestPCXWidth := ImgWidth;
+ {$endif}
  LoadPCX := true;
 end;
 
@@ -180,7 +175,7 @@ var i, offset : Longint;
     
     
 begin
-
+{$ifndef lowmem}
 if (SVGAmode) then
 begin
    width := width SHL 1;
@@ -200,7 +195,7 @@ end;
     {Now we really paint the picture}
     WaitVRetrace;
     {Set palette}
-    SetVGAPalette(PaletteBuffer);
+    SetAllPalette(PaletteBuffer);
     { Copy from doble buffer}
     if (SVGAMode) then
     begin
@@ -233,7 +228,7 @@ end;
   if SVGAMode then ClearWindow(X SHR 1, Y  SHR 1, width SHR 1, height  SHR 1, Windows[ActiveWindow].PAPER)
               else ClearWindow(X, Y, width, height, Windows[ActiveWindow].PAPER); 
  end;
- 
+ {$endif}
 end;
 
 begin
