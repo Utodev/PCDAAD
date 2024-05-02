@@ -238,7 +238,7 @@ const condactTable : TCondactTable = (
 (condactName: 'TIME   '; condactRoutine: _TIME   ; numParams: 2), {  83 $53}
 (condactName: 'PICTURE'; condactRoutine: _PICTURE; numParams: 1), {  84 $54}
 (condactName: 'DOALL  '; condactRoutine: _DOALL  ; numParams: 1), {  85 $55}
-(condactName: 'MOUSE  '; condactRoutine: _MOUSE  ; numParams: 1), {  86 $56}
+(condactName: 'MOUSE  '; condactRoutine: _MOUSE  ; numParams: 2), {  86 $56}
 (condactName: 'GFX    '; condactRoutine: _GFX    ; numParams: 2), {  87 $57}
 (condactName: 'ISNOTAT'; condactRoutine: _ISNOTAT; numParams: 2), {  88 $58}
 (condactName: 'WEIGH  '; condactRoutine: _WEIGH  ; numParams: 2), {  89 $59}
@@ -292,7 +292,7 @@ implementation
 uses flags, ddb, objects, ibmpc, stack, 
      messages, strings, errors, utils, 
      parser, pcx, log, maluva, sfx, 
-     timer, adlib, fli;
+     timer, adlib, fli, mouse;
 
 
 (*****************************************************************************************)
@@ -502,6 +502,7 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _SFX;
+var SaveMouse: boolean;
 begin
   case (parameter2) of
 
@@ -542,16 +543,24 @@ begin
     8: StopDRO;
 
     {PlaysFLI file, no repeat}
-    9: PlayFLI(parameter1,false);
+    9: begin
+        SaveMouse := PointerActive;
+        if SaveMouse then HideMouse;
+        PlayFLI(parameter1,false);
+        if SaveMouse then ShowMouse;
+       end; 
 
     {PlaysFLI file, loop}
-    10: PlayFLI(parameter1,true);
+   10: begin
+        SaveMouse := PointerActive;
+        if SaveMouse then HideMouse;
+        PlayFLI(parameter1,true);
+        if SaveMouse then ShowMouse;
+       end; 
     
   end;
   done := true;
 
- (* PENDING: SFX CONDACT *)
- done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -748,17 +757,25 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _DISPLAY;
 var multiplier : word;
+    SaveMouse: boolean;
 begin
+ SaveMouse := PointerActive;
+ if PointerActive then HideMouse;
  DisplayPCX(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
            Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8,
            parameter1, SVGAMode);
+ if SaveMouse then ShowMouse;          
  done := true;
 end;
 
 procedure _CLS;
+var SaveMouse: boolean;
 begin
- ClearCurrentWindow;
- done := true;
+    SaveMouse := PointerActive;
+    if PointerActive then HideMouse;
+    ClearCurrentWindow;
+    if SaveMouse then ShowMouse; 
+    done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1522,8 +1539,38 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _MOUSE;
+{Please notice at the end of the mouse unit there is an explanation of MOUSE condact
+was working in DAAD 2.0}
+var X, Y: Word;
+    LeftButton, RightButton, MiddleButton: boolean;
 begin
-(* PENDING: MOUSE condact implementation*)
+  case parameter2 of
+    0 : ResetMouse;
+    1 : ShowMouse;
+    2 : HideMouse;
+    3 : begin
+            GetMouse(X, Y, LeftButton, MiddleButton, RightButton);
+            SetFlag(parameter1, MouseStatus(LeftButton, MiddleButton, RightButton));
+            SetFlag(parameter1 + 1, X DIV 8);
+            SetFlag(parameter1 + 2, Y DIV 8);
+            SetFlag(parameter1 + 3, X DIV 6);
+        end;
+    4 : begin
+            {This command was not in original DAAD for DOS. Allows getting the finest granularity position
+            that the current video model allows.  It will return X/4 and Y/2 in SVGA mode, or X/2
+            and Y as is in VGA mode.}
+            GetMouse(X, Y, LeftButton, MiddleButton, RightButton);
+            SetFlag(parameter1, MouseStatus(LeftButton, MiddleButton, RightButton));
+            if (SVGAMode) then SetFlag(parameter1 + 1, X DIV 4)
+                          else SetFlag(parameter1 + 1, X DIV 2);
+            if (SVGAMode) then SetFlag(parameter1 + 2, Y DIV 2)
+                          else SetFlag(parameter1 + 2, Y);
+        end;
+    5 : ChangePointerFromFile(Parameter1);
+    6 : SetOffsetX(parameter1);
+    7 : SetOffsetY(parameter1);
+  end;
+
 done := true;
 end;
 
@@ -1583,7 +1630,6 @@ if (ObjectLocation <> getFlag(FPLAYER)) and (ObjectLocation <> LOC_CARRIED) then
  setObjectLocation(parameter1, parameter2);
  setFlag(FCARRIED, getFlag(FCARRIED) - 1);
  Sysmess(SM44); {The _ is in the }
- _SPACE;
  WriteText(getPcharMessageOTX(parameter2, true, false, true), false);
  Sysmess(SM51); {.}
  done := true;
@@ -1932,6 +1978,7 @@ begin
   CleanUpTimer;
   CloseOrderFile;
   CloseTranscript;
+  TerminateMouse;
   halt(0);
  end; 
  resetWindows;
