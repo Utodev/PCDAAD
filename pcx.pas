@@ -129,8 +129,6 @@ begin
  CurrentX := 0;
  CurrentY := 0;
  CurrentPtr := 128;
-
-
  repeat
   
   Color := readbuff.fileGetByte(CurrentPtr);

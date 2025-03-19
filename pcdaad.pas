@@ -16,7 +16,7 @@
 program PCDAAD;
 
 uses strings, global, ddb, errors, stack, condacts, flags, objects, timer,
-     graph, utils, parser, ibmpc, charset, log, pcx, maluva, sfx, adlib;
+     graph, utils, parser, ibmpc, charset, log, pcx, maluva, sfx, adlib, mouse;
 
 var ddbFilename : String;
 
@@ -36,7 +36,6 @@ begin
 
  {Where a new entry is considered and evaluated}
  RunEntry:
- TranscriptPas('MaxAvailableMemory: '+IntToStr(MaxAvail)+'; '+#13);
  {Check if current process has finished}
  if getByte(EntryPTR) = END_OF_PROCESS_MARK then
  begin
@@ -118,7 +117,8 @@ begin
  {These flags should have specific values that code can use to determine the machine running the DDB
   so they are being set after every condact to make sure even when modified, their value is restored} 
  SetFlag(FSCREENMODE, 13 + 128); {Makes sure flag 62 has proper value: mode 13 (VGA or EGA) and bit 7 set}
- SetFlag(FMOUSE, 128); {Makes sure flag 29 has "graphics" available set, and the rest is empty}
+ SetFlag(FMOUSE, getFlag(FMOUSE)  OR 128); {Makes sure flag 29 has "graphics" available set, and the rest is empty}
+ 
 
  {Let's run the condact}
  if (opcode AND $80 <> 0) then
@@ -269,6 +269,7 @@ begin
       ReadKey;
       DisplayPCX(0,0,0,0,1, SVGAMode); {Clear the PCX Window}
     end; 
+    InitializeMouse;  {Initializes the mouse}
     
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.

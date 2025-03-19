@@ -75,7 +75,7 @@ implementation
 
 uses strings, charset, crt, parser, utils, 
     log, ddb, objects, flags, global, condacts, dos,
-     vesa, errors, timer;
+     vesa, errors, timer, mouse;
 
 var ExternPTR: Pointer;
     TimeoutPreservedOrder: String;
@@ -457,7 +457,10 @@ end;
 
 procedure ScrollCurrentWindowVGA;
 var i, baseAddress, baseaddress2, linesToScroll, windowWidthInPixels : word;
+   SaveMouse: Boolean;
 begin
+  SaveMouse := PointerActive;
+  if SaveMouse then HideMouse;
   {1. Move window up}
    baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 , (windows[ActiveWindow].line + 1) * 8); 
    linesToScroll := (windows[ActiveWindow].height -1) * 8; 
@@ -474,6 +477,7 @@ begin
    baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 ,  
           (windows[ActiveWindow].line + windows[ActiveWindow].height -1) * 8); 
    for i := 0 to 7 do FillChar(Mem[$a000: baseAddress + i *320], windowWidthInPixels, chr(windows[ActiveWindow].PAPER));  
+   if SaveMouse then ShowMouse;
 end;
 
 procedure ScrollCurrentWindowSVGA;
@@ -482,7 +486,10 @@ var freeMemory:  Word;
     Buffer: Pointer;
     FitLines, WinLines : word;
     X0, Y0 : word;
+   SaveMouse: Boolean;
 begin
+  SaveMouse := PointerActive;
+  if SaveMouse then HideMouse;
   {1. Move window up}
   width := windows[ActiveWindow].width * 16;
   height := windows[ActiveWindow].height * 16;
@@ -502,6 +509,7 @@ begin
   freemem(Buffer, freeMemory);
   {2. Fill new empty space at the bottom with paper colour}
   VESARectangle(X0, windows[ActiveWindow].line * 16 + height - 16, width, 16, windows[ActiveWindow].PAPER);
+  if SaveMouse then ShowMouse;
 end;
 
 procedure ScrollCurrentWindow;
@@ -602,7 +610,10 @@ end;
 procedure WriteText(Str: Pchar; AvoidTranscript: boolean);
 var i: integer;
     AWord : String;
+    SaveMouse: Boolean;
 begin
+ SaveMouse := PointerActive;
+ if SaveMouse then HideMouse;
  LastPrintedIsCR := false;
  if not AvoidTranscript then Transcript(Str);
  i :=0 ;
@@ -625,6 +636,7 @@ begin
   i := i + 1;
  end; 
  WriteWord(Aword);
+ if SaveMouse then ShowMouse;
 end;
 
 procedure CarriageReturn;

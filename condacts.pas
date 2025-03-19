@@ -1295,6 +1295,7 @@ end;
  if Verbose then TranscriptPas('Trying standard extern execution'#13);
  condactResult := Extern(parameter1, parameter2);
  if Verbose then TranscriptPas('Standard execution result: ' +IntToStr(byte(done)) + #13);
+ done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1929,6 +1930,7 @@ var Ptr : Word;
     Direction : TFlagType;
 begin
  Ptr := GetWord(DDBHeader.connectionPos + 2 * getFlag(parameter1));
+ Done := true;
  repeat
   Direction := GetByte(Ptr);
   if (Direction<>END_OF_CONNECTIONS_MARK) and (Direction = getFlag(FVERB)) then 
@@ -1962,6 +1964,7 @@ end;
 procedure _CENTRE;
 begin
  Windows[ActiveWindow].col := (NUM_COLUMNS - Windows[ActiveWindow].width) DIV 2;
+ Done := true;
 end;
 
 (*--------------------------------------------------------------------------------------*)

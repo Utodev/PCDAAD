@@ -86,6 +86,8 @@ procedure VESAPutPixel(X,Y:longint;color:Byte);
 
 implementation
 
+uses log;
+
 type widthType=array[Byte] OF Byte;
 
 
@@ -215,8 +217,8 @@ procedure VESAPutPixel(X,Y:longint;color:Byte);
 var Offset:longint;
     Desp:word;
 begin
- Offset:=x+y*VESAScreenWidth;
- Desp:=Offset MOD ByteGranularity;
+ Offset:=x + y * VESAScreenWidth;
+ Desp:= Offset MOD ByteGranularity;
  VESASetWindow(Offset DIV ByteGranularity,WindowA);
  Mem[$a000:Desp]:=color;
 end;
@@ -264,11 +266,11 @@ begin
     JZ @NOSD
     { REP STOSD }         DB 66h ; REP STOSW
     AND DX, 3
-    JZ @FINFILA
+    JZ @end_row
     @NOSD:
     MOV CX, DX
     REP STOSB
-    JMP @FINFILA
+    JMP @end_row
 
     @SheightBANCO:
 
@@ -290,10 +292,10 @@ begin
     INT 10h
     POP AX
     POP CX
-    JCXZ @FINFILA
+    JCXZ @end_row
     REP STOSB
 
-    @FINFILA:
+    @end_row:
 
     MOV CX, l_w
     SUB CX, width
@@ -356,11 +358,11 @@ begin
     JZ @NOSD
   { REP MOVSD }         DB 66h ; REP MOVSW
     AND DX, 3
-    JZ @FINFILA
+    JZ @end_row
    @NOSD:
     MOV CX, DX
     REP MOVSB
-    JMP @FINFILA
+    JMP @end_row
 
    @SheightBANCO:
 
@@ -382,10 +384,10 @@ begin
     INT 10h
     POP AX
     POP CX
-    JCXZ @FINFILA
+    JCXZ @end_row
     REP MOVSB
 
-   @FINFILA:
+   @end_row:
 
     MOV CX, l_w
     SUB CX, width
@@ -453,11 +455,11 @@ begin
     JZ @NOSD
   { REP MOVSD }         DB 66h ; REP MOVSW
     AND DX, 3
-    JZ @FINFILA
+    JZ @end_row
    @NOSD:
     MOV CX, DX
     REP MOVSB
-    JMP @FINFILA
+    JMP @end_row
 
    @SheightBANCO:
 
@@ -479,10 +481,10 @@ begin
     INT 10h
     POP AX
     POP CX
-    JCXZ @FINFILA
+    JCXZ @end_row
     REP MOVSB
 
-   @FINFILA:
+   @end_row:
 
     MOV CX, l_w
     SUB CX, width
