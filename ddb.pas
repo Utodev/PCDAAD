@@ -76,14 +76,8 @@ begin
             BlockRead(ddbFile, DDBHeader, Sizeof(TDDBHeader));
             Close(ddbFile);
             Reset(ddbFile, 1);
-            {$ifdef lowmem} {Only for small DDB files, for debugging under Turbo Pascal IDE}
-            GetMem(DDBRAM, $0F00);  
-            FillChar(DDBRAM^, $0F00, 0);
-            {$endif}
-            {$ifndef lowmem}
             GetMem(DDBRAM, ddbSize);
             FillChar(DDBRAM^, ddbSize, 0);
-            {$endif}
             BlockRead(ddbFile, DDBRAM^, ddbSize);
             loadDDB := true;
         end;
