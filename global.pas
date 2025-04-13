@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.9 - A red herring';
+const VERSION='1.10 - A gloomy empty land';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;

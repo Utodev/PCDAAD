@@ -16,7 +16,7 @@
 program PCDAAD;
 
 uses strings, global, ddb, errors, stack, condacts, flags, objects, timer,
-     graph, utils, parser, ibmpc, charset, log, pcx, maluva, sfx, adlib, mouse;
+     graph, utils, parser, ibmpc, charset, log, pic, maluva, sfx, adlib, mouse;
 
 var ddbFilename : String;
 
@@ -252,24 +252,38 @@ begin
     InitOrderFile;
     
     Randomize;        {Initialize the random generator}
-    startVideoMode;   {Set the proper video mode}
+    if Verbose then TranscriptPas('Random seed initialized.'#13);
     InitializeParser; {Initializes the parser}
+    if Verbose then TranscriptPas('Parser initialized.'#13);
     resetFlags;       {Restores flags initial value}
+    if Verbose then TranscriptPas('Flags reset.'#13);
     resetObjects;     {Restore objects to "initially at" locations}
+    if Verbose then TranscriptPas('Objects reset.'#13);
     resetWindows;     {clears all windows setup}
+    if Verbose then TranscriptPas('Windows reset.'#13);
     resetStack;
+    if Verbose then TranscriptPas('Stack reset.'#13);
     resetProcesses;
+    if Verbose then TranscriptPas('Processes reset.'#13);    
     SetTimer;   {Set the timer to tick once every millisecond} 
+    if Verbose then TranscriptPas('Timer set.'#13);
     InitializeSFX;    {Initializes the sound effects}
+    if Verbose then TranscriptPas('SFX initialised.'#13);
     InitializeAdlib;  {Initializes the OPL sound card}
-    InitializePCX(SVGAMode); {Initializes pictures buffer}
-    if loadPCX(65535, SVGAMode) then  {Load intro screen if present}
+    if Verbose then TranscriptPas('Adlib initialised.'#13);
+    startVideoMode;   {Set the proper video mode}
+    if Verbose then TranscriptPas('Video mode set.'#13);
+    InitializePictures(SVGAMode); {Initializes pictures buffer}
+    if Verbose then TranscriptPas('Screen buffer initialised.'#13);
+    
+    if loadPicture(65535, SVGAMode) then  {Load intro screen if present}
     begin
-      DisplayPCX(0,0,320,200,0, SVGAMode); {Paint the picture}
+      if Verbose then TranscriptPas('Intro screen loaded.'#13);
+      DisplayPicture(0, SVGAMode); {Paint the picture}
       ReadKey;
-      DisplayPCX(0,0,0,0,1, SVGAMode); {Clear the PCX Window}
+      DisplayPicture(1, SVGAMode); {Clear the Picture Window}
     end; 
     InitializeMouse;  {Initializes the mouse}
-    
+    if Verbose then TranscriptPas('Mouse initialised.'#13);
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.

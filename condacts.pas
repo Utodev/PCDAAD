@@ -291,7 +291,7 @@ implementation
 
 uses flags, ddb, objects, ibmpc, stack, 
      messages, strings, errors, utils, 
-     parser, pcx, log, maluva, sfx, 
+     parser, pic, log, maluva, sfx, 
      timer, adlib, fli, mouse;
 
 
@@ -761,9 +761,7 @@ var multiplier : word;
 begin
  SaveMouse := PointerActive;
  if PointerActive then HideMouse;
- DisplayPCX(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
-           Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8,
-           parameter1, SVGAMode);
+ DisplayPicture(parameter1, SVGAMode);
  if SaveMouse then ShowMouse;          
  done := true;
 end;
@@ -1487,7 +1485,7 @@ end;
 procedure _PICTURE;
 begin
  if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
- condactResult := LoadPCX(parameter1, SVGAMode);
+ condactResult := LoadPicture(parameter1, SVGAMode);
  done := true;
 end;
 
@@ -1975,7 +1973,7 @@ begin
   terminateVideoMode;
   CopyRight;
   {Cleaning}
-  ClearPCX;
+  ClearPictures;
   TerminateSFX;
   TerminateAdlib;
   CleanUpTimer;

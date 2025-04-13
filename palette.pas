@@ -3,7 +3,8 @@ unit palette;
 interface
 
 procedure SetPalette(Color: Byte; R,G,B: Byte);
-procedure SetAllPalette(var Palette);
+procedure SetAllPalette(var Palette: array of byte);
+procedure SetPartialPalette(var Palette: array of byte; FirstColor,  LastColor : byte);
 procedure SetAllPaletteDirect;
 procedure LoadPaletteFromFile(var F: File; FirstColor, Count: Word);
 
@@ -17,7 +18,7 @@ begin
     currentPalette^[Color*3] := R;
     currentPalette^[Color*3+1] := G;
     currentPalette^[Color*3+2] := B;
-    SetAllPalette(currentPalette);
+    SetAllPalette(currentPalette^);
 end;
 
 procedure LoadPaletteFromFile(var F: File; FirstColor, Count: Word);
@@ -27,7 +28,7 @@ end;
 
 
 
-procedure SetAllPalette(var Palette);
+procedure SetAllPalette(var Palette: array of byte);
 begin
  move(Palette, currentPalette^, 768);
  asm
@@ -37,7 +38,19 @@ begin
     MOV AX, 1012h
     INT 10h
  end;   
-end; 
+end;
+
+procedure SetPartialPalette(var Palette: array of byte; FirstColor,  LastColor : byte);
+var i : byte;
+begin
+    for i := FirstColor to LastColor do
+    begin
+        currentPalette^[i*3] := Palette[i*3];
+        currentPalette^[i*3+1] := Palette[i*3+1];
+        currentPalette^[i*3+2] := Palette[i*3+2];
+    end;
+    SetAllPalette(currentPalette^);
+end;
 
 procedure SetAllPaletteDirect;
 begin

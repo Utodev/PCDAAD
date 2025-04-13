@@ -17,7 +17,7 @@ const NUM_WINDOWS = 8;
       NUM_COLUMNS = 40; {40 colums of 8x8, but proportional fonts will do better}
       NUM_LINES=25;
 
-type TWindow = packed record
+type TWindow = record
                 line, col, height, width: Word; (* In characters as DAAD understands it*)
                 operationMode: Byte;
                 currentY, currentX : Word; (* In pixels for internal use*)
@@ -25,6 +25,7 @@ type TWindow = packed record
                 INK, PAPER, BORDER : byte;
                 LastPauseLine: Word; (* Line where the text stopped for the user to read last *)
                end; 
+
 
 VAR Windows :  array [0..NUM_WINDOWS - 1] of TWindow;
     ActiveWindow : Byte;
@@ -257,8 +258,8 @@ var key : word;
     PlayerPressedKey : boolean;
 begin
  Str := '';
- SaveX := windows[ActiveWindow].currentX;
- SaveY := windows[ActiveWindow].currentY;
+ SaveX := Windows[ActiveWindow].currentX;
+ SaveY := Windows[ActiveWindow].currentY;
  {if timeout last frame, and there is text to recover, and we should recover}
  {bits 7, 6 and 5 for FTIMEOUT_CONTROL set}
  if ((getFlag(FTIMEOUT_CONTROL) and $E0) = $E0) then 
@@ -267,7 +268,7 @@ begin
   TimeoutPreservedOrder := '';
  end;
  SetFlag(FTIMEOUT_CONTROL, getFlag(FTIMEOUT_CONTROL) and $3F); {Clear bits 7 and 6} 
- Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
+ Xlimit := (Windows[ActiveWindow].col +  Windows[ActiveWindow].width) * 8; {First pixel out of the window}
  WriteTextPas(Str+'_',true);
  TimeoutHappened := false;
  TimeoutSeconds := getFlag(FTIMEOUT);
@@ -309,7 +310,7 @@ begin
     begin
       ClearWindow(SaveX + StrLenInPixels(Str) - StrLenInPixels(Str[Length(Str)]), 
                     SaveY, StrLenInPixels(''+Str[Length(Str)]+'_'), 
-                    8 , windows[ActiveWindow].PAPER);
+                    8 , Windows[ActiveWindow].PAPER);
       Str := Copy(Str, 1, Length(Str)-1); {backspace}
     end;
     (* Pending: make history of order accessible with arrow up/down instead of tab *)
@@ -318,13 +319,13 @@ begin
     historyStr := getNextOrderHistory; 
     if historyStr<> str then 
     begin
-      ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, windows[ActiveWindow].PAPER);
+      ClearWindow(SaveX, SaveY, Xlimit-SaveX , 8, Windows[ActiveWindow].PAPER);
       Str := historyStr;
     end;
     end; 
 
-    windows[ActiveWindow].currentX := SaveX;
-    windows[ActiveWindow].currentY := SaveY;
+    Windows[ActiveWindow].currentX := SaveX;
+    Windows[ActiveWindow].currentY := SaveY;
     PatchedStr := PatchStr(Str);
     WriteTextPas(PatchedStr +'_', true); {true -> avoid transcript}
   end;   { if no timeout}
@@ -332,7 +333,7 @@ begin
  {Remove the cursor}
  ClearWindow(SaveX + StrLenInPixels(Str), 
                   SaveY, StrLenInPixels('_'), 
-                  8 , windows[ActiveWindow].PAPER); 
+                  8 , Windows[ActiveWindow].PAPER); 
  if TimeoutHappened then
  begin
   {Set bit that says timeout happened}
@@ -364,12 +365,12 @@ end;
 
 procedure ClearCurrentWindow;
 begin
-   ClearWindow(windows[ActiveWindow].col * 8, windows[ActiveWindow].line * 8,
-     windows[ActiveWindow].width * 8, windows[ActiveWindow].height * 8, windows[ActiveWindow].PAPER);
+   ClearWindow(Windows[ActiveWindow].col * 8, Windows[ActiveWindow].line * 8,
+     Windows[ActiveWindow].width * 8, Windows[ActiveWindow].height * 8, Windows[ActiveWindow].PAPER);
 
-   windows[ActiveWindow].currentY := windows[ActiveWindow].line * 8;
-   windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
-   windows[ActiveWindow].LastPauseLine := 0;
+   Windows[ActiveWindow].currentY := Windows[ActiveWindow].line * 8;
+   Windows[ActiveWindow].currentX := Windows[ActiveWindow].col * 8;
+   Windows[ActiveWindow].LastPauseLine := 0;
 end;
 
 PROCEDURE startVideoMode; 
@@ -462,9 +463,9 @@ begin
   SaveMouse := PointerActive;
   if SaveMouse then HideMouse;
   {1. Move window up}
-   baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 , (windows[ActiveWindow].line + 1) * 8); 
-   linesToScroll := (windows[ActiveWindow].height -1) * 8; 
-   windowWidthInPixels := windows[ActiveWindow].width * 8;
+   baseAddress := getVGAAddr(Windows[ActiveWindow].col * 8 , (Windows[ActiveWindow].line + 1) * 8); 
+   linesToScroll := (Windows[ActiveWindow].height -1) * 8; 
+   windowWidthInPixels := Windows[ActiveWindow].width * 8;
    baseaddress2 := baseAddress - 8 * 320;
    for i := 0 to linesToScroll - 1 do 
    begin
@@ -474,9 +475,9 @@ begin
    end; 
 
    {2. Fill new empty space at the bottom with paper colour}
-   baseAddress := getVGAAddr(windows[ActiveWindow].col * 8 ,  
-          (windows[ActiveWindow].line + windows[ActiveWindow].height -1) * 8); 
-   for i := 0 to 7 do FillChar(Mem[$a000: baseAddress + i *320], windowWidthInPixels, chr(windows[ActiveWindow].PAPER));  
+   baseAddress := getVGAAddr(Windows[ActiveWindow].col * 8 ,  
+          (Windows[ActiveWindow].line + Windows[ActiveWindow].height -1) * 8); 
+   for i := 0 to 7 do FillChar(Mem[$a000: baseAddress + i *320], windowWidthInPixels, chr(Windows[ActiveWindow].PAPER));  
    if SaveMouse then ShowMouse;
 end;
 
@@ -491,10 +492,10 @@ begin
   SaveMouse := PointerActive;
   if SaveMouse then HideMouse;
   {1. Move window up}
-  width := windows[ActiveWindow].width * 16;
-  height := windows[ActiveWindow].height * 16;
-  X0 := windows[ActiveWindow].col * 16;
-  Y0 := windows[ActiveWindow].line * 16;
+  width := Windows[ActiveWindow].width * 16;
+  height := Windows[ActiveWindow].height * 16;
+  X0 := Windows[ActiveWindow].col * 16;
+  Y0 := Windows[ActiveWindow].line * 16;
   if (MaxAvail > 65000) then freeMemory:=65000 ELSE freeMemory:=MaxAvail;
   Getmem(Buffer, freeMemory);
   Winlines := height - 16 ; (* Number of pixel lines/rows in the window, minus one character row *)
@@ -508,7 +509,7 @@ begin
   until  WinLines=0;
   freemem(Buffer, freeMemory);
   {2. Fill new empty space at the bottom with paper colour}
-  VESARectangle(X0, windows[ActiveWindow].line * 16 + height - 16, width, 16, windows[ActiveWindow].PAPER);
+  VESARectangle(X0, Windows[ActiveWindow].line * 16 + height - 16, width, 16, Windows[ActiveWindow].PAPER);
   if SaveMouse then ShowMouse;
 end;
 
@@ -519,7 +520,7 @@ var Ticks: longint;
     key : word;
 begin
   {0. Check if too much text listed in order to pause if so (More...)}
-  if (windows[ActiveWindow].LastPauseLine >= windows[ActiveWindow].height) then 
+  if (Windows[ActiveWindow].LastPauseLine >= Windows[ActiveWindow].height) then 
   begin
    TimeoutHappened := false;
    TimeoutSeconds := getFlag(FTIMEOUT);
@@ -531,14 +532,14 @@ begin
     if  (TimeoutSeconds > 0) and ((getTicks - Ticks)/MILLISECONDS_DIVIDER > TimeoutSeconds) then TimeoutHappened := true;
     
    if not TimeoutHappened then key := ReadKey; {Discard key pressed}
-   windows[ActiveWindow].LastPauseLine := 0;
+   Windows[ActiveWindow].LastPauseLine := 0;
   end; 
 
   if (SVGAMode) then ScrollCurrentWindowSVGA else ScrollCurrentWindowVGA;
 
    {3. Update cursor}
-   windows[ActiveWindow].currentY := windows[ActiveWindow].currentY - 8; 
-   windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8; 
+   Windows[ActiveWindow].currentY := Windows[ActiveWindow].currentY - 8; 
+   Windows[ActiveWindow].currentX := Windows[ActiveWindow].col * 8; 
 
 end;
 
@@ -546,14 +547,14 @@ end;
 procedure NextChar(width: word);
 begin
  {Increase X}
- windows[ActiveWindow].currentX := windows[ActiveWindow].currentX + width; 
+ Windows[ActiveWindow].currentX := Windows[ActiveWindow].currentX + width; 
  {If out of boundary increase Y}
- if (windows[ActiveWindow].currentX >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then  
+ if (Windows[ActiveWindow].currentX >= (Windows[ActiveWindow].col + Windows[ActiveWindow].width) * 8 ) then  
  begin
-  windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
-  windows[ActiveWindow].currentY := windows[ActiveWindow].currentY + 8;
+  Windows[ActiveWindow].currentX := Windows[ActiveWindow].col * 8;
+  Windows[ActiveWindow].currentY := Windows[ActiveWindow].currentY + 8;
   {if out of boundary scroll window}
-  if (windows[ActiveWindow].currentY >= (windows[ActiveWindow].line + windows[ActiveWindow].height) * 8 ) then
+  if (Windows[ActiveWindow].currentY >= (Windows[ActiveWindow].line + Windows[ActiveWindow].height) * 8 ) then
     ScrollCurrentWindow;
  end;
 end;
@@ -571,7 +572,7 @@ begin
   else
   begin
     width := charsetWidth[(byte(c) + CharsetShift) MOD 256];
-    if (windows[ActiveWindow].currentX + width >= (windows[ActiveWindow].col + windows[ActiveWindow].width) * 8 ) then 
+    if (Windows[ActiveWindow].currentX + width >= (Windows[ActiveWindow].col + Windows[ActiveWindow].width) * 8 ) then 
     begin
       NextChar(width);
       WriteChar(c);
@@ -585,8 +586,8 @@ begin
           for j := 0 to width-1 do
           begin
             if (scan and (1 shl (width - j)) <> 0) 
-              then plot(windows[ActiveWindow].currentX + j, windows[ActiveWindow].currentY + i, windows[ActiveWindow].INK)
-                else plot(windows[ActiveWindow].currentX + j, windows[ActiveWindow].currentY + i, windows[ActiveWindow].PAPER);
+              then plot(Windows[ActiveWindow].currentX + j, Windows[ActiveWindow].currentY + i, Windows[ActiveWindow].INK)
+                else plot(Windows[ActiveWindow].currentX + j, Windows[ActiveWindow].currentY + i, Windows[ActiveWindow].PAPER);
           end;
         end;
         NextChar(width); {Move pointer to next printing position}
@@ -600,8 +601,8 @@ var i: integer;
     Xlimit : Word;
     
 begin
-  Xlimit := (windows[ActiveWindow].col +  windows[ActiveWindow].width) * 8; {First pixel out of the window}
-  if (StrLenInPixels(Str) + windows[ActiveWindow].currentX >= Xlimit) then CarriageReturn;
+  Xlimit := (Windows[ActiveWindow].col +  Windows[ActiveWindow].width) * 8; {First pixel out of the window}
+  if (StrLenInPixels(Str) + Windows[ActiveWindow].currentX >= Xlimit) then CarriageReturn;
   if not (LastPrintedIsCR  and (Str=' ')) then 
       for i:=1 to Length(Str) do WriteChar(Str[i]);
   LastPrintedIsCR := false;
@@ -641,11 +642,11 @@ end;
 
 procedure CarriageReturn;
 begin
-  windows[ActiveWindow].currentX := windows[ActiveWindow].col * 8;
-  windows[ActiveWindow].currentY := windows[ActiveWindow].currentY + 8;
-  windows[ActiveWindow].LastPauseLine := windows[ActiveWindow].LastPauseLine + 1;
+  Windows[ActiveWindow].currentX := Windows[ActiveWindow].col * 8;
+  Windows[ActiveWindow].currentY := Windows[ActiveWindow].currentY + 8;
+  Windows[ActiveWindow].LastPauseLine := Windows[ActiveWindow].LastPauseLine + 1;
   {if out of boundary scroll window}
-  if (windows[ActiveWindow].currentY >= (windows[ActiveWindow].line + windows[ActiveWindow].height) * 8 ) then 
+  if (Windows[ActiveWindow].currentY >= (Windows[ActiveWindow].line + Windows[ActiveWindow].height) * 8 ) then 
    ScrollCurrentWindow;
   LastPrintedIsCR := true;
 end;
