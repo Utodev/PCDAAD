@@ -1,14 +1,14 @@
+(* IMPORTANT: OPEN THIS FILE IN DOS CP850 ENCODING                                                                           *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее   *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее   *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее   *)
+(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее   *)
+(* PLEASE DON'T REMOVE THIS COMMENT. IT'S MADE SO YOU CAN EASILY SEE IF THE SOURCE CODE HAS BEEN OPENED WITH THE CP437 OR    *)
+(* CP850 ENCODINCG (DOS), BECAUSE IF NOT, AND YOUR TEXT EDITOR USES SOME MODERN ENCODING AS UTF8 OR ISO, THEN YOUR CODE WILL *)
+(* EITHER NOT COMPILE OR COMPILE BUT MAKE PCDAAD FAIL WHEN RUNNING SPANISH. SO MAKE SURE YOU SEE A LOT OF N WITH TILDE ABOVE *)
 
-(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
-(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
-(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
-(* еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее еееееее  *)
-(* PLEASE DON'T REMOVE THIS COMMENT. IT'S MADE SO YOU CAN EASILY SEE IF THE SOURCE CODE HAS BEEN OPENED WITH THE CP437 OR   *)
-(* CP850 ENCODINCG (DOS), BECAUSE IF NOT, AND YOUR TEXT EDITOR USES SOME MODERN ENCODING AS UTF8 OR ISO, THEN YOUR CODE WILL*)
-(* EITHER NOT COMPILE OR COMPILE BUT MAKE PCDAAD FAIL WHEN RUNNING SPANISH. SO MAKE SURE YOU SEE A LOT OF N WITH TILDE ABOVE*)
-
-(* нннIMPORTANT!!! IT SEEMS LIKE GITHUB IS UNABLE TO RECOGNIZE THIS FILE AS CP437, SO YOU DON't SEE THE N WITH TILDE IN THAT*)
-(* WEBSITE INTERFACE. MAKE SURE WHEN YOU CLONE THE REPO, YOU CHECK THE ENCODING OF THIS FILE OR YOUR INTERPRETER MAY FAIL   *)
+(* нннIMPORTANT!!! IT SEEMS LIKE GITHUB IS UNABLE TO RECOGNIZE THIS FILE AS CP437, SO YOU DON'T SEE THE N WITH TILDE IN THAT *)
+(* WEBSITE INTERFACE. MAKE SURE WHEN YOU CLONE THE REPO, YOU CHECK THE ENCODING OF THIS FILE OR YOUR INTERPRETER MAY FAIL    *)
 (* WITH SPANISH AND OTHER LANGUAGES GAMES *)
 
 
@@ -34,9 +34,9 @@ type TWordRecord = record
                    end; 
 
 
-{This string contains what has been received from the player input}   
-{but when read, conjunctions are replaced with a dot to ease order}
-{split later.}
+{This string contains what has been received from the player input   
+but when read, conjunctions are replaced with a dot to ease order
+split later.}
 var inputBuffer: String;
     PatchedStr : String; (* Contains the String with international characters already patched *)
 var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
@@ -47,13 +47,13 @@ var inputHistory : array [0..NUM_HISTORY_ORDERS-1] of String;
     DiagnosticsEnabled: boolean;
     NestedDoallEnabled: boolean;
 
-{Returns the code for a specific word of a specific type, or any}
-{type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
+{Returns the code for a specific word of a specific type, or any
+type if AVocType= VOC_ANY. If not found returns TWordRecord.ACode = -1}
 procedure FindWord(AWord: TWord; AVocType : TVocType; var Result: TWordRecord);
 
-{Extract an order from inputBuffer of request an order if empty}
-{Then parsers first order in the buffer and sets flags. Returns
-{true if a valid LS is found (a verb at least)} 
+{Extract an order from inputBuffer of request an order if empty
+Then parsers first order in the buffer and sets flags. Returns
+true if a valid LS is found (a verb at least)} 
 function parse(Option:TFlagType):boolean;
 
 { Initializes the parser by reading conjunctions from the DDB}
