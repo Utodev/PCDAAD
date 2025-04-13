@@ -13,6 +13,7 @@ var
     bufferFileSize: longint;
 
 function fileGetByte(offset: longint):byte;
+function fileGetWord(offset: longint):word;
 function fileopen(Filename: string):boolean;
 procedure fileclose;
 
@@ -56,6 +57,11 @@ begin
         bufferCurrentoffset := offset;
     end;
     fileGetByte := buffer^[offset - bufferCurrentoffset];
+end;
+
+function fileGetWord(offset: longint):word;
+begin
+    fileGetWord := fileGetByte(offset) + (fileGetByte(offset + 1) shl 8);
 end;
 
 procedure fileclose;
