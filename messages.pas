@@ -80,11 +80,10 @@ var Ptr : Word;
     Token : String;
     TokenID : byte;
     EscapeText : PChar;
-    PreviousWasCR : boolean;
+    
     
 begin
     Ptr := getWord(TableOffset + 2 * messageNumber);
-    PreviousWasCR:= false;
     i := 0;
     AByte := GetByte(Ptr);
     while (AByte <> ($0A xor OFUSCATE_VALUE)) and ( i < MAX_MESSAGE_LENGTH) do 
