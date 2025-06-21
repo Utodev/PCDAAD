@@ -1318,8 +1318,9 @@ begin
  if (Parameter2>=24) and (Parameter2<=238) and (Parameter2 mod 2 = 0) then
  begin
    Sound(FREQ_TABLE[(Parameter2-24) SHR 1]);
-   Delay(Parameter1 / 50);
+   Delay(Parameter1 / 50 - 0.005);
    Nosound;
+   Delay(0.005)
  end;
  done := true;
 end;
