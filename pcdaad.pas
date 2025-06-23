@@ -168,7 +168,7 @@ procedure help;
 begin
   WriteLn;
   WriteLn('Usage: ' + ParamStr(0) + 
-  ' [DDB file] [-s] [-log] [-vlog] [-vilog] [-nomaluva] [-exec] [-i<orders file>] [-d] [-h]');
+  ' [DDB file] [-s] [-log] [-vlog] [-vilog] [-nomaluva] [-exec] [-i<orders file>] [-b] [-d] [-h]');
   WriteLn;
   WriteLn('DDB File : a valid DAAD DDB file made for PC/DOS. Defaults to DAAD.DDB');
   WriteLn('-s : SVGA mode');
@@ -178,6 +178,7 @@ begin
   WriteLn('-i<orders file> : take player orders from text file until exhausted');
   WriteLn('-d : enable diagnostics');
   WriteLn('-h : shows this help');
+  WriteLn('-b : support double buffer feature for screen (only for VGA mode)');
   WriteLn('-log : Transcript game to PCDAAD.LOG');
   WriteLn('-vlog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log)');
   WriteLn('-vilog : Transcript game, condacts and useful information to PCDAAD.LOG (verbose log). '+
@@ -205,6 +206,7 @@ begin
   else if StrToUpper(ParamStr(i)) = '-NOMALUVA' then MaluvaDisabled := true
   else if StrToUpper(ParamStr(i)) = '-NDOALL' then NestedDoallEnabled := true
   else if StrToUpper(ParamStr(i)) = '-S' then SVGAMode := true
+  else if StrToUpper(ParamStr(i)) = '-B' then DoubleBuffer := true
   else if StrToUpper(ParamStr(i)) = '-EXEC' then ExecExterns := true
   else if Copy(StrToUpper(ParamStr(i)),1,2) = '-I' then 
   begin
@@ -217,8 +219,7 @@ begin
   end
   else Error(10,'Invalid or unknown parameter: ' + ParamStr(i));
  end;
-
- 
+ if (DoubleBuffer) and (SVGAMode) then Error(11, 'Double Buffering is not supported in SVGA mode. Use VGA mode instead.');
 end; 
 
 
@@ -275,6 +276,8 @@ begin
     if Verbose then TranscriptPas('Video mode set.'#13);
     InitializePictures(SVGAMode); {Initializes pictures buffer}
     if Verbose then TranscriptPas('Screen buffer initialised.'#13);
+
+    if DoubleBuffer then TranscriptPas('Double buffer feature initialised.'#13);
     
     if loadPicture(65535, SVGAMode) then  {Load intro screen if present}
     begin

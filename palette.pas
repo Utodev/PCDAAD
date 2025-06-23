@@ -7,6 +7,7 @@ procedure SetAllPalette(var Palette: array of byte);
 procedure SetPartialPalette(var Palette: array of byte; FirstColor,  LastColor : byte);
 procedure SetAllPaletteDirect;
 procedure LoadPaletteFromFile(var F: File; FirstColor, Count: Word);
+procedure getPalette(Color: Byte; var R,G,B: Byte);
 
 implementation
 
@@ -39,6 +40,16 @@ begin
     INT 10h
  end;   
 end;
+
+procedure getPalette(Color: Byte; var R,G,B: Byte);
+begin
+    Port[$3c7] := Color;
+    R := Port[$3c9];
+    G := Port[$3c9];
+    B := Port[$3c9];
+end;
+
+
 
 procedure SetPartialPalette(var Palette: array of byte; FirstColor,  LastColor : byte);
 var i : byte;

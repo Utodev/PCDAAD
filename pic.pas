@@ -15,6 +15,10 @@ UNIT PIC;
 
 interface
 
+var DoubleBuffer: boolean; { If true, the double buffer feature is activated.}
+var GraphicsToScreen: boolean; { If true, the graphics buffer is written to the screen, otherwise to the buffer}
+
+
 {Loads pciture file into buffer}
 function LoadPicture( ImageNumber: Word; SVGAMode: boolean): boolean;
 {This function really copies the buffer into the screen if option = 0, and clears the are otherwise}
@@ -24,15 +28,28 @@ procedure InitializePictures(SVGAMode: boolean);
 {This function clears the picture system}
 procedure ClearPictures;
 
+{These are the implmentation of all the GFX functions}
+procedure DBBuffertoScreen; {Copy the buffer to the screen}
+procedure DBScreentoBuffer; {Copy the screen to the buffer}
+procedure DBSwapBuffers; {Swap the buffers}
+procedure DBGraphicsWriteToScreen; {Write the graphics buffer to the screen}
+procedure DBGraphicsWriteToBuffer; {Write the graphics buffer to the buffer}
+procedure DBClearScreen; {Clear the screen}
+procedure DBClearBuffer; {Clear the buffer}
+procedure DBSetPalette(BaseFlag:byte); {Set the palette}
+procedure DBgetPalette(BaseFlag:byte); {Get the palette}
+
+
 implementation
 
-uses utils, log,readbuff, ibmpc, vesa, palette; 
+uses utils, log,readbuff, ibmpc, vesa, palette, flags; 
 
 type TScreenBuffer = array[0..63999] of Byte;
 
 type TImageType = (imageTypePCX, imageTypeMSD);
 
 var ScreenBuffer: array [0..3] of ^TScreenBuffer;
+var DoubleBufferMem: ^TScreenBuffer;
     NumBuffers: byte;
     latestPictureFileSize : Longint;
     latestPictureHeight, latestPictureWidth :Word;  { The dimensions of the image currently in the screenbuffer}
@@ -45,10 +62,12 @@ var ScreenBuffer: array [0..3] of ^TScreenBuffer;
                            limits, if float, it's shown at the current window and applies window limits}
     Palette0, Palette1 : Byte; { The image pallete will only be updated from color Palette0 to color Palette1, 
                                 if Palette0>Palette1 then the palette is not updated at all}
+    
 
 
 function loadMSD: boolean;forward;
 function loadPCX: boolean;forward;
+
 
 
 { This function initializes the screen buffer. The number of buffers is determined by the mode, and the
@@ -59,7 +78,8 @@ begin
  if (SVGAMode) then NumBuffers := 4 else NumBuffers := 1;
  if (SVGAMode) then scanlineWidth := 640 else scanlineWidth := 320;
  if (SVGAMode) then scanlineNumber := 400 else scanlineNumber := 200;
- for i:=0 to NumBuffers-1 do GetMem(ScreenBuffer[i], Sizeof(TScreenBuffer))
+ for i:=0 to NumBuffers-1 do GetMem(ScreenBuffer[i], Sizeof(TScreenBuffer));
+ if (DoubleBuffer) then GetMem(DoubleBufferMem, Sizeof(TScreenBuffer));
 end;      
 
 procedure ClearPictures;
@@ -175,8 +195,6 @@ IntToStr(width) + 'x' + IntToStr(height) + ' option=' + IntToStr(option) + #13);
           if (ApplyableWidth < width) then 
            VESARectangle(X + ApplyableWidth, Y + i, width - ApplyableWidth, 1, Windows[ActiveWindow].PAPER);
 
-        
-
       end;
     end
     else
@@ -184,9 +202,19 @@ IntToStr(width) + 'x' + IntToStr(height) + ' option=' + IntToStr(option) + #13);
       offset := 0;      
       for i:= 0 to ApplyableHeight - 1 do
       begin
-          Move(ScreenBuffer[0]^[offset], Mem[$A000:(Y+i)*scanlineWidth + X], ApplyableWidth);
-          if (ApplyableWidth < width) then 
-           FillChar(Mem[$A000:(Y+i)*scanlineWidth + X + ApplyableWidth], width - ApplyableWidth, Windows[ActiveWindow].PAPER);
+          if (GraphicsToScreen) then
+          begin
+            Move(ScreenBuffer[0]^[offset], Mem[$A000:(Y+i)*scanlineWidth + X], ApplyableWidth);
+            if (ApplyableWidth < width) then 
+            FillChar(Mem[$A000:(Y+i)*scanlineWidth + X + ApplyableWidth], width - ApplyableWidth, Windows[ActiveWindow].PAPER);
+          end
+          else
+          begin
+            Move(ScreenBuffer[0]^[offset], Pointer(longint(DoubleBufferMem)  + (Y+i) * scanlineWidth + X)^, ApplyableWidth);
+            if (ApplyableWidth < width) then 
+              FillChar(Pointer(longint(DoubleBufferMem)  + (Y+i) * scanlineWidth + X + ApplyableWidth)^,
+                 width - ApplyableWidth, Windows[ActiveWindow].PAPER);
+          end;  
           Inc(offset,scanlineWidth);
       end;
     end; 
@@ -372,8 +400,77 @@ begin
     loadMSD := true;
 end;
 
+
+procedure DBBuffertoScreen; {Copy the buffer to the screen}
+begin
+  if (DoubleBuffer) then
+  begin
+    Move(DoubleBufferMem^, Mem[$A000:0000], Sizeof(TScreenBuffer));
+  end
+end;
+
+procedure DBScreentoBuffer; {Copy the screen to the buffer}
+begin
+  if (DoubleBuffer) then
+  begin
+    Move(Mem[$A000:0000], DoubleBufferMem^, Sizeof(TScreenBuffer));
+  end
+end;
+
+procedure DBSwapBuffers; {Swap the buffers}
+var Temp: ^TScreenBuffer;
+begin
+  if (DoubleBuffer) then
+  begin
+   GetMem(Temp, Sizeof(TScreenBuffer));
+   Move(DoubleBufferMem^, Temp^, Sizeof(TScreenBuffer));
+   Move(Mem[$A000:0000], DoubleBufferMem^, Sizeof(TScreenBuffer));
+   Move(Temp^, Mem[$A000:0000], Sizeof(TScreenBuffer));
+   FreeMem(Temp, Sizeof(TScreenBuffer));
+  end;
+end;
+
+procedure DBGraphicsWriteToScreen; {Write the graphics buffer to the screen}
+begin
+   GraphicsToScreen := true;
+end;
+
+procedure DBGraphicsWriteToBuffer; {Write the graphics buffer to the buffer}
+begin
+   if DoubleBuffer then GraphicsToScreen := false;
+end;
+
+procedure DBClearScreen; {Clear the screen}
+begin
+  FillChar(Mem[$A000:0000], Sizeof(TScreenBuffer), Windows[ActiveWindow].PAPER);
+end;
+
+procedure DBClearBuffer; {Clear the buffer}
+begin
+  if (DoubleBuffer) then FillChar(DoubleBufferMem^, Sizeof(TScreenBuffer), Windows[ActiveWindow].PAPER);
+end;
+
+
+procedure DBSetPalette(BaseFlag: Byte); {Set the palette}
+begin
+ SetPalette(getFlag(BaseFlag), getFlag(BaseFlag + 1) SHR 2, 
+    getFlag(BaseFlag + 2)  SHR 2, getFlag(BaseFlag + 3)  SHR 2);           
+end;
+
+
+procedure DBgetPalette(BaseFlag: Byte); {Get the palette}
+var R, G, B: Byte;
+begin
+  getPalette(getFlag(BaseFlag), R, G, B);
+  setFlag(BaseFlag + 1, R SHL 2);
+  setFlag(BaseFlag + 2, G SHL 2);
+  setFlag(BaseFlag + 3, B SHL 2);
+end;
+
 begin
  latestPictureFileSize :=0;
+ DoubleBuffer := false; 
+ GraphicsToScreen := true; 
 end.
 
 {

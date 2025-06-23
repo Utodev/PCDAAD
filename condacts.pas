@@ -1577,7 +1577,19 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _GFX;
 begin
-(* PENDING: GFX condact implementation *)
+ case parameter2 of
+  0: DBBuffertoScreen; {Copy the buffer to the screen}
+  1: DBScreentoBuffer; {Copy the screen to the buffer}
+  2: DBSwapBuffers; {Swap the buffers}
+  3: DBGraphicsWriteToScreen; {Write the graphics buffer to the screen}
+  4: DBGraphicsWriteToBuffer; {Write the graphics buffer to the buffer}
+  5: DBClearScreen; {Clear the screen}
+  6: DBClearBuffer; {Clear the buffer}
+  7: begin end; {only AtariST supports this: DBTextWriteToScreen; {Write the text buffer to the screen}
+  8: begin end; {only AtariST supports this: DBTextWriteToBuffer; {Write the text buffer to the buffer}
+  9: DBSetPalette(Parameter1); {Set the palette}
+  10: DBgetPalette(Parameter1); {Get the palette}
+ end;
 done := true;
 end;
 
