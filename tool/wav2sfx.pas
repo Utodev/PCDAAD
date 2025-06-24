@@ -79,9 +79,9 @@ begin
     SampleRateW := 65536 - round((256000000)/SampleRate);
     SampleRateFinal := Hi(SampleRateW);
 
-    WriteLn('Sample length: ', SampleLengthW, ' bytes');
-    WriteLn('Sample rate: ', SampleRate, ' Hz');
-    WriteLn('Sample rate for SFX: ', SampleRateFinal, ' (', SampleRateW, ')');
+    //WriteLn('Sample length: ', SampleLengthW, ' bytes');
+    //WriteLn('Sample rate: ', SampleRate, ' Hz');
+    //WriteLn('Sample rate for SFX: ', SampleRateFinal, ' (', SampleRateW, ')');
 
     {Save the SFX file}
     Assign(OutFile, OutFileName);
@@ -94,7 +94,7 @@ begin
 
 
 
-     WriteLn('Done.');
+    // WriteLn('Done.');
 
 end.
 
