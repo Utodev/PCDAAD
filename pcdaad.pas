@@ -117,7 +117,7 @@ begin
  {These flags should have specific values that code can use to determine the machine running the DDB
   so they are being set after every condact to make sure even when modified, their value is restored} 
  SetFlag(FSCREENMODE, 13 + 128); {Makes sure flag 62 has proper value: mode 13 (VGA or EGA) and bit 7 set}
- SetFlag(FMOUSE, getFlag(FMOUSE)  OR 128); {Makes sure flag 29 has "graphics" available set, and the rest is empty}
+ SetFlag(FMOUSE, 128 + 1); {Makes sure flag 29 has "graphics" available set, and mouse available set,  and the rest is empty}
  
 
  {Let's run the condact}
