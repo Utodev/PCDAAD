@@ -506,8 +506,9 @@ var SaveMouse: boolean;
 begin
   case (parameter2) of
 
-    {Note: we skip "0" because 0 is used by the old AtariST SFX support, this way
-    0 does nothing in PCDAAD}
+    {Note: we skip should avoid using 255 and 2554 as they are used by original
+    SFX implementation in AtariST. SFX x 255 plays sample loaded by PICTURE, while
+    SFX 2 254 disables keyboard click sound}
 
     {Plays sample with default sample rate and no repeat}
     1: PlaySFX(parameter1, false, 0); 
