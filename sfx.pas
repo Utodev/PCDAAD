@@ -22,6 +22,7 @@ interface
 
 var SoundBlasterFound: boolean; {True if a SoundBlaster is found}
     SBBasePort, SBIRQ, SBDMA : Word; { SoundBlaster configuration}
+    SFXToPlayFromRAM: Integer;
     
     
 {Initializes the sound system}
@@ -38,6 +39,12 @@ procedure TerminateSFX;
  If 0, the sample rate will be the one stored in the SFX file
 }
 procedure PlaySFX(SampleNumber : byte; Loop:boolean; MySampleRate : Word); 
+
+
+{Plays the SFX file that has been previously loaded in RAM by PICTURE condact.
+ This is used to play SFX from graphic database, like in Atari ST and Amiga,
+ but in this case files are external}
+procedure PlaySFXFromPicture;
 
 {Stops the loop mode, if active, meaning the SFX being played, if any, will stop when the current loop ends}
 procedure StopSFXLoop;
@@ -322,6 +329,11 @@ begin
 
 end;
 
+procedure PlaySFXFromPicture;
+begin
+    if (SFXToPlayFromRAM < 0) then Exit; {If no SFX to play, exit}
+    PlaySFX(SFXToPlayFromRAM, false, 0); {Play the SFX marked by PICTURE condact}
+end;
 
 
 procedure InitializeSFX;
@@ -383,4 +395,5 @@ begin
  GetPageMem(pointer(Buffer),SizeOf(Buffers));
  Offset := Seg(Buffer^) SHL 4 + Ofs(Buffer^);
  Page := (Seg(Buffer^) + Ofs(Buffer^) SHR 4) SHR 12;
+ SFXToPlayFromRAM := -1; {No SFX to play from RAM by default}
 end.

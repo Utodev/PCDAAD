@@ -42,7 +42,7 @@ procedure DBgetPalette(BaseFlag:byte); {Get the palette}
 
 implementation
 
-uses utils, log,readbuff, ibmpc, vesa, palette, flags; 
+uses utils, log,readbuff, ibmpc, vesa, palette, flags, sfx; 
 
 type TScreenBuffer = array[0..63999] of Byte;
 
@@ -105,6 +105,9 @@ begin
   end; 
 
 
+  {First determine if there's a SFX file with that number, if so, we mark it as SFX to play when SFX condact is called}
+
+  
   { First try to load .MSD file, internal, internal format able to do float/fixed, palette limits, etc.}
   imageType := imageTypePCX;
   Success := readbuff.fileopen(ImageFileName + '.MSD');
@@ -117,11 +120,20 @@ begin
       Success := readbuff.fileopen(ImageFileName + '.VGA');{otherwise .VGA, that is just a PCX file renamed as .VGA}
       if (not Success) then
       begin
-        latestPictureFileSize := 0;
-        LoadPicture := false;
-        exit;
+       if (fileExists(ImageFileName + '.SFX')) then
+        begin
+          SFXToPlayFromRAM := ImageNumber;
+          LoadPicture := true;
+          exit;
+        end
+        else
+        begin
+          latestPictureFileSize := 0;
+          LoadPicture := false;
+          exit;
+        end;
       end;
-    end;
+    end;  
   end;  
 
   if ImageType = imageTypeMSD 
