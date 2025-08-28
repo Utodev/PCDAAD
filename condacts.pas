@@ -1804,7 +1804,7 @@ var currentNoun, currentAdjective : TFlagType;
     objno : TFlagtype;
 begin
  currentNoun := getFlag(FNOUN);
- currentAdjective := getFlag(FVERB);
+ currentAdjective := getFlag(FADJECT);
  objno := getObjectByVocabularyAtLocation(currentNoun, currentAdjective, LOC_CARRIED);
  if (objno <> NO_OBJECT) then SetReferencedObject(objno)
  else 
