@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.11 - Graeme Yeandle''s heritage';
+const VERSION='1.12 - Samudio''s Edition';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;

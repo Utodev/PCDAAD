@@ -38,11 +38,13 @@ procedure DBClearScreen; {Clear the screen}
 procedure DBClearBuffer; {Clear the buffer}
 procedure DBSetPalette(BaseFlag:byte); {Set the palette}
 procedure DBgetPalette(BaseFlag:byte); {Get the palette}
+procedure DBSetColorCycling(BaseFlag: Byte); {Enable color cycling}
+procedure DBStopColorCycling; {Disable color cycling}
 
 
 implementation
 
-uses utils, log,readbuff, ibmpc, vesa, palette, flags, sfx; 
+uses utils, log,readbuff, ibmpc, vesa, palette, flags, sfx, timer; 
 
 type TScreenBuffer = array[0..63999] of Byte;
 
@@ -479,10 +481,33 @@ begin
   setFlag(BaseFlag + 3, B SHL 2);
 end;
 
+
+procedure DBSetColorCycling(BaseFlag: Byte); {Enable color cycling}
+begin
+  ColorCyclingStartColour := getFlag(BaseFlag);
+  ColorCyclingEndColour := getFlag(BaseFlag + 1);
+  colorCycleFrames := getFlag(BaseFlag + 2);
+
+  (* Start color cycling only if parameters are valid *)
+  if colorCycleFrames > 0 then
+   if ColorCyclingEndColour > ColorCyclingStartColour then
+   begin
+    colorCycleCounter := 0;
+    ColorCyclingActive := true;
+   end; 
+end;
+
+procedure DBStopColorCycling; {Disable color cycling}
+begin
+  ColorCyclingActive := false;
+end;
+
+
 begin
  latestPictureFileSize :=0;
  DoubleBuffer := false; 
  GraphicsToScreen := true; 
+ ColorCyclingActive := false;
 end.
 
 {

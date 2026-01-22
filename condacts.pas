@@ -1592,6 +1592,8 @@ begin
   8: begin end; {only AtariST supports this: DBTextWriteToBuffer; {Write the text buffer to the buffer}
   9: DBSetPalette(Parameter1); {Set the palette}
   10: DBgetPalette(Parameter1); {Get the palette}
+  11: DBSetColorCycling(Parameter1); {Enable color cycling}
+  12: DBStopColorCycling; {Disable color cycling}
  end;
 done := true;
 end;

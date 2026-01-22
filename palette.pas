@@ -2,12 +2,20 @@ unit palette;
 
 interface
 
+var colorCyclingActive : Boolean; 
+    colorCycleCounter : Byte;
+    colorCycleFrames: Byte;
+    ColorCyclingStartColour : Byte;
+    ColorCyclingEndColour : Byte;
+
+
 procedure SetPalette(Color: Byte; R,G,B: Byte);
 procedure SetAllPalette(var Palette: array of byte);
 procedure SetPartialPalette(var Palette: array of byte; FirstColor,  LastColor : byte);
 procedure SetAllPaletteDirect;
 procedure LoadPaletteFromFile(var F: File; FirstColor, Count: Word);
 procedure getPalette(Color: Byte; var R,G,B: Byte);
+procedure RotatePalette(ColorStart:Byte;ColorEnd:Byte);
 
 implementation
 
@@ -27,7 +35,28 @@ begin
     BlockRead(F, currentPalette^[FirstColor*3], Count*3);
 end;
 
+procedure RotatePalette(ColorStart:Byte;ColorEnd:Byte);
+var i: Byte;
+    ColorStartR, ColorStartG, ColorStartB: Byte;
 
+begin
+ ColorStartR := currentPalette^[ColorStart*3];
+ ColorStartG := currentPalette^[ColorStart*3+1];
+ ColorStartB := currentPalette^[ColorStart*3+2];
+ 
+ for i:= ColorStart to ColorEnd - 1 do
+  begin
+    currentPalette^[ i*3 ] := currentPalette^[ (i+1)*3 ];
+    currentPalette^[ i*3 + 1 ] := currentPalette^[ (i+1)*3 +1 ];
+    currentPalette^[ i*3 + 2 ] := currentPalette^[ (i+1)*3 +2 ];
+  end;
+  
+    currentPalette^[ ColorEnd*3 ] := ColorStartR;
+    currentPalette^[ ColorEnd*3 +1 ] := ColorStartG;
+    currentPalette^[ ColorEnd*3 +2 ] := ColorStartB;
+    SetAllPalette(currentPalette^);
+end;
+    
 
 procedure SetAllPalette(var Palette: array of byte);
 begin
@@ -70,4 +99,5 @@ end;
 
 begin
     GetMem(currentPalette, 768);
+    colorCyclingActive := false;
 end.

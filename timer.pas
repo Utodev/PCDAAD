@@ -10,13 +10,15 @@ procedure CleanUpTimer;
 
 implementation
 
-uses dos, adlib;
+uses dos, adlib, palette;
 
 const TIMERINTR = 8;
       PIT_FREQ = $1234DD;
 
 VAR BIOSTimerHandler : procedure;
     clock_ticks, counter : longint;
+
+   
     
     
 
@@ -26,6 +28,16 @@ begin
    Inc(SystemTimeMilliseconds);
    {Take care of OPL music}
    if ActiveMusic then ProcessDRO;
+
+   if ColorCyclingActive then
+     begin
+       Inc(colorCycleCounter);
+       if colorCycleCounter >= colorCycleFrames then
+         begin
+           colorCycleCounter := 0;
+           RotatePalette(ColorCyclingStartColour, ColorCyclingEndColour); 
+         end;
+     end;
 
   {Standard timer handler  code}
   clock_ticks := clock_ticks + counter;
