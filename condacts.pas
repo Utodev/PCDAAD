@@ -500,71 +500,6 @@ begin
  condactResult := getFlag(FADVERB) = parameter1;
 end;
 
-(*--------------------------------------------------------------------------------------*)
-procedure _SFX;
-var SaveMouse: boolean;
-begin
-  case (parameter2) of
-
-
-    {Plays sample with default sample rate and no repeat}
-    1: PlaySFX(parameter1, false, 0); 
-
-    {Plays sample with default sample rate and loop}
-    2: PlaySFX(parameter1, true, 0); 
-
-    {Plays sample with specific sample rate and no repeat}
-    3: begin
-        CondactPtr := CondactPTR + 1;
-        PlaySFX(parameter1, false, getByte(CondactPTR)); 
-       end; 
-
-    {Plays sample with specific sample rate and loop}
-    {specific sample rate is in the next byte in the DDB,
-    created with #defb XX, where the frequency is higher
-    the higher is XX}
-    4: begin 
-        CondactPtr := CondactPTR + 1;
-        PlaySFX(parameter1, true, getByte(CondactPTR)); 
-       end;
-
-    {Stops loop if enabled, parameter2 is irrelevant}
-    5: StopSFXLoop;
-
-    {Plays DRO file, no repeat}
-    6: PlayDRO(parameter1, false);
-
-    {Plays DRO file, loop}
-    7: PlayDRO(parameter1, true);
-
-    {Stops DRO playing}
-    8: StopDRO;
-
-    {PlaysFLI file, no repeat}
-    9: begin
-        SaveMouse := PointerActive;
-        if SaveMouse then HideMouse;
-        PlayFLI(parameter1,false);
-        if SaveMouse then ShowMouse;
-       end; 
-
-    {PlaysFLI file, loop}
-   10: begin
-        SaveMouse := PointerActive;
-        if SaveMouse then HideMouse;
-        PlayFLI(parameter1,true);
-        if SaveMouse then ShowMouse;
-       end; 
-
-    {Play SFX loaded with PICTURE, old style}
-    255: begin
-           PlaySFXFromPicture;
-         end;   
-    
-  end;
-  done := true;
-
-end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _DESC;
@@ -1594,8 +1529,86 @@ begin
   10: DBgetPalette(Parameter1); {Get the palette}
   11: DBSetColorCycling(Parameter1); {Enable color cycling}
   12: DBStopColorCycling; {Disable color cycling}
+  (* For some reason I added FLI playing to SFX condact instead of GFX condact . Since I regret that,
+  but I don't want to break backward compatibility, I will redirect FLI playing requests from GFX 
+  to SFX condact, and document them in GFX instead of SFX from now on. *)
+  13: begin
+       Parameter2 := 9;
+       _SFX;  (* Play FLI from SFX condact *)
+      end; 
+  14: begin
+         Parameter2 := 10;
+         _SFX;  (* Play FLI looped from SFX condact *)
+      end;
  end;
 done := true;
+end;
+
+
+(*--------------------------------------------------------------------------------------*)
+procedure _SFX;
+var SaveMouse: boolean;
+begin
+  case (parameter2) of
+
+
+    {Plays sample with default sample rate and no repeat}
+    1: PlaySFX(parameter1, false, 0); 
+
+    {Plays sample with default sample rate and loop}
+    2: PlaySFX(parameter1, true, 0); 
+
+    {Plays sample with specific sample rate and no repeat}
+    3: begin
+        CondactPtr := CondactPTR + 1;
+        PlaySFX(parameter1, false, getByte(CondactPTR)); 
+       end; 
+
+    {Plays sample with specific sample rate and loop}
+    {specific sample rate is in the next byte in the DDB,
+    created with #defb XX, where the frequency is higher
+    the higher is XX}
+    4: begin 
+        CondactPtr := CondactPTR + 1;
+        PlaySFX(parameter1, true, getByte(CondactPTR)); 
+       end;
+
+    {Stops loop if enabled, parameter2 is irrelevant}
+    5: StopSFXLoop;
+
+    {Plays DRO file, no repeat}
+    6: PlayDRO(parameter1, false);
+
+    {Plays DRO file, loop}
+    7: PlayDRO(parameter1, true);
+
+    {Stops DRO playing}
+    8: StopDRO;
+
+    {PlaysFLI file, no repeat}
+    9: begin
+        SaveMouse := PointerActive;
+        if SaveMouse then HideMouse;
+        PlayFLI(parameter1,false);
+        if SaveMouse then ShowMouse;
+       end; 
+
+    {PlaysFLI file, loop}
+   10: begin
+        SaveMouse := PointerActive;
+        if SaveMouse then HideMouse;
+        PlayFLI(parameter1,true);
+        if SaveMouse then ShowMouse;
+       end; 
+
+    {Play SFX loaded with PICTURE, old style}
+    255: begin
+           PlaySFXFromPicture;
+         end;   
+    
+  end;
+  done := true;
+
 end;
 
 (*--------------------------------------------------------------------------------------*)
