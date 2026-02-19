@@ -1466,7 +1466,6 @@ begin
     end
     else 
     begin
-        Sysmess(SM8);
         newtext;
         _DONE;
         exit;  
