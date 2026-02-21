@@ -56,7 +56,7 @@ implementation
 
 uses dos, flags, ibmpc, utils, log;
 
-const BUFFER_SIZE = 2048;
+const BUFFER_SIZE = 256;
 
 type Buffers =array[0..1] OF array[0..BUFFER_SIZE-1] of byte;      
 
