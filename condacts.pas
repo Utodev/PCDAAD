@@ -1467,7 +1467,7 @@ begin
     else 
     begin
         newtext;
-        _DONE;
+        _NOTDONE;
         exit;  
     end; 
  until false;
