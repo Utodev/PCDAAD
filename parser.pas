@@ -525,6 +525,7 @@ end;
    {If Spanish, check pronominal terminations}
    if IsSpanish then 
     begin
+      if (not LimitEnclicitPronouns) or (AWordRecord.ACode<=LAST_PRONOMINAL_VERB) then
       if (AWordRecord.AType = VOC_VERB) and (not PronounInSentence) then
       begin
         j := 0;
@@ -535,23 +536,12 @@ end;
               = 1 + Length(orderWords[i]) - Length(SPANISH_TERMINATIONS[j]))
           then
           begin
-              {If we have a word ending with pronominal suffixes, we need to check whether the word is a verb 
-              also without the termination, to avoid the HABLA bug where "LA" is part of the verb habLAr and
-              not a suffix. So first we remove the termination:}
-              ASearchWord := Copy(orderWords[i], 1, Length(orderWords[i])-Length(SPANISH_TERMINATIONS[j]));
-              {Then check if still can be recognized as a verb}
-              FindWord(ASearchWord, VOC_VERB, AWordRecord);
-              if AWordRecord.ACode<>-1 then    
-              begin
                 PronounInSentence := true;
                 if getFlag(FNOUN)=NO_WORD then 
                 begin 
                   setFlag(FNOUN, getFlag(FPRONOUN));
                   setFlag(FADJECT, getFlag(FPRONOUN_ADJECT));
                 end;
-              end;  
-              {Please notice the word has to be first recognized as verb, so all Spanish verbs which are not
-                5 characters long should have synonyms including the suffix or part of it: DAR->DARLO, COGE->COGEL}
           end;
           j := j +1;
         end;  (* loop over the terminations *)

@@ -50,6 +50,7 @@ procedure MoveToDDB(var buffer; offset, size: word); {Fucntions to pacth the DDB
 procedure MoveFromDDB(var buffer; offset, size: word);
 
 function IsSpanish: boolean;
+function LimitEnclicitPronouns: boolean;
 
 
 var DDBRAM : pointer;
@@ -127,6 +128,11 @@ end;
 function IsSpanish: boolean;
 begin
  IsSpanish := (DDBHeader.targetMachineLanguage and 1) <> 0;
+end;
+
+function LimitEnclicitPronouns: boolean;
+begin
+ LimitEnclicitPronouns := (DDBHeader.targetMachineLanguage and 8) <> 0;
 end;
 
 begin

@@ -15,6 +15,7 @@ const VERSION='1.13 - Gates of Mirkwood';
       MAX_LOCATION = NUM_LOCATIONS -1;
       LAST_CONVERTIBLE_NOUN=39; {Nouns convertible to verb in absence of verb. i.e "NORTH"}
       LAST_PROPER_NOUN=50;
+      LAST_PRONOMINAL_VERB=239; {Verbs that can apply pronouns terminations in Spanish}
 
       {For some reason, setting the timer to run every 1 ms, makes the OPL music run at 
       the proper speed, but apaprently that doesn't make the Delay function work
