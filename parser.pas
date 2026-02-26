@@ -525,8 +525,8 @@ end;
    {If Spanish, check pronominal terminations}
    if IsSpanish then 
     begin
-      if (not LimitEnclicitPronouns) or (AWordRecord.ACode<=LAST_PRONOMINAL_VERB) then
       if (AWordRecord.AType = VOC_VERB) and (not PronounInSentence) then
+      if (not LimitEnclicitPronouns) or (AWordRecord.ACode<=LAST_PRONOMINAL_VERB) then
       begin
         j := 0;
         while (j<4) and (not PronounInSentence) do
