@@ -1442,11 +1442,12 @@ begin
  end;
  if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  i := -1;
+ SetFlag(FDOALL,parameter1);
  repeat
     objno := getNextObjectAt(i, parameter1); 
     if (objno<>MAX_OBJECT) then
     begin
-        SetFlag(FDOALL,objno);
+        
         SetReferencedObject(objno);
         {Checking if OBJ2 is the same as OBJ1, to support EXCEPT and also to avoid what Issue#4 in Github details}
         if (getFlag(FNOUN) = getFlag(FNOUN2)) and  

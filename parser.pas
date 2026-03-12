@@ -394,7 +394,11 @@ begin
 end; 
 
 
-
+function CheckTermination(Termination: String; Word: String): boolean;
+begin
+  CheckTermination := (Length(Word)> Length(Termination)) 
+              and (Copy(Word, Length(Word) - Length(Termination) + 1, Length(Termination)) = Termination)
+end;
 
 function parse(Option:TFlagType):boolean;
 var orderWords : array[0..High(Byte)] of TCompleteWord;
@@ -532,8 +536,7 @@ end;
         while (j<4) and (not PronounInSentence) do
         begin
           {check if the verb ends with one of the pronominal suffixes}
-          if (Pos(SPANISH_TERMINATIONS[j], StrToUpper(orderWords[i])) 
-              = 1 + Length(orderWords[i]) - Length(SPANISH_TERMINATIONS[j]))
+          if CheckTermination(SPANISH_TERMINATIONS[j], StrToUpper(orderWords[i])) 
           then
           begin
                 PronounInSentence := true;

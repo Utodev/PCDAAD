@@ -57,7 +57,7 @@ var DDBRAM : pointer;
 
 implementation
 
-uses utils;
+uses utils, flags;
 
     
 
@@ -132,7 +132,7 @@ end;
 
 function LimitEnclicitPronouns: boolean;
 begin
- LimitEnclicitPronouns := (DDBHeader.targetMachineLanguage and 8) <> 0;
+ LimitEnclicitPronouns := getFlag(FOBJECT_PRINT_FLAGS) and 4 <> 0;
 end;
 
 begin

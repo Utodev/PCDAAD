@@ -47,7 +47,7 @@ begin
     {Try to get next object at the doall location}
     if Verbose then TranscriptPas('{Last doall object:'+ inttostr(getFlag(FDOALL))+'}'+#13);
     repeat
-      nextDoallObjno := getNextObjectAt(getFlag(FDOALL), DoallLocation);
+      nextDoallObjno := getNextObjectAt(getFlag(FREFOBJ), DoallLocation);
       if Verbose then TranscriptPas('{Next doall object:'+ inttostr(nextDoallObjno)+'}'+#13);
       {If a valid object found jump back to DOALL entry/condact}
       if nextDoallObjno <> MAX_OBJECT then
