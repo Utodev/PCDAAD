@@ -54,6 +54,9 @@ var flagsArray : array [0..MAX_FLAGS-1] of TFlagType;
 function getFlag(index: word):TFlagType;
 procedure setFlag(index: word; value: TFlagType);
 function getFlagBit(index:word;bitno:byte): boolean;
+procedure setFlagBit(index:word;bitno:byte);
+procedure clearFlagBit(index:word;bitno:byte);
+procedure toggleFlagBit(index:word;bitno:byte);
 
 procedure resetFlags; {Restore flag to initial values}
 procedure RAMSaveFlags; {Copies the flags in a RAMSAVE slot}
@@ -94,5 +97,22 @@ function getFlagBit(index:word;bitno:byte): boolean;
 begin
     getFlagBit := (getFlag(index) AND (1 SHL bitno)) <> 0;
 end;
+
+
+procedure setFlagBit(index:word;bitno:byte);
+begin
+    flagsArray[index] := flagsArray[index] OR (1 SHL bitno);
+end;
+
+procedure clearFlagBit(index:word;bitno:byte);
+begin
+    flagsArray[index] := flagsArray[index] AND ((1 SHL bitno) XOR $FF);
+end;
+
+procedure toggleFlagBit(index:word;bitno:byte);
+begin
+    flagsArray[index] := flagsArray[index] XOR (1 SHL bitno);
+end;
+
 
 end.

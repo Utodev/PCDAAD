@@ -492,6 +492,11 @@ end;
 
  {parse the order}
 
+{Clear bit 4 of FOBJECT_PRINT_FLAGS that indicates there was a preposition before the noun1}
+clearFlagBit(FOBJECT_PRINT_FLAGS, 4); 
+{Clear bit 5 of FOBJECT_PRINT_FLAGS that indicates there was an unknown word after the verb}
+clearFlagBit(FOBJECT_PRINT_FLAGS, 5); 
+
  setflag(FVERB, NO_WORD);
  setFlag(FNOUN, NO_WORD);
  setFlag(FADJECT, NO_WORD);
@@ -513,7 +518,13 @@ end;
    if (AWordRecord.AType = VOC_NOUN) and (getFlag(FNOUN2) = NO_WORD) then setFlag(FNOUN2,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_ADJECT) and (getFlag(FADJECT) = NO_WORD) then setFlag(FADJECT,AWordRecord.ACode) else
    if (AWordRecord.AType = VOC_ADJECT) and (getFlag(FADJECT2) = NO_WORD) then setFlag(FADJECT2,AWordRecord.ACode) else
-   if (AWordRecord.AType = VOC_PREPOSITION) and (getFlag(FPREP) = NO_WORD) then setFlag(FPREP,AWordRecord.ACode) else
+   if (AWordRecord.AType = VOC_PREPOSITION) and (getFlag(FPREP) = NO_WORD) then 
+   begin
+    setFlag(FPREP,AWordRecord.ACode);
+    {Set bit 4 of FOBJECT_PRINT_FLAGS to indicate there was a preposition before the noun1}
+    if V3CODE then if (getFlag(FNOUN)=NO_WORD) then setFlagBit(FOBJECT_PRINT_FLAGS, 4); 
+   end 
+   else
    if (AWordRecord.AType = VOC_ADVERB) and (getFlag(FADVERB) = NO_WORD) then setFlag(FADVERB,AWordRecord.ACode)
    {If English, pronouns work independently, if Spanish, pronouns are applied a pronominal suffixes}
    else if (not IsSpanish) and (AWordRecord.AType = VOC_PRONOUN) and (not PronounInSentence) then
@@ -551,7 +562,12 @@ end;
       end; (* if a Verb and no pronoun *) 
     end; {If IsSpanish}
    
-  end; {if AWordRecord.ACode <> -1}
+  end {if AWordRecord.ACode <> -1}
+  else
+  begin
+  {Set bit 5 of FOBJECT_PRINT_FLAGS to indicate there was an unknown word after the verb}
+   if V3CODE then if (getFlag(FVERB)<> NO_WORD) then SetflagBit(FOBJECT_PRINT_FLAGS, 5); 
+  end;
   i := i + 1;
  end; {while}
  

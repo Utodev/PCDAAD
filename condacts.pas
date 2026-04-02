@@ -149,6 +149,9 @@ procedure _dumb;
 procedure _COPYFF;
 procedure _COPYBF;
 procedure _RESET;
+procedure _INDIR;
+procedure _SETAT;
+procedure _GETKEY; {metacondact, is a PAUSE 0}
 
 
 const condactTable : TCondactTable = (
@@ -274,9 +277,9 @@ const condactTable : TCondactTable = (
 (condactName: 'COPYOF '; condactRoutine: _COPYOF ; numParams: 2), { 119 $77}
 (condactName: 'dumb   '; condactRoutine: _dumb   ; numParams: 0), { 120 $78}
 (condactName: 'COPYOO '; condactRoutine: _COPYOO ; numParams: 2), { 121 $79}
-(condactName: 'dumb   '; condactRoutine: _dumb   ; numParams: 0), { 122 $7A}
+(condactName: 'INDIR  '; condactRoutine: _INDIR  ; numParams: 1), { 122 $7A}
 (condactName: 'COPYFO '; condactRoutine: _COPYFO ; numParams: 2), { 123 $7B}
-(condactName: 'dumb   '; condactRoutine: _dumb   ; numParams: 0), { 124 $7C}
+(condactName: 'SETAT  '; condactRoutine: _SETAT  ; numParams: 2), { 124 $7C}
 (condactName: 'COPYFF '; condactRoutine: _COPYFF ; numParams: 2), { 125 $7D}
 (condactName: 'COPYBF '; condactRoutine: _COPYBF ; numParams: 2), { 126 $7E}
 (condactName: 'RESET  '; condactRoutine: _RESET  ; numParams: 0)  { 127 $7F}
@@ -873,7 +876,7 @@ begin
 (*--------------------------------------------------------------------------------------*)
 procedure _PAUSE;
 begin
- if (parameter1 = 0) then Delay(5.12) {256/50}
+ if (parameter1 = 0) then _GETKEY
                      else Delay(parameter1 / 50);
  done := true; 
 end;
@@ -1195,16 +1198,18 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _HASAT;
-var flag : TFlagType;
-    bit : Word;
+var baseFlag: TFlagType;
 begin
-    condactResult := getFlagBit(59-parameter1 div 8, parameter1 mod 8);
+    if(getFlagBit(FOBJECT_PRINT_FLAGS, 1)) then baseFlag := 91 else baseFlag := 59;
+    condactResult := getFlagBit(baseFlag - (parameter1 div 8), parameter1 mod 8);
 end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _HASNAT;
+var baseFlag: TFlagType;
 begin
-    condactResult := not getFlagBit(59 - (parameter1 div 8), parameter1 mod 8);
+    if(getFlagBit(FOBJECT_PRINT_FLAGS, 1)) then baseFlag := 91 else baseFlag := 59;
+    condactResult := not getFlagBit(baseFlag - (parameter1 div 8), parameter1 mod 8);
 end;
 
 (*--------------------------------------------------------------------------------------*)
@@ -1443,11 +1448,14 @@ begin
  if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  i := -1;
  SetFlag(FDOALL,parameter1);
+ SetFlagBit(FOBJECT_PRINT_FLAGS,0); {Sets the flag that indicates there was no object found in DOALL, it will be cleared 
+                                    if an object is found, but will remain set otherwise}
  repeat
     objno := getNextObjectAt(i, parameter1); 
     if (objno<>MAX_OBJECT) then
     begin
-        
+        ClearFlagBit(FOBJECT_PRINT_FLAGS,0); {Clears the flag that indicates there was no object 
+                                             found in DOALL, as we have found an object}
         SetReferencedObject(objno);
         {Checking if OBJ2 is the same as OBJ1, to support EXCEPT and also to avoid what Issue#4 in Github details}
         if (getFlag(FNOUN) = getFlag(FNOUN2)) and  
@@ -1769,8 +1777,12 @@ end;
 
 (*--------------------------------------------------------------------------------------*)
 procedure _RANDOM;
+var i: byte;
 begin
- SetFlag(parameter1, random(101));
+ repeat
+    i := random(101)
+ until  (i>0) and (i<=100);
+ SetFlag(parameter1, i);
  done := true;
 end;
 
@@ -2032,6 +2044,18 @@ begin
 end;
 
 (*--------------------------------------------------------------------------------------*)
+procedure _GETKEY;
+var inkey : word;
+begin
+  REPEAT UNTIL Keypressed;
+  inkey := ReadKey;
+  setflag(FKEY1, inkey and $FF);
+  setflag(FKEY2, (inkey and $FF00) SHR 8);
+  done := true;
+end;
+
+
+(*--------------------------------------------------------------------------------------*)
 procedure _BIGGER;
 begin
  condactResult := getFlag(Parameter1) > getFlag(Parameter2);
@@ -2138,6 +2162,34 @@ begin
  done := true;
 end;
 
+(*--------------------------------------------------------------------------------------*)
+procedure _INDIR;
+begin
+ if (V3CODE) then
+ BEGIN
+    writeByte(CondactPTR+3, getFlag(Parameter1));
+ END;
+ done := true;
+end;
+
+(*--------------------------------------------------------------------------------------*)
+procedure _SETAT;
+var baseFlag, finalFlag: TflagType;
+    bit: byte;
+begin
+    if V3CODE then
+    BEGIN
+        if(getFlagBit(FOBJECT_PRINT_FLAGS, 1)) then baseFlag := 91 else baseFlag := 59;
+        finalFlag := baseFlag - (Parameter1 div 8);
+        bit := Parameter1 mod 8;    
+        case Parameter2 of
+            0: ClearFlagBit(finalFlag, bit);
+            1: SetFlagBit(finalFlag, bit);
+            2: ToggleFlagBit(finalFlag, bit);
+        end;
+    END;    
+    done := true;
+end;
 
 
 end.

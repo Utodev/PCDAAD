@@ -43,6 +43,7 @@ var DDBHeader : TDDBheader;
 function loadDDB(filename: String) : boolean; {Loads a DDB file}
 function getByte(address: Word): byte; {get byte at address from DDB}
 function getWord(address: Word): word; {get word at address from DDB}
+procedure writeByte(address: Word; value: byte);{write byte at address from DDB}
 procedure resetProcesses; {restarts pointers to restart game}
 procedure ConsumeProcess; {Goes to last entry of process}
 
@@ -50,6 +51,7 @@ procedure MoveToDDB(var buffer; offset, size: word); {Fucntions to pacth the DDB
 procedure MoveFromDDB(var buffer; offset, size: word);
 
 function IsSpanish: boolean;
+function V3CODE: boolean; 
 function LimitEnclicitPronouns: boolean;
 
 
@@ -103,6 +105,12 @@ begin
                          else getByte := byte(pointer(DWORD(DDBRAM)+address)^);
 end;
 
+(*Writes a byte to the DDB file *)
+procedure writeByte(address: Word; value: byte);
+begin
+    byte(pointer(DWORD(DDBRAM)+address)^) := value;
+end;
+
 (*Returns a word from the DDB file *)
 function getWord(address: Word): word;
 begin
@@ -133,6 +141,11 @@ end;
 function LimitEnclicitPronouns: boolean;
 begin
  LimitEnclicitPronouns := getFlag(FOBJECT_PRINT_FLAGS) and 4 <> 0;
+end;
+
+function V3CODE: boolean; 
+begin 
+ V3CODE := DDBHeader.version = 3;
 end;
 
 begin
