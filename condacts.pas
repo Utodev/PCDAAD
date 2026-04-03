@@ -2188,6 +2188,8 @@ begin
         if(getFlagBit(FOBJECT_PRINT_FLAGS, 1)) then baseFlag := 91 else baseFlag := 59;
         finalFlag := baseFlag - (Parameter1 div 8);
         bit := Parameter1 mod 8;    
+        Parameter2 := Parameter2 and 3; {Only the first two bits are relevant, so we mask the rest}
+        if (Parameter2 = 3) then Parameter2 := 2; {3 does the same as 2 in other targets}
         case Parameter2 of
             0: ClearFlagBit(finalFlag, bit);
             1: SetFlagBit(finalFlag, bit);
