@@ -492,10 +492,13 @@ end;
 
  {parse the order}
 
-{Clear bit 4 of FOBJECT_PRINT_FLAGS that indicates there was a preposition before the noun1}
-clearFlagBit(FOBJECT_PRINT_FLAGS, 4); 
-{Clear bit 5 of FOBJECT_PRINT_FLAGS that indicates there was an unknown word after the verb}
-clearFlagBit(FOBJECT_PRINT_FLAGS, 5); 
+if (V3CODE) then
+BEGIN
+  {Clear bit 4 of FOBJECT_PRINT_FLAGS that indicates there was a preposition before the noun1}
+  clearFlagBit(FOBJECT_PRINT_FLAGS, 4); 
+  {Clear bit 5 of FOBJECT_PRINT_FLAGS that indicates there was an unknown word after the verb}
+  clearFlagBit(FOBJECT_PRINT_FLAGS, 5); 
+END;
 
  setflag(FVERB, NO_WORD);
  setFlag(FNOUN, NO_WORD);

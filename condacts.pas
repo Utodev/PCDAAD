@@ -1451,14 +1451,17 @@ begin
  if (parameter1= LOC_HERE) then parameter1 := getFlag(FPLAYER);
  i := -1;
  SetFlag(FDOALL,parameter1);
- SetFlagBit(FOBJECT_PRINT_FLAGS,0); {Sets the flag that indicates there was no object found in DOALL, it will be cleared 
-                                    if an object is found, but will remain set otherwise}
+ {Sets the flag that indicates there was no object found in DOALL, it will be cleared 
+ if an object is found, but will remain set otherwise}
+ if (V3CODE) then SetFlagBit(FOBJECT_PRINT_FLAGS,0); 
+                                    
  repeat
     objno := getNextObjectAt(i, parameter1); 
     if (objno<>MAX_OBJECT) then
     begin
-        ClearFlagBit(FOBJECT_PRINT_FLAGS,0); {Clears the flag that indicates there was no object 
-                                             found in DOALL, as we have found an object}
+        {Clears the flag that indicates there was no object found in DOALL, as we have found an object}
+        if V3CODE then ClearFlagBit(FOBJECT_PRINT_FLAGS,0); 
+                                             
         SetReferencedObject(objno);
         {Checking if OBJ2 is the same as OBJ1, to support EXCEPT and also to avoid what Issue#4 in Github details}
         if (getFlag(FNOUN) = getFlag(FNOUN2)) and  
