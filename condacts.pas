@@ -876,8 +876,11 @@ begin
 (*--------------------------------------------------------------------------------------*)
 procedure _PAUSE;
 begin
- if (parameter1 = 0) then _GETKEY
-                     else Delay(parameter1 / 50);
+ if (parameter1 = 0) then 
+                    begin
+                     if (DDB.V3CODE) then _GETKEY else Delay(256/50);
+                    end 
+                    else Delay(parameter1 / 50);
  done := true; 
 end;
 
