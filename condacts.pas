@@ -152,6 +152,7 @@ procedure _RESET;
 procedure _INDIR;
 procedure _SETAT;
 procedure _GETKEY; {metacondact, is a PAUSE 0}
+procedure _XMES;
 
 
 const condactTable : TCondactTable = (
@@ -275,7 +276,7 @@ const condactTable : TCondactTable = (
 (condactName: 'RESTART'; condactRoutine: _RESTART; numParams: 0), { 117 $75}
 (condactName: 'TAB    '; condactRoutine: _TAB    ; numParams: 1), { 118 $76}
 (condactName: 'COPYOF '; condactRoutine: _COPYOF ; numParams: 2), { 119 $77}
-(condactName: 'dumb   '; condactRoutine: _dumb   ; numParams: 0), { 120 $78}
+(condactName: 'XMES   '; condactRoutine: _XMES   ; numParams: 2), { 120 $78}
 (condactName: 'COPYOO '; condactRoutine: _COPYOO ; numParams: 2), { 121 $79}
 (condactName: 'INDIR  '; condactRoutine: _INDIR  ; numParams: 1), { 122 $7A}
 (condactName: 'COPYFO '; condactRoutine: _COPYFO ; numParams: 2), { 123 $7B}
@@ -373,8 +374,12 @@ procedure _XMES;
 var XmessageOffset : Word;
 begin 
  XmessageOffset := Parameter1;
- CondactPTR := CondactPTR + 1;
- XmessageOffset := XmessageOffset + getByte(CondactPTR) * 256;
+ if (V3CODE) THEN XmessageOffset := XmessageOffset + Parameter2 * 256
+ ELSE
+ BEGIN
+    CondactPTR := CondactPTR + 1;
+    XmessageOffset := XmessageOffset + getByte(CondactPTR) * 256;
+ END;   
  Xmes(XmessageOffset);
  done := true;
 end;       
@@ -2198,6 +2203,7 @@ begin
     END;    
     done := true;
 end;
+
 
 
 end.

@@ -288,5 +288,6 @@ begin
     end; 
     InitializeMouse;  {Initializes the mouse}
     if Verbose then TranscriptPas('Mouse initialised.'#13);
+    if V3CODE then MaluvaDisabled := true; {Maluva is not compatible with V3 code, so we disable it if V3 code is detected}
     run; {there is no way back from this procedure, so cleaning isn't here}
 end.
