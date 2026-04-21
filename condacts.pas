@@ -1336,7 +1336,7 @@ var result : boolean;
 begin
  result := parse(parameter1);
  condactResult := not result;
- done := false;
+ if (not condactResult) then done := true; (* as seen in original code, if parse fails as condition, marks done *)
 end;
 
 (*--------------------------------------------------------------------------------------*)
