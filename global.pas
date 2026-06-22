@@ -6,7 +6,7 @@ unit GLOBAL;
 
 interface
 
-const VERSION='1.13 - Gates of Mirkwood';
+const VERSION='1.14 - Elven King Cellar';
       NO_WORD = $FF;
       END_OF_PROCESS_MARK = $00;
       END_OF_CONDACTS_MARK = $FF;

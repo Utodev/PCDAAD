@@ -408,9 +408,10 @@ procedure Printat(line, col : word);
 begin
  if (line < Windows[ActiveWindow].height) and (col < Windows[ActiveWindow].width) then
  begin
-    Windows[ActiveWindow].CurrentY := line * 8;
-    Windows[ActiveWindow].CurrentX := col * 8;
- end;
+    Windows[ActiveWindow].CurrentY := (Windows[ActiveWindow].line + line) * 8;
+    Windows[ActiveWindow].CurrentX := (Windows[ActiveWindow].col + col) * 8;
+ end
+ else Printat(0,0);
 end; 
 
 procedure Tab(col:word);
