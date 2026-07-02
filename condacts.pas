@@ -693,8 +693,14 @@ end;
 procedure _DPRINT;
 var value: Word;
     valstr : array[0..2] of char;
+    highByte: byte;
 begin
-    Value := getFlag(parameter1) + 256 * getFlag(parameter1 + 1);
+    {When parameter1=255, flag[256] is OOB. Other targets' memory layout places
+     objLocations right after flagsArray, so flag[256] = objLocations[0].
+     We replicate that behaviour explicitly.}
+    if (parameter1 < 255) then highByte := getFlag(parameter1 + 1)
+                          else highByte := getObjectLocation(0);
+    Value := getFlag(parameter1) + 256 * highByte;
     StrPCopy(valstr,inttostr(value));
     WriteText(valstr, false);
     done := true;
@@ -941,7 +947,7 @@ begin
   exit;
  end;
 
- if (getFlag(FPLAYER)>= getFlag(FOBJECTS_CONVEYABLE)) then
+ if (getFlag(FCARRIED)>= getFlag(FOBJECTS_CONVEYABLE)) then
  begin
   Sysmess(SM42); {I can't remove the _. My hands are full.}
   newtext;
@@ -1350,7 +1356,7 @@ end;
 (*--------------------------------------------------------------------------------------*)
 procedure _PROCESS;
 begin
-    if (Parameter1 >= DDBHeader.numPro) then Error(3, 'Process ' + inttostr(parameter1) + 'does not exist');
+    if (Parameter1 >= DDBHeader.numPro) then Error(3, 'Process ' + inttostr(parameter1) + ' does not exist');
     StackPush;
     if (NestedDoallEnabled) then
     begin
