@@ -1,6 +1,5 @@
 release/*
 *.
-*.BAT
 *.ERR
 *.OLD
 *.EXT
