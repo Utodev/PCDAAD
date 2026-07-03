@@ -83,7 +83,8 @@ begin
             FillChar(DDBRAM^, ddbSize, 0);
             BlockRead(ddbFile, DDBRAM^, ddbSize);
             loadDDB := true;
-        end;
+        end
+        else Close(ddbFile); {file opened but size invalid: close the handle}
     end;
 end;
 
