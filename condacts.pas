@@ -711,10 +711,14 @@ procedure _DISPLAY;
 var multiplier : word;
     SaveMouse: boolean;
 begin
- SaveMouse := PointerActive;
- if PointerActive then HideMouse;
- DisplayPicture(parameter1, SVGAMode);
- if SaveMouse then ShowMouse;          
+ if Parameter1 <> 0 then ClearCurrentWindow
+ else
+ begin 
+    SaveMouse := PointerActive;
+    if PointerActive then HideMouse;
+    DisplayPicture(parameter1, SVGAMode);
+    if SaveMouse then ShowMouse;          
+ end;
  done := true;
 end;
 
